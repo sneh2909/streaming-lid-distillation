@@ -1,0 +1,16 @@
+# audio / models / caches — never commit
+data/**/*.wav
+data/**/*.flac
+data/**/*.mp3
+data/raw/
+data/clips/
+pretrained_models/
+checkpoints/
+*.pt
+*.ckpt
+__pycache__/
+.venv/
+.ipynb_checkpoints/
+.env
+# assignment brief kept local (not ours to publish)
+assignment.md
