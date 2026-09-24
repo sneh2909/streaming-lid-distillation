@@ -4,13 +4,17 @@ data/**/*.flac
 data/**/*.mp3
 data/raw/
 data/clips/
+data/generated/
 pretrained_models/
 checkpoints/
 *.pt
 *.ckpt
 __pycache__/
 .venv/
+.cache/
 .ipynb_checkpoints/
 .env
+*.egg-info/
+.pytest_cache/
 # assignment brief kept local (not ours to publish)
 assignment.md

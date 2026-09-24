@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "streaming-lid-distillation"
+version = "0.1.0"
+description = "CPU-sized offline-to-streaming language-ID distillation demo"
+requires-python = ">=3.10,<3.11"
+dependencies = [
+  "gTTS>=2.5,<2.6",
+  "huggingface-hub==0.24.7",
+  "matplotlib>=3.9,<4",
+  "miniaudio>=1.61,<2",
+  "numpy>=2.0,<3",
+  "soundfile>=0.13,<0.14",
+  "speechbrain==1.0.3",
+  "torch==2.6.0",
+  "torchaudio==2.6.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<9"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/streaming_lid"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchaudio = { index = "pytorch-cpu" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

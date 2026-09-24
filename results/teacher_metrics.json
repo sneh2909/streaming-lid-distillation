@@ -1,0 +1,19 @@
+{
+  "teacher_name": "speechbrain/lang-id-voxlingua107-ecapa",
+  "languages": [
+    "en",
+    "hi",
+    "mr",
+    "bn",
+    "ta",
+    "te",
+    "gu"
+  ],
+  "n_clips": 30,
+  "n_converged_utterance_targets": 27,
+  "n_local_window_target_clips": 3,
+  "mean_anchor_label_agreement": 0.9767676767676767,
+  "temperature": 2.0,
+  "window_past_ms": 1750,
+  "window_future_ms": 250
+}

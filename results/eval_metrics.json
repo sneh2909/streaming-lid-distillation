@@ -1,0 +1,62 @@
+{
+  "heldout_agreement": 0.8601583113456465,
+  "heldout_per_clip": [
+    {
+      "id": "en_heldout_5",
+      "agreement": 0.8333333333333334,
+      "frames": 456
+    },
+    {
+      "id": "hi_heldout_5",
+      "agreement": 0.5824847250509165,
+      "frames": 491
+    },
+    {
+      "id": "mr_heldout_2",
+      "agreement": 1.0,
+      "frames": 496
+    },
+    {
+      "id": "bn_heldout_2",
+      "agreement": 1.0,
+      "frames": 476
+    },
+    {
+      "id": "ta_heldout_2",
+      "agreement": 0.9892241379310345,
+      "frames": 464
+    },
+    {
+      "id": "te_heldout_2",
+      "agreement": 0.7068345323741008,
+      "frames": 556
+    },
+    {
+      "id": "gu_heldout_2",
+      "agreement": 0.940677966101695,
+      "frames": 472
+    }
+  ],
+  "switch_detected_seconds": 5.65500020980835,
+  "true_switch_seconds": 4.0,
+  "switch_lag_ms": 1655.0002098083496,
+  "detector": {
+    "threshold": 0.6,
+    "margin": 0.1,
+    "dwell_chunks": 3,
+    "dwell_ms": 480.0,
+    "ema_new_weight": 0.3,
+    "initial_commit_seconds": 2.4549999237060547
+  },
+  "cpu_rtf": 0.006396283177112525,
+  "cpu_rtf_runs": [
+    0.006396283177112525,
+    0.00619446125849796,
+    0.006277071655541525,
+    0.006875189781455893,
+    0.007721442070940632
+  ],
+  "cpu_threads": 1,
+  "chunk_equivalence_checked": true,
+  "nan_free": true
+}
