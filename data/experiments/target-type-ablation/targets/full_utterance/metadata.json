@@ -1,12 +1,12 @@
 {
   "experiment": "target-type-ablation",
-  "schema_version": 2,
-  "analysis_version": "target-type-ablation-v2",
+  "schema_version": 3,
+  "analysis_version": "target-type-ablation-v3",
   "variant": "full_utterance",
   "input_sha256": "ed1c02ea8036372143a7373fca971d1f3b6f64ce9514f7ec75bfee44d1fc9f59",
-  "run_identity_sha256": "1d2d889abf733b9797a981e6d65809726d4d4822460d0877bd91fbe97a4c75c7",
-  "driver_sha256": "910b89fb772af1b13c64b366ad19a1b62a5b31b2f9136f77e5901625896350e9",
-  "pipeline_source_sha256": "2d867c795fbbfa665b198be015e7bbf129c008dd9a7560e9f2d4543aa9c4094b",
+  "run_identity_sha256": "da7401f33b70d428f029c1466c0b9447831c7a1102ab9824d4feb58752486a9e",
+  "driver_sha256": "d04982511e70d63f9df9f5651d3d6666d479aa5eaddabcf05c055d00dd5c1af0",
+  "pipeline_source_sha256": "873d5713540a128580eaf858450410979200fd53eab6b7ed0b6e37c2415e234e",
   "teacher_identity": {
     "model_id": "speechbrain/lang-id-voxlingua107-ecapa",
     "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
@@ -44,18 +44,18 @@
     "teacher_temperature": 2.0,
     "anchor_hop_frames": 25,
     "anchor_hop_ms": 250.0,
-    "interpolation": "linear posterior interpolation on the 10 ms feature grid",
     "window": "whole clip; one posterior repeated over all frames",
+    "anchor_expansion": "constant repetition",
     "future_context_ms": "unbounded until clip end",
     "context_valid_at_tested_latency": false
   },
-  "generated_utc": "2026-09-25T19:27:19.962976+00:00",
+  "generated_utc": "2026-09-25T19:46:22.774158+00:00",
   "summary": {
     "clips": 94,
     "anchors": 94,
     "frames": 41195,
     "known_label_frame_accuracy_micro_all_splits": 0.935429056924384,
-    "generation_wall_seconds": 24.741784869000185,
+    "generation_wall_seconds": 30.390297894999094,
     "per_clip": [
       {
         "id": "en_train_00",

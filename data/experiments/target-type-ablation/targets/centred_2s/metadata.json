@@ -1,12 +1,12 @@
 {
   "experiment": "target-type-ablation",
-  "schema_version": 2,
-  "analysis_version": "target-type-ablation-v2",
+  "schema_version": 3,
+  "analysis_version": "target-type-ablation-v3",
   "variant": "centred_2s",
   "input_sha256": "ed1c02ea8036372143a7373fca971d1f3b6f64ce9514f7ec75bfee44d1fc9f59",
-  "run_identity_sha256": "1d2d889abf733b9797a981e6d65809726d4d4822460d0877bd91fbe97a4c75c7",
-  "driver_sha256": "910b89fb772af1b13c64b366ad19a1b62a5b31b2f9136f77e5901625896350e9",
-  "pipeline_source_sha256": "2d867c795fbbfa665b198be015e7bbf129c008dd9a7560e9f2d4543aa9c4094b",
+  "run_identity_sha256": "da7401f33b70d428f029c1466c0b9447831c7a1102ab9824d4feb58752486a9e",
+  "driver_sha256": "d04982511e70d63f9df9f5651d3d6666d479aa5eaddabcf05c055d00dd5c1af0",
+  "pipeline_source_sha256": "873d5713540a128580eaf858450410979200fd53eab6b7ed0b6e37c2415e234e",
   "teacher_identity": {
     "model_id": "speechbrain/lang-id-voxlingua107-ecapa",
     "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
@@ -44,27 +44,27 @@
     "teacher_temperature": 2.0,
     "anchor_hop_frames": 25,
     "anchor_hop_ms": 250.0,
-    "interpolation": "linear posterior interpolation on the 10 ms feature grid",
     "window": "[target frame end - 1000 ms, target frame end + 1000 ms]",
+    "anchor_expansion": "causal previous-anchor hold on the 10 ms grid",
     "past_context_ms": 1000,
     "future_context_ms": 1000,
     "context_valid_at_tested_latency": false,
     "future_context_excess_ms": 750.0
   },
-  "generated_utc": "2026-09-25T19:29:09.628051+00:00",
+  "generated_utc": "2026-09-25T19:48:51.397256+00:00",
   "summary": {
     "clips": 94,
     "anchors": 1786,
     "frames": 41195,
-    "known_label_frame_accuracy_micro_all_splits": 0.8551523243112028,
-    "generation_wall_seconds": 109.58265206900069,
+    "known_label_frame_accuracy_micro_all_splits": 0.8427721810899381,
+    "generation_wall_seconds": 148.5602080539993,
     "per_clip": [
       {
         "id": "en_train_00",
         "split": "train",
         "frames": 443,
         "anchors": 19,
-        "known_label_frame_accuracy": 0.7584650112866818,
+        "known_label_frame_accuracy": 0.7178329571106095,
         "mean_selected_language_mass": 0.24402259290218353
       },
       {
@@ -72,7 +72,7 @@
         "split": "train",
         "frames": 391,
         "anchors": 17,
-        "known_label_frame_accuracy": 0.5728900255754475,
+        "known_label_frame_accuracy": 0.639386189258312,
         "mean_selected_language_mass": 0.3916234076023102
       },
       {
@@ -80,7 +80,7 @@
         "split": "train",
         "frames": 450,
         "anchors": 19,
-        "known_label_frame_accuracy": 0.9155555555555556,
+        "known_label_frame_accuracy": 0.8888888888888888,
         "mean_selected_language_mass": 0.0644368901848793
       },
       {
@@ -96,7 +96,7 @@
         "split": "train",
         "frames": 454,
         "anchors": 20,
-        "known_label_frame_accuracy": 0.3964757709251101,
+        "known_label_frame_accuracy": 0.3392070484581498,
         "mean_selected_language_mass": 0.22567597031593323
       },
       {
@@ -104,7 +104,7 @@
         "split": "train",
         "frames": 469,
         "anchors": 20,
-        "known_label_frame_accuracy": 0.32196162046908317,
+        "known_label_frame_accuracy": 0.31982942430703626,
         "mean_selected_language_mass": 0.6484726667404175
       },
       {
@@ -120,7 +120,7 @@
         "split": "train",
         "frames": 393,
         "anchors": 17,
-        "known_label_frame_accuracy": 0.33587786259541985,
+        "known_label_frame_accuracy": 0.31806615776081426,
         "mean_selected_language_mass": 0.6043336391448975
       },
       {
@@ -128,7 +128,7 @@
         "split": "train",
         "frames": 369,
         "anchors": 16,
-        "known_label_frame_accuracy": 0.024390243902439025,
+        "known_label_frame_accuracy": 0.06775067750677506,
         "mean_selected_language_mass": 0.5606807470321655
       },
       {
@@ -144,7 +144,7 @@
         "split": "heldout",
         "frames": 308,
         "anchors": 14,
-        "known_label_frame_accuracy": 0.9707792207792207,
+        "known_label_frame_accuracy": 0.9188311688311688,
         "mean_selected_language_mass": 0.26653262972831726
       },
       {
@@ -160,7 +160,7 @@
         "split": "heldout",
         "frames": 347,
         "anchors": 15,
-        "known_label_frame_accuracy": 0.8213256484149856,
+        "known_label_frame_accuracy": 0.7838616714697406,
         "mean_selected_language_mass": 0.5807533860206604
       },
       {
@@ -168,7 +168,7 @@
         "split": "train",
         "frames": 581,
         "anchors": 25,
-        "known_label_frame_accuracy": 0.9345955249569707,
+        "known_label_frame_accuracy": 0.9139414802065404,
         "mean_selected_language_mass": 0.7211747169494629
       },
       {
@@ -184,7 +184,7 @@
         "split": "train",
         "frames": 537,
         "anchors": 23,
-        "known_label_frame_accuracy": 0.9553072625698324,
+        "known_label_frame_accuracy": 0.931098696461825,
         "mean_selected_language_mass": 0.6704063415527344
       },
       {
@@ -192,7 +192,7 @@
         "split": "train",
         "frames": 372,
         "anchors": 16,
-        "known_label_frame_accuracy": 0.3790322580645161,
+        "known_label_frame_accuracy": 0.4032258064516129,
         "mean_selected_language_mass": 0.8748820424079895
       },
       {
@@ -216,7 +216,7 @@
         "split": "train",
         "frames": 439,
         "anchors": 19,
-        "known_label_frame_accuracy": 0.929384965831435,
+        "known_label_frame_accuracy": 0.8861047835990888,
         "mean_selected_language_mass": 0.9882868528366089
       },
       {
@@ -232,7 +232,7 @@
         "split": "train",
         "frames": 442,
         "anchors": 19,
-        "known_label_frame_accuracy": 0.8868778280542986,
+        "known_label_frame_accuracy": 0.9049773755656109,
         "mean_selected_language_mass": 0.9750301837921143
       },
       {
@@ -248,7 +248,7 @@
         "split": "heldout",
         "frames": 382,
         "anchors": 17,
-        "known_label_frame_accuracy": 0.9057591623036649,
+        "known_label_frame_accuracy": 0.8691099476439791,
         "mean_selected_language_mass": 0.7987828254699707
       },
       {
@@ -256,7 +256,7 @@
         "split": "heldout",
         "frames": 488,
         "anchors": 21,
-        "known_label_frame_accuracy": 0.9549180327868853,
+        "known_label_frame_accuracy": 0.9733606557377049,
         "mean_selected_language_mass": 0.9680583477020264
       },
       {
@@ -264,7 +264,7 @@
         "split": "heldout",
         "frames": 410,
         "anchors": 18,
-        "known_label_frame_accuracy": 0.9902439024390244,
+        "known_label_frame_accuracy": 0.9390243902439024,
         "mean_selected_language_mass": 0.9777567386627197
       },
       {
@@ -272,7 +272,7 @@
         "split": "train",
         "frames": 610,
         "anchors": 26,
-        "known_label_frame_accuracy": 0.9967213114754099,
+        "known_label_frame_accuracy": 0.9590163934426229,
         "mean_selected_language_mass": 0.9703420400619507
       },
       {
@@ -280,7 +280,7 @@
         "split": "train",
         "frames": 470,
         "anchors": 20,
-        "known_label_frame_accuracy": 0.825531914893617,
+        "known_label_frame_accuracy": 0.851063829787234,
         "mean_selected_language_mass": 0.8273665308952332
       },
       {
@@ -296,7 +296,7 @@
         "split": "train",
         "frames": 381,
         "anchors": 17,
-        "known_label_frame_accuracy": 0.9553805774278216,
+        "known_label_frame_accuracy": 0.9343832020997376,
         "mean_selected_language_mass": 0.996371865272522
       },
       {
@@ -304,7 +304,7 @@
         "split": "train",
         "frames": 489,
         "anchors": 21,
-        "known_label_frame_accuracy": 0.7852760736196319,
+        "known_label_frame_accuracy": 0.7668711656441718,
         "mean_selected_language_mass": 0.7212744951248169
       },
       {
@@ -320,7 +320,7 @@
         "split": "train",
         "frames": 416,
         "anchors": 18,
-        "known_label_frame_accuracy": 0.42788461538461536,
+        "known_label_frame_accuracy": 0.39903846153846156,
         "mean_selected_language_mass": 0.8590112924575806
       },
       {
@@ -328,7 +328,7 @@
         "split": "train",
         "frames": 368,
         "anchors": 16,
-        "known_label_frame_accuracy": 0.9619565217391305,
+        "known_label_frame_accuracy": 0.9320652173913043,
         "mean_selected_language_mass": 0.9773897528648376
       },
       {
@@ -336,7 +336,7 @@
         "split": "train",
         "frames": 358,
         "anchors": 16,
-        "known_label_frame_accuracy": 0.9916201117318436,
+        "known_label_frame_accuracy": 0.9301675977653632,
         "mean_selected_language_mass": 0.9961889982223511
       },
       {
@@ -344,7 +344,7 @@
         "split": "train",
         "frames": 330,
         "anchors": 15,
-        "known_label_frame_accuracy": 0.5272727272727272,
+        "known_label_frame_accuracy": 0.5303030303030303,
         "mean_selected_language_mass": 0.7255632877349854
       },
       {
@@ -352,7 +352,7 @@
         "split": "heldout",
         "frames": 319,
         "anchors": 14,
-        "known_label_frame_accuracy": 0.8683385579937304,
+        "known_label_frame_accuracy": 0.8432601880877743,
         "mean_selected_language_mass": 0.9573540687561035
       },
       {
@@ -360,7 +360,7 @@
         "split": "heldout",
         "frames": 424,
         "anchors": 18,
-        "known_label_frame_accuracy": 0.5424528301886793,
+        "known_label_frame_accuracy": 0.4693396226415094,
         "mean_selected_language_mass": 0.9763057231903076
       },
       {
@@ -368,7 +368,7 @@
         "split": "heldout",
         "frames": 356,
         "anchors": 16,
-        "known_label_frame_accuracy": 0.5280898876404494,
+        "known_label_frame_accuracy": 0.43820224719101125,
         "mean_selected_language_mass": 0.9929578304290771
       },
       {
@@ -376,7 +376,7 @@
         "split": "train",
         "frames": 581,
         "anchors": 25,
-        "known_label_frame_accuracy": 0.8502581755593803,
+        "known_label_frame_accuracy": 0.8278829604130808,
         "mean_selected_language_mass": 0.938490092754364
       },
       {
@@ -392,7 +392,7 @@
         "split": "train",
         "frames": 501,
         "anchors": 21,
-        "known_label_frame_accuracy": 0.9680638722554891,
+        "known_label_frame_accuracy": 0.9500998003992016,
         "mean_selected_language_mass": 0.878180980682373
       },
       {
@@ -400,7 +400,7 @@
         "split": "train",
         "frames": 430,
         "anchors": 19,
-        "known_label_frame_accuracy": 0.5604651162790698,
+        "known_label_frame_accuracy": 0.5813953488372093,
         "mean_selected_language_mass": 0.9458388090133667
       },
       {
@@ -424,7 +424,7 @@
         "split": "train",
         "frames": 394,
         "anchors": 17,
-        "known_label_frame_accuracy": 0.9568527918781726,
+        "known_label_frame_accuracy": 0.9365482233502538,
         "mean_selected_language_mass": 0.9506250023841858
       },
       {
@@ -464,7 +464,7 @@
         "split": "heldout",
         "frames": 355,
         "anchors": 16,
-        "known_label_frame_accuracy": 0.8985915492957747,
+        "known_label_frame_accuracy": 0.8591549295774648,
         "mean_selected_language_mass": 0.8541584014892578
       },
       {
@@ -584,7 +584,7 @@
         "split": "train",
         "frames": 633,
         "anchors": 27,
-        "known_label_frame_accuracy": 0.627172195892575,
+        "known_label_frame_accuracy": 0.6050552922590837,
         "mean_selected_language_mass": 0.9500344395637512
       },
       {
@@ -592,7 +592,7 @@
         "split": "train",
         "frames": 519,
         "anchors": 22,
-        "known_label_frame_accuracy": 0.9325626204238922,
+        "known_label_frame_accuracy": 0.9036608863198459,
         "mean_selected_language_mass": 0.9188216924667358
       },
       {
@@ -600,7 +600,7 @@
         "split": "train",
         "frames": 581,
         "anchors": 25,
-        "known_label_frame_accuracy": 0.9948364888123924,
+        "known_label_frame_accuracy": 0.9569707401032702,
         "mean_selected_language_mass": 0.9465683102607727
       },
       {
@@ -608,7 +608,7 @@
         "split": "train",
         "frames": 497,
         "anchors": 21,
-        "known_label_frame_accuracy": 0.9275653923541247,
+        "known_label_frame_accuracy": 0.8993963782696177,
         "mean_selected_language_mass": 0.958511233329773
       },
       {
@@ -616,7 +616,7 @@
         "split": "train",
         "frames": 502,
         "anchors": 22,
-        "known_label_frame_accuracy": 0.9920318725099602,
+        "known_label_frame_accuracy": 0.950199203187251,
         "mean_selected_language_mass": 0.9488487243652344
       },
       {
@@ -624,7 +624,7 @@
         "split": "train",
         "frames": 448,
         "anchors": 19,
-        "known_label_frame_accuracy": 0.9263392857142857,
+        "known_label_frame_accuracy": 0.8883928571428571,
         "mean_selected_language_mass": 0.8646513223648071
       },
       {
@@ -632,7 +632,7 @@
         "split": "train",
         "frames": 372,
         "anchors": 16,
-        "known_label_frame_accuracy": 0.9596774193548387,
+        "known_label_frame_accuracy": 0.9327956989247311,
         "mean_selected_language_mass": 0.9953683614730835
       },
       {
@@ -640,7 +640,7 @@
         "split": "train",
         "frames": 299,
         "anchors": 13,
-        "known_label_frame_accuracy": 0.9230769230769231,
+        "known_label_frame_accuracy": 0.9163879598662207,
         "mean_selected_language_mass": 0.9447998404502869
       },
       {
@@ -648,7 +648,7 @@
         "split": "train",
         "frames": 448,
         "anchors": 19,
-        "known_label_frame_accuracy": 0.96875,
+        "known_label_frame_accuracy": 0.9441964285714286,
         "mean_selected_language_mass": 0.9622673392295837
       },
       {
@@ -656,7 +656,7 @@
         "split": "train",
         "frames": 355,
         "anchors": 16,
-        "known_label_frame_accuracy": 0.7492957746478873,
+        "known_label_frame_accuracy": 0.7183098591549296,
         "mean_selected_language_mass": 0.7600650787353516
       },
       {
@@ -672,7 +672,7 @@
         "split": "heldout",
         "frames": 336,
         "anchors": 15,
-        "known_label_frame_accuracy": 0.8720238095238095,
+        "known_label_frame_accuracy": 0.8511904761904762,
         "mean_selected_language_mass": 0.9017085433006287
       },
       {
@@ -680,7 +680,7 @@
         "split": "heldout",
         "frames": 314,
         "anchors": 14,
-        "known_label_frame_accuracy": 0.9777070063694268,
+        "known_label_frame_accuracy": 0.9968152866242038,
         "mean_selected_language_mass": 0.8974838852882385
       },
       {
@@ -688,7 +688,7 @@
         "split": "train",
         "frames": 580,
         "anchors": 25,
-        "known_label_frame_accuracy": 0.843103448275862,
+        "known_label_frame_accuracy": 0.8275862068965517,
         "mean_selected_language_mass": 0.774324893951416
       },
       {
@@ -696,7 +696,7 @@
         "split": "train",
         "frames": 532,
         "anchors": 23,
-        "known_label_frame_accuracy": 0.8289473684210527,
+        "known_label_frame_accuracy": 0.8120300751879699,
         "mean_selected_language_mass": 0.9354856014251709
       },
       {
@@ -720,7 +720,7 @@
         "split": "train",
         "frames": 492,
         "anchors": 21,
-        "known_label_frame_accuracy": 0.9247967479674797,
+        "known_label_frame_accuracy": 0.8983739837398373,
         "mean_selected_language_mass": 0.7433729767799377
       },
       {
@@ -728,7 +728,7 @@
         "split": "train",
         "frames": 530,
         "anchors": 23,
-        "known_label_frame_accuracy": 0.9377358490566038,
+        "known_label_frame_accuracy": 0.9433962264150944,
         "mean_selected_language_mass": 0.933948278427124
       },
       {
@@ -736,7 +736,7 @@
         "split": "train",
         "frames": 465,
         "anchors": 20,
-        "known_label_frame_accuracy": 0.9440860215053763,
+        "known_label_frame_accuracy": 0.967741935483871,
         "mean_selected_language_mass": 0.9818012118339539
       },
       {
@@ -752,7 +752,7 @@
         "split": "train",
         "frames": 375,
         "anchors": 16,
-        "known_label_frame_accuracy": 0.7253333333333334,
+        "known_label_frame_accuracy": 0.7333333333333333,
         "mean_selected_language_mass": 0.9212320446968079
       },
       {
@@ -760,7 +760,7 @@
         "split": "train",
         "frames": 382,
         "anchors": 17,
-        "known_label_frame_accuracy": 0.725130890052356,
+        "known_label_frame_accuracy": 0.7853403141361257,
         "mean_selected_language_mass": 0.8301464319229126
       },
       {
@@ -768,7 +768,7 @@
         "split": "heldout",
         "frames": 388,
         "anchors": 17,
-        "known_label_frame_accuracy": 0.9819587628865979,
+        "known_label_frame_accuracy": 0.9355670103092784,
         "mean_selected_language_mass": 0.8842623233795166
       },
       {
@@ -792,7 +792,7 @@
         "split": "train",
         "frames": 798,
         "anchors": 33,
-        "known_label_frame_accuracy": 0.8320802005012531,
+        "known_label_frame_accuracy": 0.7781954887218046,
         "mean_selected_language_mass": 0.47338810563087463
       },
       {
@@ -800,7 +800,7 @@
         "split": "switch",
         "frames": 798,
         "anchors": 33,
-        "known_label_frame_accuracy": 0.8671679197994987,
+        "known_label_frame_accuracy": 0.8395989974937343,
         "mean_selected_language_mass": 0.5586749315261841
       },
       {
@@ -808,7 +808,7 @@
         "split": "switch",
         "frames": 798,
         "anchors": 33,
-        "known_label_frame_accuracy": 0.8947368421052632,
+        "known_label_frame_accuracy": 0.87468671679198,
         "mean_selected_language_mass": 0.5374490022659302
       }
     ]

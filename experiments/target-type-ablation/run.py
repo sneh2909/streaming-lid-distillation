@@ -122,8 +122,8 @@ from streaming_lid.model import CausalLIDStudent  # noqa: E402
 
 
 EXPERIMENT_NAME = "target-type-ablation"
-SCHEMA_VERSION = 2
-ANALYSIS_VERSION = "target-type-ablation-v2"
+SCHEMA_VERSION = 3
+ANALYSIS_VERSION = "target-type-ablation-v3"
 TEACHER_REVISION = "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9"
 TEACHER_ARTIFACT_FILES = (
     "classifier.ckpt",
@@ -295,6 +295,20 @@ def standard_anchor_frames(num_frames: int) -> np.ndarray:
     return anchors
 
 
+def causal_hold_posteriors(
+    anchor_frames: np.ndarray, anchor_values: np.ndarray, num_frames: int
+) -> np.ndarray:
+    """Expand anchors without consulting any anchor later than the target frame."""
+    frame_index = np.arange(num_frames)
+    anchor_index = np.searchsorted(anchor_frames, frame_index, side="right") - 1
+    anchor_index = np.clip(anchor_index, 0, len(anchor_frames) - 1)
+    if np.any(anchor_frames[anchor_index] > frame_index):
+        raise AssertionError("causal hold selected a future anchor")
+    expanded = anchor_values[anchor_index].astype(np.float32, copy=True)
+    expanded /= np.clip(expanded.sum(axis=-1, keepdims=True), 1e-8, None)
+    return expanded
+
+
 def copy_padded_slice(
     waveform: torch.Tensor, source_start: int, source_end: int
 ) -> torch.Tensor:
@@ -382,8 +396,17 @@ def make_target_arrays(
     soft_anchors = torch.softmax(
         selected_logs / TEACHER_TEMPERATURE, dim=-1
     ).numpy()
-    raw = interpolate_posteriors(anchors, raw_anchors, num_frames)
-    soft = interpolate_posteriors(anchors, soft_anchors, num_frames)
+    if variant == "full_utterance":
+        # Preserve exact parity with the main full-utterance cache. With one
+        # anchor, interpolation is just constant repetition.
+        raw = interpolate_posteriors(anchors, raw_anchors, num_frames)
+        soft = interpolate_posteriors(anchors, soft_anchors, num_frames)
+    else:
+        # Linear interpolation would consult the next 250 ms anchor and leak up
+        # to another 240 ms of audio. Previous-anchor hold preserves each
+        # target's stated evidence horizon.
+        raw = causal_hold_posteriors(anchors, raw_anchors, num_frames)
+        soft = causal_hold_posteriors(anchors, soft_anchors, num_frames)
     return TargetArrays(
         raw=raw,
         soft=soft,
@@ -407,12 +430,12 @@ def target_definition(variant: str) -> dict:
         "teacher_temperature": TEACHER_TEMPERATURE,
         "anchor_hop_frames": TEACHER_HOP_FRAMES,
         "anchor_hop_ms": TEACHER_HOP_FRAMES * FRAME_MS,
-        "interpolation": "linear posterior interpolation on the 10 ms feature grid",
     }
     if variant == "full_utterance":
         return {
             **common,
             "window": "whole clip; one posterior repeated over all frames",
+            "anchor_expansion": "constant repetition",
             "future_context_ms": "unbounded until clip end",
             "context_valid_at_tested_latency": False,
         }
@@ -420,6 +443,7 @@ def target_definition(variant: str) -> dict:
         return {
             **common,
             "window": "[target frame end - 1000 ms, target frame end + 1000 ms]",
+            "anchor_expansion": "causal previous-anchor hold on the 10 ms grid",
             "past_context_ms": CENTRED_PAST_MS,
             "future_context_ms": CENTRED_FUTURE_MS,
             "context_valid_at_tested_latency": False,
@@ -429,6 +453,7 @@ def target_definition(variant: str) -> dict:
         return {
             **common,
             "window": "[clip start, target frame end + 250 ms]",
+            "anchor_expansion": "causal previous-anchor hold on the 10 ms grid",
             "past_context_ms": "growing from clip start",
             "future_context_ms": EVIDENCE_LOOKAHEAD_MS,
             "context_valid_at_tested_latency": True,
@@ -812,18 +837,44 @@ def threshold_policy_transition(
     }
 
 
-def flip_metrics(classes: np.ndarray, times: np.ndarray) -> dict:
+def transition_matches_reference_boundary(
+    transition: dict,
+    boundary_seconds: float,
+    *,
+    early_tolerance_ms: float = EVIDENCE_LOOKAHEAD_MS,
+) -> bool:
+    """Whether a persistent source->target event plausibly matches the boundary."""
+    start = transition["transition_start_seconds"]
+    confirmed = transition["transition_confirmed_seconds"]
+    return bool(
+        start is not None
+        and confirmed is not None
+        and start >= boundary_seconds - early_tolerance_ms / 1_000
+        and confirmed >= boundary_seconds
+    )
+
+
+def flip_metrics(
+    classes: np.ndarray,
+    times: np.ndarray,
+    *,
+    matched_reference_transition: bool,
+) -> dict:
     flips = int(np.sum(classes[1:] != classes[:-1])) if len(classes) > 1 else 0
     duration_minutes = (
         max(float(times[-1] - times[0]), 1e-8) / 60 if len(times) > 1 else 0.0
     )
-    # One source->target change is intended. Extra top-1 changes are flip-flops.
-    excess = max(0, flips - 1)
+    # Discount the one intended change only when a persistent source->target
+    # event actually matched the annotated boundary. Otherwise every observed
+    # class change is unmatched churn.
+    matched = int(matched_reference_transition)
+    unmatched = max(0, flips - matched)
     return {
         "top1_changes": flips,
-        "excess_flip_flops": excess,
-        "excess_flip_flops_per_minute": (
-            excess / duration_minutes if duration_minutes > 0 else 0.0
+        "matched_reference_transitions": matched,
+        "unmatched_top1_changes": unmatched,
+        "unmatched_top1_changes_per_minute": (
+            unmatched / duration_minutes if duration_minutes > 0 else 0.0
         ),
     }
 
@@ -995,6 +1046,13 @@ def evaluate_switch_clip(
         target_index,
         PERSISTENCE_CHUNKS,
     )
+    ema_transition = persistent_transition(
+        ema_chunk_classes,
+        chunk_times,
+        source_index,
+        target_index,
+        PERSISTENCE_CHUNKS,
+    )
     policy = threshold_policy_transition(
         chunks, chunk_times, source_index, target_index
     )
@@ -1023,6 +1081,19 @@ def evaluate_switch_clip(
         source_index,
         target_index,
         PERSISTENCE_CHUNKS,
+    )
+    raw_matches_boundary = transition_matches_reference_boundary(
+        raw_transition, boundary_seconds
+    )
+    ema_matches_boundary = transition_matches_reference_boundary(
+        ema_transition, boundary_seconds
+    )
+    teacher_matches_boundary = transition_matches_reference_boundary(
+        teacher_transition,
+        boundary_seconds,
+        early_tolerance_ms=(
+            0.0 if variant == "full_utterance" else target_available_offset_ms(variant)
+        ),
     )
     semantic_teacher_start = teacher_transition["transition_start_seconds"]
     semantic_teacher_confirmed = teacher_transition["transition_confirmed_seconds"]
@@ -1069,11 +1140,22 @@ def evaluate_switch_clip(
         ),
         "raw_persistent_transition": {
             **raw_transition,
+            "matches_reference_boundary": raw_matches_boundary,
             "transition_start_lag_ms": safe_lag_ms(
                 raw_transition["transition_start_seconds"], boundary_seconds
             ),
             "transition_confirmed_lag_ms": safe_lag_ms(
                 raw_transition["transition_confirmed_seconds"], boundary_seconds
+            ),
+        },
+        "ema_persistent_transition": {
+            **ema_transition,
+            "matches_reference_boundary": ema_matches_boundary,
+            "transition_start_lag_ms": safe_lag_ms(
+                ema_transition["transition_start_seconds"], boundary_seconds
+            ),
+            "transition_confirmed_lag_ms": safe_lag_ms(
+                ema_transition["transition_confirmed_seconds"], boundary_seconds
             ),
         },
         "policy_transition": {
@@ -1082,10 +1164,19 @@ def evaluate_switch_clip(
                 policy["switch_commit_seconds"], boundary_seconds
             ),
         },
-        "raw_chunk_flips": flip_metrics(raw_chunk_classes, chunk_times),
-        "ema_chunk_flips": flip_metrics(ema_chunk_classes, chunk_times),
+        "raw_chunk_flips": flip_metrics(
+            raw_chunk_classes,
+            chunk_times,
+            matched_reference_transition=raw_matches_boundary,
+        ),
+        "ema_chunk_flips": flip_metrics(
+            ema_chunk_classes,
+            chunk_times,
+            matched_reference_transition=ema_matches_boundary,
+        ),
         "teacher_target_transition": {
             **teacher_transition,
+            "matches_reference_boundary": teacher_matches_boundary,
             "semantic_transition_start_lag_ms": safe_lag_ms(
                 semantic_teacher_start, boundary_seconds
             ),
@@ -1108,7 +1199,9 @@ def evaluate_switch_clip(
                 confirmed_teacher_transition_available, boundary_seconds
             ),
             "anchor_flips": flip_metrics(
-                anchor_probs.argmax(axis=-1), anchor_times
+                anchor_probs.argmax(axis=-1),
+                anchor_times,
+                matched_reference_transition=teacher_matches_boundary,
             ),
         },
     }
@@ -1123,17 +1216,19 @@ def aggregate_switch_metrics(per_clip: list[dict]) -> dict:
     raw_lags = [
         record["raw_persistent_transition"]["transition_start_lag_ms"]
         for record in per_clip
-        if record["raw_persistent_transition"]["transition_start_lag_ms"] is not None
+        if record["raw_persistent_transition"]["matches_reference_boundary"]
+    ]
+    ema_lags = [
+        record["ema_persistent_transition"]["transition_start_lag_ms"]
+        for record in per_clip
+        if record["ema_persistent_transition"]["matches_reference_boundary"]
     ]
     teacher_confirmed_lags = [
         record["teacher_target_transition"][
             "confirmed_transition_availability_lag_ms"
         ]
         for record in per_clip
-        if record["teacher_target_transition"][
-            "confirmed_transition_availability_lag_ms"
-        ]
-        is not None
+        if record["teacher_target_transition"]["matches_reference_boundary"]
     ]
     return {
         "n_clips": len(per_clip),
@@ -1159,23 +1254,32 @@ def aggregate_switch_metrics(per_clip: list[dict]) -> dict:
         "raw_transition_start_lag_ms_mean_detected_only": (
             None if not raw_lags else float(np.mean(raw_lags))
         ),
+        "ema_transition_detected": len(ema_lags),
+        "ema_transition_missed": len(per_clip) - len(ema_lags),
+        "ema_transition_start_lag_ms_mean_detected_only": (
+            None if not ema_lags else float(np.mean(ema_lags))
+        ),
         "policy_transition_detected": len(policy_lags),
         "policy_transition_missed": len(per_clip) - len(policy_lags),
         "policy_switch_lag_ms_mean_detected_only": (
             None if not policy_lags else float(np.mean(policy_lags))
         ),
-        "raw_excess_flip_flops_per_minute_mean": float(
+        "raw_unmatched_top1_changes_per_minute_mean": float(
             np.mean(
                 [
-                    record["raw_chunk_flips"]["excess_flip_flops_per_minute"]
+                    record["raw_chunk_flips"][
+                        "unmatched_top1_changes_per_minute"
+                    ]
                     for record in per_clip
                 ]
             )
         ),
-        "ema_excess_flip_flops_per_minute_mean": float(
+        "ema_unmatched_top1_changes_per_minute_mean": float(
             np.mean(
                 [
-                    record["ema_chunk_flips"]["excess_flip_flops_per_minute"]
+                    record["ema_chunk_flips"][
+                        "unmatched_top1_changes_per_minute"
+                    ]
                     for record in per_clip
                 ]
             )

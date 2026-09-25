@@ -487,6 +487,25 @@ def main() -> None:
         "cpu_rtf": cpu_rtf,
         "losses": train_metrics["losses"],
         "optimizer_steps": train_metrics["optimizer_steps"],
+        "requested_optimizer_steps": train_metrics[
+            "requested_optimizer_steps"
+        ],
+        "successful_optimizer_steps": train_metrics[
+            "successful_optimizer_steps"
+        ],
+        "post_update_checks": train_metrics["post_update_checks"],
+        "all_requested_steps_completed": train_metrics[
+            "all_requested_steps_completed"
+        ],
+        "real_audio_optimizer_step": train_metrics[
+            "real_audio_optimizer_step"
+        ],
+        "post_update_model_state_finite": train_metrics[
+            "post_update_model_state_finite"
+        ],
+        "post_update_optimizer_state_finite": train_metrics[
+            "post_update_optimizer_state_finite"
+        ],
         "examples_seen": train_metrics["examples_seen"],
         "effective_epochs": train_metrics["effective_epochs"],
         "first_10_mean_loss": train_metrics["first_10_mean_loss"],
