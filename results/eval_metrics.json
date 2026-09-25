@@ -1,42 +1,42 @@
 {
-  "heldout_teacher_agreement_micro": 0.22854360829044373,
-  "heldout_teacher_agreement_macro": 0.19458680858144867,
-  "heldout_student_label_accuracy_micro": 0.17262484351091947,
-  "heldout_student_label_accuracy_macro": 0.1523138355752685,
-  "heldout_teacher_label_accuracy_micro": 0.8481012658227848,
-  "heldout_teacher_label_accuracy_macro": 0.8571428571428571,
-  "heldout_student_clip_accuracy": 0.14285714285714285,
-  "heldout_teacher_clip_accuracy": 0.8571428571428571,
+  "heldout_teacher_agreement_micro": 0.08578491965389369,
+  "heldout_teacher_agreement_macro": 0.08334918232543319,
+  "heldout_student_label_accuracy_micro": 0.08578491965389369,
+  "heldout_student_label_accuracy_macro": 0.08334918232543319,
+  "heldout_teacher_label_accuracy_micro": 1.0,
+  "heldout_teacher_label_accuracy_macro": 1.0,
+  "heldout_student_clip_accuracy": 0.09523809523809523,
+  "heldout_teacher_clip_accuracy": 1.0,
   "heldout_per_language": {
     "en": {
       "n_clips": 3,
       "speaker_ids": [
-        "en-IN-PrabhatNeural"
+        "gtts:en:default"
       ],
-      "teacher_agreement": 0.4001831501831502,
-      "student_label_accuracy": 0.03205128205128205,
-      "teacher_label_accuracy": 0.0,
+      "teacher_agreement": 0.0,
+      "student_label_accuracy": 0.0,
+      "teacher_label_accuracy": 1.0,
       "student_clip_accuracy": 0.0,
-      "teacher_clip_accuracy": 0.0
+      "teacher_clip_accuracy": 1.0
     },
     "hi": {
       "n_clips": 3,
       "speaker_ids": [
-        "hi-IN-MadhurNeural"
+        "gtts:hi:default"
       ],
-      "teacher_agreement": 0.9880952380952381,
-      "student_label_accuracy": 0.9880952380952381,
+      "teacher_agreement": 0.024819855884707767,
+      "student_label_accuracy": 0.024819855884707767,
       "teacher_label_accuracy": 1.0,
-      "student_clip_accuracy": 1.0,
+      "student_clip_accuracy": 0.0,
       "teacher_clip_accuracy": 1.0
     },
     "mr": {
       "n_clips": 3,
       "speaker_ids": [
-        "mr-IN-ManoharNeural"
+        "gtts:mr:default"
       ],
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "teacher_agreement": 0.007312614259597806,
+      "student_label_accuracy": 0.007312614259597806,
       "teacher_label_accuracy": 1.0,
       "student_clip_accuracy": 0.0,
       "teacher_clip_accuracy": 1.0
@@ -44,10 +44,10 @@
     "bn": {
       "n_clips": 3,
       "speaker_ids": [
-        "bn-IN-BashkarNeural"
+        "gtts:bn:default"
       ],
-      "teacher_agreement": 0.0022002200220022,
-      "student_label_accuracy": 0.0022002200220022,
+      "teacher_agreement": 0.05906821963394343,
+      "student_label_accuracy": 0.05906821963394343,
       "teacher_label_accuracy": 1.0,
       "student_clip_accuracy": 0.0,
       "teacher_clip_accuracy": 1.0
@@ -55,21 +55,21 @@
     "ta": {
       "n_clips": 3,
       "speaker_ids": [
-        "ta-IN-ValluvarNeural"
+        "gtts:ta:default"
       ],
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "teacher_agreement": 0.43049705139005895,
+      "student_label_accuracy": 0.43049705139005895,
       "teacher_label_accuracy": 1.0,
-      "student_clip_accuracy": 0.0,
+      "student_clip_accuracy": 0.6666666666666666,
       "teacher_clip_accuracy": 1.0
     },
     "te": {
       "n_clips": 3,
       "speaker_ids": [
-        "te-IN-MohanNeural"
+        "gtts:te:default"
       ],
-      "teacher_agreement": 0.04449152542372881,
-      "student_label_accuracy": 0.04449152542372881,
+      "teacher_agreement": 0.047372954349698536,
+      "student_label_accuracy": 0.047372954349698536,
       "teacher_label_accuracy": 1.0,
       "student_clip_accuracy": 0.0,
       "teacher_clip_accuracy": 1.0
@@ -77,10 +77,10 @@
     "gu": {
       "n_clips": 3,
       "speaker_ids": [
-        "gu-IN-NiranjanNeural"
+        "gtts:gu:default"
       ],
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "teacher_agreement": 0.015734265734265736,
+      "student_label_accuracy": 0.015734265734265736,
       "teacher_label_accuracy": 1.0,
       "student_clip_accuracy": 0.0,
       "teacher_clip_accuracy": 1.0
@@ -90,264 +90,264 @@
     {
       "id": "en_heldout_10",
       "language": "en",
-      "speaker_id": "en-IN-PrabhatNeural",
+      "speaker_id": "gtts:en:default",
       "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.039735099337748346,
-      "teacher_label_accuracy": 0.0,
-      "student_clip_prediction": "hi",
-      "teacher_clip_prediction": "gu",
-      "frames": 302
+      "student_label_accuracy": 0.0,
+      "teacher_label_accuracy": 1.0,
+      "student_clip_prediction": "ta",
+      "teacher_clip_prediction": "en",
+      "frames": 300
     },
     {
       "id": "en_heldout_11",
       "language": "en",
-      "speaker_id": "en-IN-PrabhatNeural",
-      "teacher_agreement": 0.9931818181818182,
+      "speaker_id": "gtts:en:default",
+      "teacher_agreement": 0.0,
       "student_label_accuracy": 0.0,
-      "teacher_label_accuracy": 0.0,
-      "student_clip_prediction": "hi",
-      "teacher_clip_prediction": "hi",
-      "frames": 440
+      "teacher_label_accuracy": 1.0,
+      "student_clip_prediction": "bn",
+      "teacher_clip_prediction": "en",
+      "frames": 425
     },
     {
       "id": "en_heldout_12",
       "language": "en",
-      "speaker_id": "en-IN-PrabhatNeural",
+      "speaker_id": "gtts:en:default",
       "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.06571428571428571,
-      "teacher_label_accuracy": 0.0,
-      "student_clip_prediction": "hi",
-      "teacher_clip_prediction": "gu",
-      "frames": 350
+      "student_label_accuracy": 0.0,
+      "teacher_label_accuracy": 1.0,
+      "student_clip_prediction": "ta",
+      "teacher_clip_prediction": "en",
+      "frames": 328
     },
     {
       "id": "hi_heldout_10",
       "language": "hi",
-      "speaker_id": "hi-IN-MadhurNeural",
-      "teacher_agreement": 0.9638888888888889,
-      "student_label_accuracy": 0.9638888888888889,
+      "speaker_id": "gtts:hi:default",
+      "teacher_agreement": 0.0,
+      "student_label_accuracy": 0.0,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "ta",
       "teacher_clip_prediction": "hi",
-      "frames": 360
+      "frames": 380
     },
     {
       "id": "hi_heldout_11",
       "language": "hi",
-      "speaker_id": "hi-IN-MadhurNeural",
-      "teacher_agreement": 1.0,
-      "student_label_accuracy": 1.0,
+      "speaker_id": "gtts:hi:default",
+      "teacher_agreement": 0.012875536480686695,
+      "student_label_accuracy": 0.012875536480686695,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "ta",
       "teacher_clip_prediction": "hi",
-      "frames": 449
+      "frames": 466
     },
     {
       "id": "hi_heldout_12",
       "language": "hi",
-      "speaker_id": "hi-IN-MadhurNeural",
-      "teacher_agreement": 0.997275204359673,
-      "student_label_accuracy": 0.997275204359673,
+      "speaker_id": "gtts:hi:default",
+      "teacher_agreement": 0.062034739454094295,
+      "student_label_accuracy": 0.062034739454094295,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "ta",
       "teacher_clip_prediction": "hi",
-      "frames": 367
+      "frames": 403
     },
     {
       "id": "mr_heldout_10",
       "language": "mr",
-      "speaker_id": "mr-IN-ManoharNeural",
+      "speaker_id": "gtts:mr:default",
       "teacher_agreement": 0.0,
       "student_label_accuracy": 0.0,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "gu",
       "teacher_clip_prediction": "mr",
-      "frames": 289
+      "frames": 312
     },
     {
       "id": "mr_heldout_11",
       "language": "mr",
-      "speaker_id": "mr-IN-ManoharNeural",
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "speaker_id": "gtts:mr:default",
+      "teacher_agreement": 0.0024154589371980675,
+      "student_label_accuracy": 0.0024154589371980675,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "gu",
       "teacher_clip_prediction": "mr",
-      "frames": 386
+      "frames": 414
     },
     {
       "id": "mr_heldout_12",
       "language": "mr",
-      "speaker_id": "mr-IN-ManoharNeural",
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "speaker_id": "gtts:mr:default",
+      "teacher_agreement": 0.019021739130434784,
+      "student_label_accuracy": 0.019021739130434784,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "gu",
       "teacher_clip_prediction": "mr",
-      "frames": 318
+      "frames": 368
     },
     {
       "id": "bn_heldout_10",
       "language": "bn",
-      "speaker_id": "bn-IN-BashkarNeural",
-      "teacher_agreement": 0.007434944237918215,
-      "student_label_accuracy": 0.007434944237918215,
+      "speaker_id": "gtts:bn:default",
+      "teacher_agreement": 0.0,
+      "student_label_accuracy": 0.0,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "gu",
       "teacher_clip_prediction": "bn",
-      "frames": 269
+      "frames": 374
     },
     {
       "id": "bn_heldout_11",
       "language": "bn",
-      "speaker_id": "bn-IN-BashkarNeural",
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "speaker_id": "gtts:bn:default",
+      "teacher_agreement": 0.10473815461346633,
+      "student_label_accuracy": 0.10473815461346633,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "te",
       "teacher_clip_prediction": "bn",
-      "frames": 330
+      "frames": 401
     },
     {
       "id": "bn_heldout_12",
       "language": "bn",
-      "speaker_id": "bn-IN-BashkarNeural",
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "speaker_id": "gtts:bn:default",
+      "teacher_agreement": 0.06791569086651054,
+      "student_label_accuracy": 0.06791569086651054,
       "teacher_label_accuracy": 1.0,
       "student_clip_prediction": "hi",
       "teacher_clip_prediction": "bn",
-      "frames": 310
+      "frames": 427
     },
     {
       "id": "ta_heldout_10",
       "language": "ta",
-      "speaker_id": "ta-IN-ValluvarNeural",
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "speaker_id": "gtts:ta:default",
+      "teacher_agreement": 0.49872122762148335,
+      "student_label_accuracy": 0.49872122762148335,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "ta",
       "teacher_clip_prediction": "ta",
-      "frames": 318
+      "frames": 391
     },
     {
       "id": "ta_heldout_11",
       "language": "ta",
-      "speaker_id": "ta-IN-ValluvarNeural",
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "speaker_id": "gtts:ta:default",
+      "teacher_agreement": 0.6105527638190955,
+      "student_label_accuracy": 0.6105527638190955,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "ta",
       "teacher_clip_prediction": "ta",
-      "frames": 370
+      "frames": 398
     },
     {
       "id": "ta_heldout_12",
       "language": "ta",
-      "speaker_id": "ta-IN-ValluvarNeural",
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "speaker_id": "gtts:ta:default",
+      "teacher_agreement": 0.18341708542713567,
+      "student_label_accuracy": 0.18341708542713567,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "bn",
       "teacher_clip_prediction": "ta",
-      "frames": 299
+      "frames": 398
     },
     {
       "id": "te_heldout_10",
       "language": "te",
-      "speaker_id": "te-IN-MohanNeural",
-      "teacher_agreement": 0.08791208791208792,
-      "student_label_accuracy": 0.08791208791208792,
+      "speaker_id": "gtts:te:default",
+      "teacher_agreement": 0.02112676056338028,
+      "student_label_accuracy": 0.02112676056338028,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "ta",
       "teacher_clip_prediction": "te",
-      "frames": 364
+      "frames": 426
     },
     {
       "id": "te_heldout_11",
       "language": "te",
-      "speaker_id": "te-IN-MohanNeural",
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "speaker_id": "gtts:te:default",
+      "teacher_agreement": 0.0906801007556675,
+      "student_label_accuracy": 0.0906801007556675,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "ta",
       "teacher_clip_prediction": "te",
-      "frames": 307
+      "frames": 397
     },
     {
       "id": "te_heldout_12",
       "language": "te",
-      "speaker_id": "te-IN-MohanNeural",
-      "teacher_agreement": 0.03663003663003663,
-      "student_label_accuracy": 0.03663003663003663,
+      "speaker_id": "gtts:te:default",
+      "teacher_agreement": 0.029585798816568046,
+      "student_label_accuracy": 0.029585798816568046,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "ta",
       "teacher_clip_prediction": "te",
-      "frames": 273
+      "frames": 338
     },
     {
       "id": "gu_heldout_10",
       "language": "gu",
-      "speaker_id": "gu-IN-NiranjanNeural",
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "speaker_id": "gtts:gu:default",
+      "teacher_agreement": 0.014084507042253521,
+      "student_label_accuracy": 0.014084507042253521,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "bn",
       "teacher_clip_prediction": "gu",
-      "frames": 336
+      "frames": 355
     },
     {
       "id": "gu_heldout_11",
       "language": "gu",
-      "speaker_id": "gu-IN-NiranjanNeural",
-      "teacher_agreement": 0.0,
-      "student_label_accuracy": 0.0,
+      "speaker_id": "gtts:gu:default",
+      "teacher_agreement": 0.03316326530612245,
+      "student_label_accuracy": 0.03316326530612245,
       "teacher_label_accuracy": 1.0,
-      "student_clip_prediction": "hi",
+      "student_clip_prediction": "bn",
       "teacher_clip_prediction": "gu",
-      "frames": 384
+      "frames": 392
     },
     {
       "id": "gu_heldout_12",
       "language": "gu",
-      "speaker_id": "gu-IN-NiranjanNeural",
+      "speaker_id": "gtts:gu:default",
       "teacher_agreement": 0.0,
       "student_label_accuracy": 0.0,
       "teacher_label_accuracy": 1.0,
       "student_clip_prediction": "hi",
       "teacher_clip_prediction": "gu",
-      "frames": 368
+      "frames": 397
     }
   ],
   "speaker_split": {
     "train_speaker_ids": [
+      "bn-IN-BashkarNeural",
       "bn-IN-TanishaaNeural",
       "en-IN-NeerjaNeural",
+      "en-IN-PrabhatNeural",
+      "gu-IN-DhwaniNeural",
+      "gu-IN-NiranjanNeural",
+      "hi-IN-MadhurNeural",
+      "hi-IN-SwaraNeural",
+      "mr-IN-AarohiNeural",
+      "mr-IN-ManoharNeural",
+      "ta-IN-PallaviNeural",
+      "ta-IN-ValluvarNeural",
+      "te-IN-MohanNeural",
+      "te-IN-ShrutiNeural"
+    ],
+    "heldout_speaker_ids": [
       "gtts:bn:default",
       "gtts:en:default",
       "gtts:gu:default",
       "gtts:hi:default",
       "gtts:mr:default",
       "gtts:ta:default",
-      "gtts:te:default",
-      "gu-IN-DhwaniNeural",
-      "hi-IN-SwaraNeural",
-      "mr-IN-AarohiNeural",
-      "ta-IN-PallaviNeural",
-      "te-IN-ShrutiNeural"
-    ],
-    "heldout_speaker_ids": [
-      "bn-IN-BashkarNeural",
-      "en-IN-PrabhatNeural",
-      "gu-IN-NiranjanNeural",
-      "hi-IN-MadhurNeural",
-      "mr-IN-ManoharNeural",
-      "ta-IN-ValluvarNeural",
-      "te-IN-MohanNeural"
+      "gtts:te:default"
     ],
     "switch_eval_speaker_ids": [
-      "en-IN-PrabhatNeural",
-      "hi-IN-MadhurNeural"
+      "gtts:en:default",
+      "gtts:hi:default"
     ],
     "train_evaluation_speaker_overlap": [],
     "speaker_disjoint": true
@@ -361,15 +361,15 @@
     "dwell_chunks": 3,
     "dwell_ms": 480.0,
     "ema_new_weight": 0.3,
-    "initial_commit_seconds": 1.6549999713897705
+    "initial_commit_seconds": null
   },
-  "cpu_rtf": 0.008549347270903075,
+  "cpu_rtf": 0.005784836057943558,
   "cpu_rtf_runs": [
-    0.009491684122484667,
-    0.008195886288218638,
-    0.008549347270903075,
-    0.008442970985415943,
-    0.008628370854230938
+    0.006013460079485212,
+    0.005939507129225068,
+    0.005784836057943558,
+    0.005715877197404533,
+    0.005635591529114004
   ],
   "cpu_threads": 1,
   "chunk_equivalence_checked": true,

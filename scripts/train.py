@@ -72,6 +72,7 @@ def main() -> None:
         collate_fn=collate_distillation_batch,
         generator=generator,
         num_workers=0,
+        drop_last=True,
     )
     model = CausalLIDStudent(num_languages=len(LANGUAGE_CODES))
     optimizer = torch.optim.AdamW(

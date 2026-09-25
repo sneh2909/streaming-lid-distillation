@@ -12,39 +12,39 @@
   "n_clips": 94,
   "n_converged_utterance_targets": 91,
   "n_local_window_target_clips": 3,
-  "mean_anchor_label_agreement": 0.9123146357188912,
+  "mean_anchor_label_agreement": 0.9026434558349453,
   "temperature": 2.0,
   "window_past_ms": 1750,
   "window_future_ms": 250,
   "speaker_split": {
     "train_speaker_ids": [
+      "bn-IN-BashkarNeural",
       "bn-IN-TanishaaNeural",
       "en-IN-NeerjaNeural",
+      "en-IN-PrabhatNeural",
+      "gu-IN-DhwaniNeural",
+      "gu-IN-NiranjanNeural",
+      "hi-IN-MadhurNeural",
+      "hi-IN-SwaraNeural",
+      "mr-IN-AarohiNeural",
+      "mr-IN-ManoharNeural",
+      "ta-IN-PallaviNeural",
+      "ta-IN-ValluvarNeural",
+      "te-IN-MohanNeural",
+      "te-IN-ShrutiNeural"
+    ],
+    "heldout_speaker_ids": [
       "gtts:bn:default",
       "gtts:en:default",
       "gtts:gu:default",
       "gtts:hi:default",
       "gtts:mr:default",
       "gtts:ta:default",
-      "gtts:te:default",
-      "gu-IN-DhwaniNeural",
-      "hi-IN-SwaraNeural",
-      "mr-IN-AarohiNeural",
-      "ta-IN-PallaviNeural",
-      "te-IN-ShrutiNeural"
-    ],
-    "heldout_speaker_ids": [
-      "bn-IN-BashkarNeural",
-      "en-IN-PrabhatNeural",
-      "gu-IN-NiranjanNeural",
-      "hi-IN-MadhurNeural",
-      "mr-IN-ManoharNeural",
-      "ta-IN-ValluvarNeural",
-      "te-IN-MohanNeural"
+      "gtts:te:default"
     ],
     "switch_eval_speaker_ids": [
-      "en-IN-PrabhatNeural",
-      "hi-IN-MadhurNeural"
+      "gtts:en:default",
+      "gtts:hi:default"
     ],
     "train_evaluation_speaker_overlap": [],
     "speaker_disjoint": true

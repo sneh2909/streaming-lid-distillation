@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import gc
+import hashlib
 import json
 import math
 import resource
@@ -78,8 +79,10 @@ class Predictor(Protocol):
     model_id: str
     revision: str | None
     parameter_count: int
+    batch_size: int
+    load_validation: dict
 
-    def predict(self, waveform: torch.Tensor) -> Prediction: ...
+    def predict_batch(self, waveforms: list[torch.Tensor]) -> list[Prediction]: ...
 
 
 class ECAPAPredictor:
@@ -106,21 +109,32 @@ class ECAPAPredictor:
         )
         # SpeechBrain's cached snapshot revision is fixed by the main pipeline.
         self.revision = "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9"
+        self.batch_size = 24
+        self.load_validation = {"checkpoint_warnings": "none"}
 
-    def predict(self, waveform: torch.Tensor) -> Prediction:
+    def predict_batch(self, waveforms: list[torch.Tensor]) -> list[Prediction]:
+        lengths = torch.tensor([len(waveform) for waveform in waveforms])
+        padded = torch.nn.utils.rnn.pad_sequence(waveforms, batch_first=True)
+        relative_lengths = lengths / padded.shape[1]
         with torch.inference_mode():
             log_probabilities, _, _, _ = self.model.classify_batch(
-                waveform.unsqueeze(0)
+                padded, relative_lengths
             )
-        log_probabilities = log_probabilities.squeeze(0)
         probabilities = log_probabilities.exp()
-        predicted_index = int(log_probabilities.argmax())
-        code = self.index_to_label[predicted_index].split(":", 1)[0]
-        return Prediction(
-            code=code,
-            hi_probability=float(probabilities[self.code_to_index["hi"]]),
-            en_probability=float(probabilities[self.code_to_index["en"]]),
-        )
+        results = []
+        for row, probability_row in zip(
+            log_probabilities, probabilities, strict=True
+        ):
+            predicted_index = int(row.argmax())
+            code = self.index_to_label[predicted_index].split(":", 1)[0]
+            results.append(
+                Prediction(
+                    code=code,
+                    hi_probability=float(probability_row[self.code_to_index["hi"]]),
+                    en_probability=float(probability_row[self.code_to_index["en"]]),
+                )
+            )
+        return results
 
 
 class WhisperPredictor:
@@ -147,39 +161,49 @@ class WhisperPredictor:
             raise ValueError(f"Whisper is missing requested languages: {sorted(missing)}")
         self.parameter_count = sum(p.numel() for p in self.model.parameters())
         self.revision = getattr(self.model.config, "_commit_hash", None)
+        self.batch_size = 2
+        self.load_validation = {"checkpoint_warnings": "none"}
 
-    def predict(self, waveform: torch.Tensor) -> Prediction:
+    def predict_batch(self, waveforms: list[torch.Tensor]) -> list[Prediction]:
         inputs = self.processor(
-            waveform.numpy(), sampling_rate=SAMPLE_RATE, return_tensors="pt"
+            [waveform.numpy() for waveform in waveforms],
+            sampling_rate=SAMPLE_RATE,
+            return_tensors="pt",
         )
         decoder_input_ids = torch.tensor(
-            [[self.model.config.decoder_start_token_id]], dtype=torch.long
+            [[self.model.config.decoder_start_token_id]] * len(waveforms),
+            dtype=torch.long,
         )
         with torch.inference_mode():
             token_logits = self.model(
                 input_features=inputs.input_features,
                 decoder_input_ids=decoder_input_ids,
-            ).logits[0, 0]
-        language_probabilities = torch.softmax(token_logits[self.language_ids], dim=-1)
-        winning_position = int(language_probabilities.argmax())
-        winning_id = self.language_ids[winning_position]
-        return Prediction(
-            code=self.id_to_code[winning_id],
-            hi_probability=float(
-                language_probabilities[
-                    self.language_position[self.code_to_id["hi"]]
-                ]
-            ),
-            en_probability=float(
-                language_probabilities[
-                    self.language_position[self.code_to_id["en"]]
-                ]
-            ),
+            ).logits[:, 0]
+        language_probabilities = torch.softmax(
+            token_logits[:, self.language_ids], dim=-1
         )
+        results = []
+        for row in language_probabilities:
+            winning_position = int(row.argmax())
+            winning_id = self.language_ids[winning_position]
+            results.append(
+                Prediction(
+                    code=self.id_to_code[winning_id],
+                    hi_probability=float(
+                        row[self.language_position[self.code_to_id["hi"]]]
+                    ),
+                    en_probability=float(
+                        row[self.language_position[self.code_to_id["en"]]]
+                    ),
+                )
+            )
+        return results
 
 
 class MMSPredictor:
     def __init__(self) -> None:
+        from huggingface_hub import hf_hub_download
+        from safetensors import safe_open
         from transformers import AutoFeatureExtractor, Wav2Vec2ForSequenceClassification
 
         self.model_id = MODEL_IDS["mms-lid-126"]
@@ -197,21 +221,60 @@ class MMSPredictor:
             raise ValueError(f"MMS is missing requested languages: {sorted(missing)}")
         self.parameter_count = sum(p.numel() for p in self.model.parameters())
         self.revision = getattr(self.model.config, "_commit_hash", None)
+        self.batch_size = 4
 
-    def predict(self, waveform: torch.Tensor) -> Prediction:
+        # Transformers 4.44 reports legacy weight_g/weight_v as missing even
+        # though PyTorch's compatibility hook loads them into the new
+        # parametrization names. Compare the actual tensors so a real partial
+        # checkpoint load cannot silently enter the experiment.
+        checkpoint_path = hf_hub_download(self.model_id, "model.safetensors")
+        convolution = self.model.wav2vec2.encoder.pos_conv_embed.conv
+        with safe_open(checkpoint_path, framework="pt", device="cpu") as checkpoint:
+            saved_g = checkpoint.get_tensor(
+                "wav2vec2.encoder.pos_conv_embed.conv.weight_g"
+            )
+            saved_v = checkpoint.get_tensor(
+                "wav2vec2.encoder.pos_conv_embed.conv.weight_v"
+            )
+        loaded_g = convolution.parametrizations.weight.original0.detach()
+        loaded_v = convolution.parametrizations.weight.original1.detach()
+        weight_g_exact = torch.equal(loaded_g, saved_g)
+        weight_v_exact = torch.equal(loaded_v, saved_v)
+        if not weight_g_exact or not weight_v_exact:
+            raise ValueError("MMS positional convolution checkpoint did not load exactly")
+        self.load_validation = {
+            "transformers_legacy_weight_norm_warning": True,
+            "weight_g_exactly_matches_checkpoint": weight_g_exact,
+            "weight_v_exactly_matches_checkpoint": weight_v_exact,
+        }
+
+    def predict_batch(self, waveforms: list[torch.Tensor]) -> list[Prediction]:
         inputs = self.processor(
-            waveform.numpy(), sampling_rate=SAMPLE_RATE, return_tensors="pt"
+            [waveform.numpy() for waveform in waveforms],
+            sampling_rate=SAMPLE_RATE,
+            return_tensors="pt",
+            padding=True,
+            return_attention_mask=True,
         )
         with torch.inference_mode():
-            logits = self.model(**inputs).logits[0]
+            logits = self.model(**inputs).logits
         probabilities = torch.softmax(logits, dim=-1)
-        predicted_mms_code = self.index_to_mms_code[int(logits.argmax())]
-        code = MMS_TO_REPO_CODE.get(predicted_mms_code, predicted_mms_code)
-        return Prediction(
-            code=code,
-            hi_probability=float(probabilities[self.mms_code_to_index["hin"]]),
-            en_probability=float(probabilities[self.mms_code_to_index["eng"]]),
-        )
+        results = []
+        for logit_row, probability_row in zip(logits, probabilities, strict=True):
+            predicted_mms_code = self.index_to_mms_code[int(logit_row.argmax())]
+            code = MMS_TO_REPO_CODE.get(predicted_mms_code, predicted_mms_code)
+            results.append(
+                Prediction(
+                    code=code,
+                    hi_probability=float(
+                        probability_row[self.mms_code_to_index["hin"]]
+                    ),
+                    en_probability=float(
+                        probability_row[self.mms_code_to_index["eng"]]
+                    ),
+                )
+            )
+        return results
 
 
 def parse_args() -> argparse.Namespace:
@@ -303,6 +366,18 @@ def build_switch_cases(item: dict, manifest: Path) -> list[dict]:
     return cases
 
 
+def input_fingerprint(items: list[dict], manifest: Path) -> str:
+    """Hash manifest records and source WAV bytes to prevent mixed partial runs."""
+    digest = hashlib.sha256()
+    for item in sorted(items, key=lambda record: record["id"]):
+        digest.update(json.dumps(item, sort_keys=True).encode("utf-8"))
+        audio_path = resolve_audio_path(item, manifest)
+        with audio_path.open("rb") as handle:
+            for block in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(block)
+    return digest.hexdigest()
+
+
 def summarize_accuracy(predictions: list[dict]) -> dict:
     by_condition: dict[str, dict[str, dict]] = {}
     for bandwidth in ("clean_16khz", "roundtrip_8khz"):
@@ -383,6 +458,34 @@ def make_predictor(name: str) -> Predictor:
     raise ValueError(name)
 
 
+def run_prediction_batches(
+    predictor: Predictor, cases: list[dict]
+) -> tuple[list[Prediction], int]:
+    # Keep equal-duration examples together. This avoids model-specific padding
+    # behavior becoming an uncontrolled variable in the teacher comparison.
+    groups: dict[int, list[tuple[int, dict]]] = {}
+    for index, case in enumerate(cases):
+        groups.setdefault(len(case["waveform"]), []).append((index, case))
+    predictions: list[Prediction | None] = [None] * len(cases)
+    batches = 0
+    for indexed_cases in groups.values():
+        for start in range(0, len(indexed_cases), predictor.batch_size):
+            batch = indexed_cases[start : start + predictor.batch_size]
+            batch_predictions = predictor.predict_batch(
+                [case["waveform"] for _, case in batch]
+            )
+            if len(batch_predictions) != len(batch):
+                raise ValueError("predictor returned the wrong batch length")
+            for (index, _), prediction in zip(
+                batch, batch_predictions, strict=True
+            ):
+                predictions[index] = prediction
+            batches += 1
+    if any(prediction is None for prediction in predictions):
+        raise AssertionError("missing batched prediction")
+    return [prediction for prediction in predictions if prediction is not None], batches
+
+
 def evaluate_model(
     name: str,
     eval_cases: list[dict],
@@ -395,12 +498,12 @@ def evaluate_model(
 
     # Warm-up is excluded from timings and prevents first-kernel setup from
     # dominating this tiny evaluation.
-    predictor.predict(eval_cases[0]["waveform"])
+    predictor.predict_batch([eval_cases[0]["waveform"]])
     wall_start = time.perf_counter()
     cpu_start = process_cpu_seconds()
+    prediction_values, eval_batches = run_prediction_batches(predictor, eval_cases)
     predictions = []
-    for case in eval_cases:
-        result = predictor.predict(case["waveform"])
+    for case, result in zip(eval_cases, prediction_values, strict=True):
         predictions.append(
             {
                 "id": case["id"],
@@ -417,9 +520,9 @@ def evaluate_model(
 
     switch_wall_start = time.perf_counter()
     switch_cpu_start = process_cpu_seconds()
+    switch_values, switch_batches = run_prediction_batches(predictor, switch_cases)
     switch_predictions = []
-    for case in switch_cases:
-        result = predictor.predict(case["waveform"])
+    for case, result in zip(switch_cases, switch_values, strict=True):
         switch_predictions.append(
             {
                 "anchor_frame": case["anchor_frame"],
@@ -441,10 +544,13 @@ def evaluate_model(
         "model_id": predictor.model_id,
         "revision": predictor.revision,
         "parameter_count": predictor.parameter_count,
+        "load_validation": predictor.load_validation,
         "accuracy": summarize_accuracy(predictions),
         "switch": switch_summary(switch_predictions, true_switch_seconds),
         "timing": {
             "load_wall_seconds": load_wall_seconds,
+            "batch_size": predictor.batch_size,
+            "timed_batches": eval_batches + switch_batches,
             "timed_requests": len(eval_cases) + len(switch_cases),
             "timed_audio_seconds": total_audio_seconds,
             "wall_seconds": total_wall_seconds,
@@ -485,13 +591,23 @@ def main() -> None:
             "held-out manifest must contain an equal non-zero count for every "
             f"configured language, got {dict(heldout_counts)}"
         )
+    fingerprint_items = heldout + [switch_item]
+    fingerprint_before_load = input_fingerprint(fingerprint_items, manifest)
     eval_cases = build_eval_cases(heldout, manifest)
     switch_cases = build_switch_cases(switch_item, manifest)
+    fingerprint_after_load = input_fingerprint(fingerprint_items, manifest)
+    if fingerprint_before_load != fingerprint_after_load:
+        raise RuntimeError("evaluation audio changed while it was being loaded")
     true_switch_seconds = float(switch_item["segments"][0]["end_seconds"])
 
     output_path = Path(__file__).with_name("results.json")
     if output_path.exists() and not args.fresh:
         output = json.loads(output_path.read_text())
+        previous_fingerprint = output.get("input_sha256")
+        if output.get("models") and previous_fingerprint != fingerprint_after_load:
+            raise ValueError(
+                "existing model results use different inputs; rerun all models with --fresh"
+            )
     else:
         output = {"models": {}}
     output.update(
@@ -501,6 +617,7 @@ def main() -> None:
             "manifest": str(manifest.relative_to(REPO_ROOT)),
             "heldout_ids": [record["id"] for record in heldout],
             "switch_id": switch_item["id"],
+            "input_sha256": fingerprint_after_load,
             "language_codes": list(LANGUAGE_CODES),
             "window_seconds": list(WINDOW_SECONDS),
             "crop": "single centred crop per held-out clip",

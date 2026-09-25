@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import tempfile
+import time
 from pathlib import Path
 
 import edge_tts
@@ -19,10 +20,10 @@ from streaming_lid.data import require_speaker_disjoint
 
 TRAIN_CLIPS_PER_LANGUAGE = 10
 HELDOUT_CLIPS_PER_LANGUAGE = 3
-# Each language uses a female and a male Edge voice in training. The gTTS locale
-# voice is held out entirely. These are synthetic voice identities, not claims
-# about unique human speakers; both gender coverage and identity separation are
-# explicit so the evaluation split cannot accidentally be "all unseen males".
+# Each language uses its gTTS locale voice plus a male Edge voice in training.
+# Evaluation uses an unseen female Edge voice. These are synthetic voice
+# identities, not claims about unique human speakers. Provider and broad gender
+# conditions both occur in training, while the exact held-out identity does not.
 EDGE_VOICES = {
     "en": {"female": "en-IN-NeerjaNeural", "male": "en-IN-PrabhatNeural"},
     "hi": {"female": "hi-IN-SwaraNeural", "male": "hi-IN-MadhurNeural"},
@@ -166,20 +167,32 @@ def decode_and_write(temporary_name: str, output_path: Path) -> None:
 def synthesize(text: str, language: str, voice: str, output_path: Path) -> None:
     """Fetch one TTS response and store a normalized 16 kHz WAV."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_name: str | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            suffix=".mp3", prefix="tts-", dir=output_path.parent, delete=False
-        ) as temporary:
-            temporary_name = temporary.name
-        if voice.startswith("gtts:"):
-            gTTS(text=text, lang=language, slow=False).save(temporary_name)
-        else:
-            edge_tts.Communicate(text=text, voice=voice).save_sync(temporary_name)
-        decode_and_write(temporary_name, output_path)
-    finally:
-        if temporary_name:
-            Path(temporary_name).unlink(missing_ok=True)
+    for attempt in range(4):
+        temporary_name: str | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                suffix=".mp3", prefix="tts-", dir=output_path.parent, delete=False
+            ) as temporary:
+                temporary_name = temporary.name
+            if voice.startswith("gtts:"):
+                gTTS(text=text, lang=language, slow=False).save(temporary_name)
+            else:
+                edge_tts.Communicate(text=text, voice=voice).save_sync(temporary_name)
+            decode_and_write(temporary_name, output_path)
+            return
+        except Exception:
+            if attempt == 3:
+                raise
+            wait_seconds = 2**attempt
+            print(
+                f"transient synthesis failure for {voice}; "
+                f"retrying in {wait_seconds} s",
+                flush=True,
+            )
+            time.sleep(wait_seconds)
+        finally:
+            if temporary_name:
+                Path(temporary_name).unlink(missing_ok=True)
 
 
 def four_second_segment(samples: np.ndarray, seconds: float = 4.0) -> np.ndarray:
@@ -249,14 +262,17 @@ def main() -> None:
                 else "heldout"
             )
             if split == "heldout":
+                voice = EDGE_VOICES[language]["female"]
+                source = "Microsoft Edge TTS via edge-tts"
+            elif sentence_index < 5:
                 voice = f"gtts:{language}:default"
                 source = "gTTS"
             else:
-                gender = "female" if sentence_index < 5 else "male"
-                voice = EDGE_VOICES[language][gender]
+                voice = EDGE_VOICES[language]["male"]
                 source = "Microsoft Edge TTS via edge-tts"
             clip_id = f"{language}_{split}_{sentence_index:02d}"
-            output_path = audio_dir / f"{clip_id}.wav"
+            voice_slug = voice.lower().replace(":", "-")
+            output_path = audio_dir / f"{clip_id}--{voice_slug}.wav"
             if args.force or not output_path.exists():
                 print(f"synthesizing {clip_id} with {voice}: {text}", flush=True)
                 synthesize(text, language, voice, output_path)

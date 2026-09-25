@@ -4,39 +4,42 @@
       "model_id": "speechbrain/lang-id-voxlingua107-ecapa",
       "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
       "parameter_count": 21246443,
+      "load_validation": {
+        "checkpoint_warnings": "none"
+      },
       "accuracy": {
         "clean_16khz": {
           "1": {
-            "correct": 14,
+            "correct": 15,
             "total": 21,
-            "accuracy": 0.6666666666666666
+            "accuracy": 0.7142857142857143
           },
           "2": {
-            "correct": 16,
+            "correct": 20,
             "total": 21,
-            "accuracy": 0.7619047619047619
+            "accuracy": 0.9523809523809523
+          },
+          "4": {
+            "correct": 21,
+            "total": 21,
+            "accuracy": 1.0
+          }
+        },
+        "roundtrip_8khz": {
+          "1": {
+            "correct": 13,
+            "total": 21,
+            "accuracy": 0.6190476190476191
+          },
+          "2": {
+            "correct": 17,
+            "total": 21,
+            "accuracy": 0.8095238095238095
           },
           "4": {
             "correct": 19,
             "total": 21,
             "accuracy": 0.9047619047619048
-          }
-        },
-        "roundtrip_8khz": {
-          "1": {
-            "correct": 11,
-            "total": 21,
-            "accuracy": 0.5238095238095238
-          },
-          "2": {
-            "correct": 15,
-            "total": 21,
-            "accuracy": 0.7142857142857143
-          },
-          "4": {
-            "correct": 16,
-            "total": 21,
-            "accuracy": 0.7619047619047619
           }
         }
       },
@@ -51,18 +54,20 @@
         "right_context_ms": 250,
         "first_persistent_target_available_seconds": null,
         "availability_adjusted_lag_ms": null,
-        "anchor_label_accuracy": 0.3333333333333333,
-        "anchor_correct": 11,
+        "anchor_label_accuracy": 0.45454545454545453,
+        "anchor_correct": 15,
         "anchor_total": 33
       },
       "timing": {
-        "load_wall_seconds": 4.734325723000438,
+        "load_wall_seconds": 6.282794828000078,
+        "batch_size": 24,
+        "timed_batches": 8,
         "timed_requests": 159,
         "timed_audio_seconds": 360.0,
-        "wall_seconds": 11.378520359000504,
-        "process_cpu_seconds": 67.974635,
-        "wall_rtf": 0.03160700099722362,
-        "mean_wall_ms_per_request": 71.56302112578933,
+        "wall_seconds": 9.43112053799996,
+        "process_cpu_seconds": 55.762303,
+        "wall_rtf": 0.026197557049999886,
+        "mean_wall_ms_per_request": 59.31522350943371,
         "includes_preprocessing": true,
         "includes_model_load": false
       },
@@ -70,20 +75,20 @@
         {
           "id": "en_heldout_10",
           "expected": "en",
-          "predicted": "de",
+          "predicted": "ne",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.018129561096429825,
-          "en_probability": 0.0287314485758543
+          "hi_probability": 0.007243060041218996,
+          "en_probability": 0.010667850263416767
         },
         {
           "id": "en_heldout_10",
           "expected": "en",
-          "predicted": "hi",
+          "predicted": "sl",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.555207371711731,
-          "en_probability": 0.008913595229387283
+          "hi_probability": 0.013510767370462418,
+          "en_probability": 0.01665336824953556
         },
         {
           "id": "en_heldout_10",
@@ -91,17 +96,17 @@
           "predicted": "de",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.030841834843158722,
-          "en_probability": 0.06052571162581444
+          "hi_probability": 0.0001811463589547202,
+          "en_probability": 0.10513757914304733
         },
         {
           "id": "en_heldout_10",
           "expected": "en",
-          "predicted": "hi",
+          "predicted": "eo",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.49513909220695496,
-          "en_probability": 0.03968895971775055
+          "hi_probability": 0.0006047833594493568,
+          "en_probability": 0.03584156185388565
         },
         {
           "id": "en_heldout_10",
@@ -109,125 +114,125 @@
           "predicted": "en",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.04596807062625885,
-          "en_probability": 0.44146233797073364
+          "hi_probability": 0.004925914574414492,
+          "en_probability": 0.747463583946228
         },
         {
           "id": "en_heldout_10",
           "expected": "en",
-          "predicted": "hi",
+          "predicted": "eo",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.6556275486946106,
-          "en_probability": 0.1451433300971985
+          "hi_probability": 0.009720194153487682,
+          "en_probability": 0.14048653841018677
+        },
+        {
+          "id": "en_heldout_11",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 6.647422560490668e-05,
+          "en_probability": 0.38688886165618896
         },
         {
           "id": "en_heldout_11",
           "expected": "en",
           "predicted": "af",
           "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.002840927802026272,
+          "en_probability": 0.048061102628707886
+        },
+        {
+          "id": "en_heldout_11",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.06395900994539261,
-          "en_probability": 0.02005993202328682
+          "hi_probability": 0.00013005419168621302,
+          "en_probability": 0.4032871425151825
         },
         {
           "id": "en_heldout_11",
           "expected": "en",
           "predicted": "ml",
-          "window_seconds": 1,
+          "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.020181015133857727,
-          "en_probability": 0.00010007716628024355
+          "hi_probability": 0.00024089989892672747,
+          "en_probability": 0.022244930267333984
         },
         {
           "id": "en_heldout_11",
           "expected": "en",
-          "predicted": "hi",
-          "window_seconds": 2,
+          "predicted": "en",
+          "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.3678632974624634,
-          "en_probability": 0.02593349851667881
+          "hi_probability": 5.079425591247855e-06,
+          "en_probability": 0.9015002250671387
         },
         {
           "id": "en_heldout_11",
           "expected": "en",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.5433757901191711,
-          "en_probability": 0.0033080049324780703
-        },
-        {
-          "id": "en_heldout_11",
-          "expected": "en",
-          "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.723991870880127,
-          "en_probability": 0.015604866668581963
-        },
-        {
-          "id": "en_heldout_11",
-          "expected": "en",
-          "predicted": "hi",
+          "predicted": "en",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.5928711295127869,
-          "en_probability": 0.0030054692178964615
+          "hi_probability": 0.000461683637695387,
+          "en_probability": 0.5274394750595093
         },
         {
           "id": "en_heldout_12",
           "expected": "en",
-          "predicted": "gu",
+          "predicted": "as",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.008893865160644054,
-          "en_probability": 8.915553735278081e-06
+          "hi_probability": 0.00011864323460031301,
+          "en_probability": 0.00028217039653100073
         },
         {
           "id": "en_heldout_12",
           "expected": "en",
-          "predicted": "gu",
+          "predicted": "as",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.10520565509796143,
-          "en_probability": 5.733393845730461e-05
+          "hi_probability": 8.990464266389608e-05,
+          "en_probability": 1.4193913102644728e-06
         },
         {
           "id": "en_heldout_12",
           "expected": "en",
-          "predicted": "gu",
+          "predicted": "en",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.19481465220451355,
-          "en_probability": 0.0001530343433842063
+          "hi_probability": 0.020128166303038597,
+          "en_probability": 0.9393377304077148
         },
         {
           "id": "en_heldout_12",
           "expected": "en",
-          "predicted": "hi",
+          "predicted": "as",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.7676051259040833,
-          "en_probability": 3.2689692943677073e-06
+          "hi_probability": 0.0519077330827713,
+          "en_probability": 0.015445672906935215
         },
         {
           "id": "en_heldout_12",
           "expected": "en",
-          "predicted": "gu",
+          "predicted": "en",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.1977563202381134,
-          "en_probability": 0.010616161860525608
+          "hi_probability": 0.028596416115760803,
+          "en_probability": 0.8259841799736023
         },
         {
           "id": "en_heldout_12",
           "expected": "en",
-          "predicted": "hi",
+          "predicted": "la",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.8054431676864624,
-          "en_probability": 0.0014743698993697762
+          "hi_probability": 0.0863606184720993,
+          "en_probability": 0.2016996294260025
         },
         {
           "id": "hi_heldout_10",
@@ -235,8 +240,8 @@
           "predicted": "hi",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.9965894222259521,
-          "en_probability": 1.1790328435790087e-10
+          "hi_probability": 0.9838584065437317,
+          "en_probability": 8.715775834389206e-07
         },
         {
           "id": "hi_heldout_10",
@@ -244,8 +249,8 @@
           "predicted": "hi",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.967444658279419,
-          "en_probability": 7.020594772200184e-09
+          "hi_probability": 0.9717928171157837,
+          "en_probability": 2.887676828322583e-06
         },
         {
           "id": "hi_heldout_10",
@@ -253,8 +258,8 @@
           "predicted": "hi",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.997593343257904,
-          "en_probability": 1.1668774453632569e-11
+          "hi_probability": 0.9985538125038147,
+          "en_probability": 1.3811049370815454e-07
         },
         {
           "id": "hi_heldout_10",
@@ -262,8 +267,8 @@
           "predicted": "hi",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9334074854850769,
-          "en_probability": 1.6450722728489353e-10
+          "hi_probability": 0.9996660947799683,
+          "en_probability": 5.954566617560886e-08
         },
         {
           "id": "hi_heldout_10",
@@ -271,8 +276,8 @@
           "predicted": "hi",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.9981229901313782,
-          "en_probability": 4.546638402141284e-13
+          "hi_probability": 0.9870322942733765,
+          "en_probability": 1.396044257973017e-08
         },
         {
           "id": "hi_heldout_10",
@@ -280,26 +285,26 @@
           "predicted": "hi",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.997837483882904,
-          "en_probability": 1.6693297135231266e-12
+          "hi_probability": 0.9982317090034485,
+          "en_probability": 6.782432948604367e-10
         },
         {
           "id": "hi_heldout_11",
           "expected": "hi",
-          "predicted": "gu",
+          "predicted": "ko",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.44219496846199036,
-          "en_probability": 2.878763449842836e-09
+          "hi_probability": 0.0012215853203088045,
+          "en_probability": 4.5617471187142655e-06
         },
         {
           "id": "hi_heldout_11",
           "expected": "hi",
-          "predicted": "hi",
+          "predicted": "ko",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.8640231490135193,
-          "en_probability": 6.007567776578071e-08
+          "hi_probability": 0.0011114013614133,
+          "en_probability": 9.333444950243575e-08
         },
         {
           "id": "hi_heldout_11",
@@ -307,8 +312,8 @@
           "predicted": "hi",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.9796992540359497,
-          "en_probability": 7.388774278017669e-15
+          "hi_probability": 0.9916011095046997,
+          "en_probability": 3.2041462816323474e-08
         },
         {
           "id": "hi_heldout_11",
@@ -316,8 +321,8 @@
           "predicted": "hi",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9066700339317322,
-          "en_probability": 1.3330796969773795e-13
+          "hi_probability": 0.7094445824623108,
+          "en_probability": 4.3960103113249716e-08
         },
         {
           "id": "hi_heldout_11",
@@ -325,17 +330,17 @@
           "predicted": "hi",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.9722160696983337,
-          "en_probability": 3.554363659277083e-17
+          "hi_probability": 0.9787745475769043,
+          "en_probability": 1.2313697839161364e-09
         },
         {
           "id": "hi_heldout_11",
           "expected": "hi",
-          "predicted": "ur",
+          "predicted": "hi",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.23258452117443085,
-          "en_probability": 1.738303884244851e-15
+          "hi_probability": 0.7788284420967102,
+          "en_probability": 3.281991900472292e-10
         },
         {
           "id": "hi_heldout_12",
@@ -343,8 +348,8 @@
           "predicted": "hi",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.9800918102264404,
-          "en_probability": 1.8132139534407163e-14
+          "hi_probability": 0.9999297857284546,
+          "en_probability": 4.091781438415182e-13
         },
         {
           "id": "hi_heldout_12",
@@ -352,8 +357,8 @@
           "predicted": "hi",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.8969565033912659,
-          "en_probability": 1.6773030880878892e-11
+          "hi_probability": 0.9988275170326233,
+          "en_probability": 8.199898225702551e-12
         },
         {
           "id": "hi_heldout_12",
@@ -361,8 +366,8 @@
           "predicted": "hi",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.999549925327301,
-          "en_probability": 3.600877242730801e-15
+          "hi_probability": 0.9997442364692688,
+          "en_probability": 1.1376112725447474e-12
         },
         {
           "id": "hi_heldout_12",
@@ -370,8 +375,8 @@
           "predicted": "hi",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9965481162071228,
-          "en_probability": 8.394032864622591e-12
+          "hi_probability": 0.9975368976593018,
+          "en_probability": 2.7186748945834394e-12
         },
         {
           "id": "hi_heldout_12",
@@ -379,8 +384,8 @@
           "predicted": "hi",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.9975826740264893,
-          "en_probability": 7.428073628920063e-18
+          "hi_probability": 0.9996097683906555,
+          "en_probability": 1.0528561089097593e-14
         },
         {
           "id": "hi_heldout_12",
@@ -388,8 +393,8 @@
           "predicted": "hi",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9540078043937683,
-          "en_probability": 2.035469130756435e-14
+          "hi_probability": 0.9976938366889954,
+          "en_probability": 2.2645491913413605e-14
         },
         {
           "id": "mr_heldout_10",
@@ -397,8 +402,8 @@
           "predicted": "mr",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.017076466232538223,
-          "en_probability": 5.519434909118104e-10
+          "hi_probability": 3.5171990475646453e-07,
+          "en_probability": 1.1888785789171408e-10
         },
         {
           "id": "mr_heldout_10",
@@ -406,8 +411,8 @@
           "predicted": "mr",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.25000396370887756,
-          "en_probability": 1.313950992454238e-08
+          "hi_probability": 1.8710967424340197e-06,
+          "en_probability": 4.2328662797075367e-10
         },
         {
           "id": "mr_heldout_10",
@@ -415,8 +420,8 @@
           "predicted": "mr",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.012782633304595947,
-          "en_probability": 1.3969998491347724e-09
+          "hi_probability": 4.76063988230635e-09,
+          "en_probability": 2.1219340846055645e-13
         },
         {
           "id": "mr_heldout_10",
@@ -424,8 +429,8 @@
           "predicted": "mr",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.399056613445282,
-          "en_probability": 3.032687345694285e-08
+          "hi_probability": 1.6826979276629572e-07,
+          "en_probability": 1.4112863655491026e-11
         },
         {
           "id": "mr_heldout_10",
@@ -433,8 +438,8 @@
           "predicted": "mr",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.0011210115626454353,
-          "en_probability": 3.247598023836673e-11
+          "hi_probability": 1.8211210317531368e-07,
+          "en_probability": 1.6579943527047364e-13
         },
         {
           "id": "mr_heldout_10",
@@ -442,8 +447,8 @@
           "predicted": "mr",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.17210303246974945,
-          "en_probability": 3.067573972614923e-09
+          "hi_probability": 2.2685073872708017e-06,
+          "en_probability": 4.958795960657847e-13
         },
         {
           "id": "mr_heldout_11",
@@ -451,35 +456,35 @@
           "predicted": "mr",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.07706005871295929,
-          "en_probability": 2.3269078330834247e-10
-        },
-        {
-          "id": "mr_heldout_11",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.6705687642097473,
-          "en_probability": 1.866089949231764e-09
+          "hi_probability": 0.00021251496218610555,
+          "en_probability": 4.0656214395085044e-08
         },
         {
           "id": "mr_heldout_11",
           "expected": "mr",
           "predicted": "mr",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.00811428390443325,
-          "en_probability": 1.6303526237382293e-11
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 1.9736247850232758e-05,
+          "en_probability": 6.520574635793253e-10
         },
         {
           "id": "mr_heldout_11",
           "expected": "mr",
           "predicted": "mr",
           "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 3.929675074232364e-08,
+          "en_probability": 3.1299766872430615e-15
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.07560394704341888,
-          "en_probability": 7.528845602511325e-11
+          "hi_probability": 4.578228072205093e-07,
+          "en_probability": 6.5312499806786765e-15
         },
         {
           "id": "mr_heldout_11",
@@ -487,8 +492,8 @@
           "predicted": "mr",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 2.3675029297010042e-05,
-          "en_probability": 1.8033463584183826e-14
+          "hi_probability": 9.260347155759519e-09,
+          "en_probability": 9.895827689256867e-17
         },
         {
           "id": "mr_heldout_11",
@@ -496,44 +501,44 @@
           "predicted": "mr",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.0064708939753472805,
-          "en_probability": 2.9548447022520463e-12
+          "hi_probability": 2.9011042101956264e-07,
+          "en_probability": 6.78782515424795e-15
         },
         {
           "id": "mr_heldout_12",
           "expected": "mr",
-          "predicted": "gu",
+          "predicted": "mr",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.2547246515750885,
-          "en_probability": 4.4293345033419307e-14
+          "hi_probability": 1.2721491657430306e-05,
+          "en_probability": 9.688715801869918e-11
         },
         {
           "id": "mr_heldout_12",
           "expected": "mr",
-          "predicted": "hi",
+          "predicted": "mr",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9550830125808716,
-          "en_probability": 1.578114583455914e-10
+          "hi_probability": 0.0001506077533122152,
+          "en_probability": 6.173632982608979e-08
         },
         {
           "id": "mr_heldout_12",
           "expected": "mr",
-          "predicted": "gu",
+          "predicted": "mr",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.3816399872303009,
-          "en_probability": 2.6439936936899222e-14
+          "hi_probability": 5.046955629950389e-05,
+          "en_probability": 2.2018702779038474e-14
         },
         {
           "id": "mr_heldout_12",
           "expected": "mr",
-          "predicted": "hi",
+          "predicted": "mr",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.8359540104866028,
-          "en_probability": 3.5336070007552234e-12
+          "hi_probability": 0.0002187951176892966,
+          "en_probability": 1.716587158875904e-12
         },
         {
           "id": "mr_heldout_12",
@@ -541,17 +546,17 @@
           "predicted": "mr",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.012144838459789753,
-          "en_probability": 1.6208770597890272e-15
+          "hi_probability": 1.4661894454093272e-07,
+          "en_probability": 4.557140653804705e-18
         },
         {
           "id": "mr_heldout_12",
           "expected": "mr",
-          "predicted": "hi",
+          "predicted": "mr",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.8169807195663452,
-          "en_probability": 1.1384534807923341e-12
+          "hi_probability": 2.9246232315927045e-06,
+          "en_probability": 2.4473542644189194e-16
         },
         {
           "id": "bn_heldout_10",
@@ -559,8 +564,8 @@
           "predicted": "bn",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 7.019551412668079e-05,
-          "en_probability": 1.0557081875361973e-09
+          "hi_probability": 7.728251148364507e-06,
+          "en_probability": 6.9072436659212144e-09
         },
         {
           "id": "bn_heldout_10",
@@ -568,8 +573,8 @@
           "predicted": "bn",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.0018246372928842902,
-          "en_probability": 2.6318559775972972e-08
+          "hi_probability": 8.880057976057287e-06,
+          "en_probability": 7.778137955938291e-08
         },
         {
           "id": "bn_heldout_10",
@@ -577,8 +582,8 @@
           "predicted": "bn",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 1.6985353795462288e-05,
-          "en_probability": 7.61214380418096e-08
+          "hi_probability": 0.0002318658953299746,
+          "en_probability": 2.370915408445029e-10
         },
         {
           "id": "bn_heldout_10",
@@ -586,8 +591,8 @@
           "predicted": "bn",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.0024481865111738443,
-          "en_probability": 1.7248063954866666e-07
+          "hi_probability": 0.0010218453826382756,
+          "en_probability": 2.3185370068290467e-08
         },
         {
           "id": "bn_heldout_10",
@@ -595,8 +600,8 @@
           "predicted": "bn",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 6.661069619440241e-06,
-          "en_probability": 2.987483871397245e-10
+          "hi_probability": 0.0005761949578300118,
+          "en_probability": 2.7275057212783338e-11
         },
         {
           "id": "bn_heldout_10",
@@ -604,8 +609,8 @@
           "predicted": "bn",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.019905390217900276,
-          "en_probability": 1.4744546916745094e-08
+          "hi_probability": 0.00458797300234437,
+          "en_probability": 1.2581495845154222e-09
         },
         {
           "id": "bn_heldout_11",
@@ -613,35 +618,35 @@
           "predicted": "bn",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 1.1427023309806827e-06,
-          "en_probability": 2.3834013518353458e-07
+          "hi_probability": 5.40402288606856e-05,
+          "en_probability": 1.3891554573319809e-10
         },
         {
           "id": "bn_heldout_11",
           "expected": "bn",
-          "predicted": "hi",
+          "predicted": "ln",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.33260801434516907,
-          "en_probability": 9.954464076145086e-06
-        },
-        {
-          "id": "bn_heldout_11",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 4.12531591109655e-08,
-          "en_probability": 3.667399994800036e-10
+          "hi_probability": 0.0016614001942798495,
+          "en_probability": 2.870195459081515e-08
         },
         {
           "id": "bn_heldout_11",
           "expected": "bn",
           "predicted": "bn",
           "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 6.366729508044955e-07,
+          "en_probability": 7.447325091683443e-14
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 4.878601885138778e-06,
-          "en_probability": 1.805339072680212e-10
+          "hi_probability": 0.0002536516694817692,
+          "en_probability": 1.3624912829912628e-11
         },
         {
           "id": "bn_heldout_11",
@@ -649,8 +654,8 @@
           "predicted": "bn",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 1.950802470673807e-07,
-          "en_probability": 1.7929399284688508e-11
+          "hi_probability": 1.4111271866568131e-06,
+          "en_probability": 1.4126712156287656e-14
         },
         {
           "id": "bn_heldout_11",
@@ -658,26 +663,26 @@
           "predicted": "bn",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 4.4491935113910586e-05,
-          "en_probability": 1.2532033744072635e-10
+          "hi_probability": 0.00010355097765568644,
+          "en_probability": 6.5064919597956905e-12
         },
         {
           "id": "bn_heldout_12",
           "expected": "bn",
-          "predicted": "hi",
+          "predicted": "bn",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.6438453197479248,
-          "en_probability": 9.060470151922573e-10
+          "hi_probability": 0.00049212685553357,
+          "en_probability": 4.974652356715126e-10
         },
         {
           "id": "bn_heldout_12",
           "expected": "bn",
-          "predicted": "hi",
+          "predicted": "bn",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9626007080078125,
-          "en_probability": 4.4560610756860797e-10
+          "hi_probability": 0.007611451670527458,
+          "en_probability": 1.3677315280347102e-07
         },
         {
           "id": "bn_heldout_12",
@@ -685,8 +690,8 @@
           "predicted": "bn",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.07218582183122635,
-          "en_probability": 1.456107057151712e-08
+          "hi_probability": 4.1178813262376934e-05,
+          "en_probability": 3.494734612374123e-14
         },
         {
           "id": "bn_heldout_12",
@@ -694,8 +699,8 @@
           "predicted": "bn",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.009168524295091629,
-          "en_probability": 3.2776439895521037e-10
+          "hi_probability": 9.160120680462569e-05,
+          "en_probability": 1.0461951400683733e-12
         },
         {
           "id": "bn_heldout_12",
@@ -703,8 +708,8 @@
           "predicted": "bn",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 7.924422970972955e-05,
-          "en_probability": 3.130820602770257e-10
+          "hi_probability": 5.958975179964909e-08,
+          "en_probability": 4.541405263186558e-16
         },
         {
           "id": "bn_heldout_12",
@@ -712,8 +717,8 @@
           "predicted": "bn",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.0006711348542012274,
-          "en_probability": 7.923672828979988e-11
+          "hi_probability": 5.380085212891572e-07,
+          "en_probability": 4.389294239485683e-14
         },
         {
           "id": "ta_heldout_10",
@@ -721,8 +726,8 @@
           "predicted": "ta",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 3.475635708127811e-07,
-          "en_probability": 6.956685227876847e-11
+          "hi_probability": 1.4516077229131952e-10,
+          "en_probability": 1.0462379863829772e-14
         },
         {
           "id": "ta_heldout_10",
@@ -730,8 +735,8 @@
           "predicted": "ta",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 2.83564531855518e-06,
-          "en_probability": 3.0474237022737327e-10
+          "hi_probability": 5.574538164410114e-09,
+          "en_probability": 6.911153236071471e-14
         },
         {
           "id": "ta_heldout_10",
@@ -739,8 +744,8 @@
           "predicted": "ta",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 1.704196339602504e-09,
-          "en_probability": 5.1110853327429595e-09
+          "hi_probability": 7.200154779037418e-14,
+          "en_probability": 8.805326370970649e-17
         },
         {
           "id": "ta_heldout_10",
@@ -748,8 +753,8 @@
           "predicted": "ta",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 1.3470154769379405e-08,
-          "en_probability": 2.8828145204329303e-08
+          "hi_probability": 1.6036832235430398e-12,
+          "en_probability": 1.2811631672270205e-15
         },
         {
           "id": "ta_heldout_10",
@@ -757,8 +762,8 @@
           "predicted": "ta",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 9.676932866131693e-11,
-          "en_probability": 1.2503001411978687e-10
+          "hi_probability": 1.9144050832976302e-14,
+          "en_probability": 2.286227951423062e-17
         },
         {
           "id": "ta_heldout_10",
@@ -766,8 +771,8 @@
           "predicted": "ta",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 2.2395343357572983e-09,
-          "en_probability": 2.4309670942912476e-10
+          "hi_probability": 1.3931386697463993e-13,
+          "en_probability": 1.34488688521706e-16
         },
         {
           "id": "ta_heldout_11",
@@ -775,8 +780,8 @@
           "predicted": "ta",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 2.0055069853697205e-06,
-          "en_probability": 2.598983428470092e-07
+          "hi_probability": 5.133881941787877e-08,
+          "en_probability": 1.6005091349469147e-11
         },
         {
           "id": "ta_heldout_11",
@@ -784,8 +789,8 @@
           "predicted": "ta",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 1.2840638191846665e-05,
-          "en_probability": 1.2109221643186174e-06
+          "hi_probability": 1.0696317076508421e-07,
+          "en_probability": 1.184755852451369e-11
         },
         {
           "id": "ta_heldout_11",
@@ -793,8 +798,8 @@
           "predicted": "ta",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 4.5906747153656724e-11,
-          "en_probability": 6.522987174278211e-14
+          "hi_probability": 3.741928641942671e-11,
+          "en_probability": 2.5709484945823794e-15
         },
         {
           "id": "ta_heldout_11",
@@ -802,8 +807,8 @@
           "predicted": "ta",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 3.41388861624381e-11,
-          "en_probability": 1.0916345139031641e-13
+          "hi_probability": 8.572142995433296e-11,
+          "en_probability": 4.690950624090199e-15
         },
         {
           "id": "ta_heldout_11",
@@ -811,8 +816,8 @@
           "predicted": "ta",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 2.9405828172457404e-07,
-          "en_probability": 1.823994844052379e-10
+          "hi_probability": 6.591811124723179e-11,
+          "en_probability": 8.752957261987451e-15
         },
         {
           "id": "ta_heldout_11",
@@ -820,8 +825,8 @@
           "predicted": "ta",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 8.310443604386819e-07,
-          "en_probability": 2.2608163952053673e-10
+          "hi_probability": 3.1390886418014574e-11,
+          "en_probability": 4.2477609632301204e-15
         },
         {
           "id": "ta_heldout_12",
@@ -829,8 +834,8 @@
           "predicted": "ta",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 1.8888442809839034e-06,
-          "en_probability": 2.0691695112873276e-07
+          "hi_probability": 6.253680453482957e-07,
+          "en_probability": 6.878956432254668e-11
         },
         {
           "id": "ta_heldout_12",
@@ -838,8 +843,8 @@
           "predicted": "ta",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 1.4635673323937226e-05,
-          "en_probability": 4.590532753923071e-08
+          "hi_probability": 7.011404790091547e-08,
+          "en_probability": 1.5488785254369475e-10
         },
         {
           "id": "ta_heldout_12",
@@ -847,8 +852,8 @@
           "predicted": "ta",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 2.603771349640738e-07,
-          "en_probability": 9.32845245493752e-10
+          "hi_probability": 4.99015726518337e-08,
+          "en_probability": 2.035436272654345e-12
         },
         {
           "id": "ta_heldout_12",
@@ -856,8 +861,8 @@
           "predicted": "ta",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 4.894952780887252e-07,
-          "en_probability": 9.247440591053646e-10
+          "hi_probability": 7.682737113157145e-09,
+          "en_probability": 1.475006575213378e-11
         },
         {
           "id": "ta_heldout_12",
@@ -865,8 +870,8 @@
           "predicted": "ta",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 5.64758011023514e-07,
-          "en_probability": 1.759000167744773e-10
+          "hi_probability": 1.6289192217300297e-08,
+          "en_probability": 6.584261537682587e-14
         },
         {
           "id": "ta_heldout_12",
@@ -874,44 +879,44 @@
           "predicted": "ta",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 4.919180014439917e-07,
-          "en_probability": 2.0501574396480926e-11
-        },
-        {
-          "id": "te_heldout_10",
-          "expected": "te",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.6552348732948303,
-          "en_probability": 2.6815285991688143e-08
+          "hi_probability": 2.9103206511393864e-09,
+          "en_probability": 2.2034216356874026e-13
         },
         {
           "id": "te_heldout_10",
           "expected": "te",
           "predicted": "gu",
           "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.09632007032632828,
-          "en_probability": 5.661868726747343e-06
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0001370936952298507,
+          "en_probability": 3.0796826894219365e-11
         },
         {
           "id": "te_heldout_10",
           "expected": "te",
-          "predicted": "hi",
+          "predicted": "te",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0014098352985456586,
+          "en_probability": 9.467075040570094e-11
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "te",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.6990109086036682,
-          "en_probability": 1.2996794396258338e-07
+          "hi_probability": 1.045771932695061e-05,
+          "en_probability": 1.639911643980252e-11
         },
         {
           "id": "te_heldout_10",
           "expected": "te",
-          "predicted": "gu",
+          "predicted": "te",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.26313135027885437,
-          "en_probability": 3.4009412956947926e-06
+          "hi_probability": 0.0002129292261088267,
+          "en_probability": 6.957335402235643e-11
         },
         {
           "id": "te_heldout_10",
@@ -919,8 +924,8 @@
           "predicted": "te",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.008735744282603264,
-          "en_probability": 3.020192707037239e-10
+          "hi_probability": 3.951755811471003e-09,
+          "en_probability": 2.361459035518025e-15
         },
         {
           "id": "te_heldout_10",
@@ -928,8 +933,8 @@
           "predicted": "te",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.0006758759845979512,
-          "en_probability": 4.3865747145765965e-10
+          "hi_probability": 4.21218011581459e-08,
+          "en_probability": 1.0497680808939543e-14
         },
         {
           "id": "te_heldout_11",
@@ -937,8 +942,8 @@
           "predicted": "te",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 5.710142545467534e-07,
-          "en_probability": 4.222546249287029e-13
+          "hi_probability": 8.004801799188499e-08,
+          "en_probability": 4.5389185743260896e-09
         },
         {
           "id": "te_heldout_11",
@@ -946,8 +951,8 @@
           "predicted": "te",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 1.0714950803958345e-05,
-          "en_probability": 1.967562831411973e-12
+          "hi_probability": 3.1683935475257385e-08,
+          "en_probability": 2.8170588084464043e-09
         },
         {
           "id": "te_heldout_11",
@@ -955,8 +960,8 @@
           "predicted": "te",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 1.5425474231278713e-08,
-          "en_probability": 3.067691813532611e-16
+          "hi_probability": 3.052035754080862e-05,
+          "en_probability": 5.527283630790691e-10
         },
         {
           "id": "te_heldout_11",
@@ -964,8 +969,8 @@
           "predicted": "te",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 1.3265987490740372e-06,
-          "en_probability": 7.380464037772157e-15
+          "hi_probability": 4.023743258585455e-06,
+          "en_probability": 2.539389254430091e-10
         },
         {
           "id": "te_heldout_11",
@@ -973,8 +978,8 @@
           "predicted": "te",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 1.3999580914969556e-05,
-          "en_probability": 3.9546431450723785e-13
+          "hi_probability": 4.573162004817277e-05,
+          "en_probability": 1.0238013770091925e-09
         },
         {
           "id": "te_heldout_11",
@@ -982,8 +987,8 @@
           "predicted": "te",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.00020995858358219266,
-          "en_probability": 1.8877705388470334e-12
+          "hi_probability": 2.2462208448814636e-07,
+          "en_probability": 4.34296591744765e-11
         },
         {
           "id": "te_heldout_12",
@@ -991,8 +996,8 @@
           "predicted": "te",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 5.7322376960655674e-06,
-          "en_probability": 5.727190098038515e-13
+          "hi_probability": 2.5514213120914064e-05,
+          "en_probability": 2.0357828270367584e-11
         },
         {
           "id": "te_heldout_12",
@@ -1000,8 +1005,8 @@
           "predicted": "te",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 9.894080903904978e-06,
-          "en_probability": 1.1341534265560393e-12
+          "hi_probability": 1.7514184946776368e-05,
+          "en_probability": 1.1570334967903051e-10
         },
         {
           "id": "te_heldout_12",
@@ -1009,8 +1014,8 @@
           "predicted": "te",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 5.82923530600965e-06,
-          "en_probability": 2.58602622822679e-12
+          "hi_probability": 1.5551389878964983e-05,
+          "en_probability": 9.025193786760255e-11
         },
         {
           "id": "te_heldout_12",
@@ -1018,8 +1023,8 @@
           "predicted": "te",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 1.032500108522072e-06,
-          "en_probability": 9.265734880747889e-13
+          "hi_probability": 1.238830645888811e-05,
+          "en_probability": 4.466672309799691e-10
         },
         {
           "id": "te_heldout_12",
@@ -1027,8 +1032,8 @@
           "predicted": "te",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 3.098186061833985e-05,
-          "en_probability": 5.270605566570774e-12
+          "hi_probability": 9.050837093127484e-07,
+          "en_probability": 1.1460575544131046e-11
         },
         {
           "id": "te_heldout_12",
@@ -1036,26 +1041,26 @@
           "predicted": "te",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.0003890447551384568,
-          "en_probability": 9.537264207548635e-12
+          "hi_probability": 1.8373141301708529e-06,
+          "en_probability": 5.657446733309257e-12
         },
         {
           "id": "gu_heldout_10",
           "expected": "gu",
-          "predicted": "gu",
+          "predicted": "tl",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.3393478989601135,
-          "en_probability": 1.7825010445449152e-07
+          "hi_probability": 0.008768250234425068,
+          "en_probability": 8.394687756663188e-05
         },
         {
           "id": "gu_heldout_10",
           "expected": "gu",
-          "predicted": "tg",
+          "predicted": "sw",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.09095936268568039,
-          "en_probability": 2.238611926941303e-07
+          "hi_probability": 0.043349578976631165,
+          "en_probability": 5.3307798225432634e-05
         },
         {
           "id": "gu_heldout_10",
@@ -1063,17 +1068,17 @@
           "predicted": "gu",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.002836746396496892,
-          "en_probability": 8.489765002117622e-10
+          "hi_probability": 0.0070886071771383286,
+          "en_probability": 1.4385112081072293e-05
         },
         {
           "id": "gu_heldout_10",
           "expected": "gu",
-          "predicted": "gu",
+          "predicted": "kn",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.023643437772989273,
-          "en_probability": 1.7552350684013618e-08
+          "hi_probability": 0.013480668887495995,
+          "en_probability": 7.257333891175222e-06
         },
         {
           "id": "gu_heldout_10",
@@ -1081,8 +1086,8 @@
           "predicted": "gu",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.0010767983039841056,
-          "en_probability": 3.0357095309740956e-11
+          "hi_probability": 0.00123119680210948,
+          "en_probability": 1.2197760952403769e-06
         },
         {
           "id": "gu_heldout_10",
@@ -1090,26 +1095,26 @@
           "predicted": "gu",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.009361558593809605,
-          "en_probability": 1.9264940753771498e-09
+          "hi_probability": 0.008453773334622383,
+          "en_probability": 1.2796646160495584e-06
         },
         {
           "id": "gu_heldout_11",
           "expected": "gu",
-          "predicted": "gu",
+          "predicted": "sl",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.001023141318000853,
-          "en_probability": 3.457900979442208e-11
+          "hi_probability": 0.000681326084304601,
+          "en_probability": 3.5669560816131707e-07
         },
         {
           "id": "gu_heldout_11",
           "expected": "gu",
-          "predicted": "ha",
+          "predicted": "sl",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.02713528834283352,
-          "en_probability": 5.425503796230302e-11
+          "hi_probability": 0.00014247524086385965,
+          "en_probability": 9.127862909963369e-09
         },
         {
           "id": "gu_heldout_11",
@@ -1117,8 +1122,8 @@
           "predicted": "gu",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.00018901868315879256,
-          "en_probability": 1.4106478572056824e-12
+          "hi_probability": 0.00029278997681103647,
+          "en_probability": 5.982246364943933e-10
         },
         {
           "id": "gu_heldout_11",
@@ -1126,8 +1131,8 @@
           "predicted": "gu",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.014624820090830326,
-          "en_probability": 2.0770399289382624e-11
+          "hi_probability": 0.0006955237477086484,
+          "en_probability": 4.254114394086628e-09
         },
         {
           "id": "gu_heldout_11",
@@ -1135,8 +1140,8 @@
           "predicted": "gu",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 6.371024210238829e-05,
-          "en_probability": 2.8184450758493573e-13
+          "hi_probability": 2.580012551334221e-05,
+          "en_probability": 1.5263902641837745e-10
         },
         {
           "id": "gu_heldout_11",
@@ -1144,8 +1149,8 @@
           "predicted": "gu",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.008813614025712013,
-          "en_probability": 3.4540165866348005e-12
+          "hi_probability": 0.0005424164701253176,
+          "en_probability": 2.05799910446558e-09
         },
         {
           "id": "gu_heldout_12",
@@ -1153,17 +1158,17 @@
           "predicted": "gu",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.006095439195632935,
-          "en_probability": 1.2667016043119584e-14
+          "hi_probability": 0.2155349999666214,
+          "en_probability": 7.11795455909936e-10
         },
         {
           "id": "gu_heldout_12",
           "expected": "gu",
-          "predicted": "gu",
+          "predicted": "sa",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.4432235360145569,
-          "en_probability": 5.546451076199332e-10
+          "hi_probability": 0.3064732551574707,
+          "en_probability": 6.23271323441088e-10
         },
         {
           "id": "gu_heldout_12",
@@ -1171,17 +1176,17 @@
           "predicted": "gu",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.007628933060914278,
-          "en_probability": 2.4768525785597885e-14
+          "hi_probability": 0.01601201854646206,
+          "en_probability": 6.4519435800936e-12
         },
         {
           "id": "gu_heldout_12",
           "expected": "gu",
-          "predicted": "hi",
+          "predicted": "gu",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.7182042598724365,
-          "en_probability": 4.3515892278467305e-11
+          "hi_probability": 0.029876628890633583,
+          "en_probability": 7.178030739241059e-12
         },
         {
           "id": "gu_heldout_12",
@@ -1189,8 +1194,8 @@
           "predicted": "gu",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.003597696777433157,
-          "en_probability": 5.273289375217556e-16
+          "hi_probability": 0.0011260545579716563,
+          "en_probability": 1.1432275482184395e-12
         },
         {
           "id": "gu_heldout_12",
@@ -1198,241 +1203,241 @@
           "predicted": "gu",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.1941041499376297,
-          "en_probability": 1.6347914775366457e-13
+          "hi_probability": 0.016516562551259995,
+          "en_probability": 8.083016894699924e-12
         }
       ],
       "switch_predictions": [
         {
           "anchor_frame": 0,
           "anchor_seconds": 0.025,
-          "predicted": "tk",
-          "hi_probability": 0.0011063385754823685,
-          "en_probability": 0.003208989044651389
+          "predicted": "hr",
+          "hi_probability": 0.0031104455702006817,
+          "en_probability": 0.00011068736057495698
         },
         {
           "anchor_frame": 25,
           "anchor_seconds": 0.275,
-          "predicted": "ru",
-          "hi_probability": 0.05643252655863762,
-          "en_probability": 0.0012974714627489448
+          "predicted": "hr",
+          "hi_probability": 0.042889080941677094,
+          "en_probability": 0.00027249674894846976
         },
         {
           "anchor_frame": 50,
           "anchor_seconds": 0.525,
-          "predicted": "ml",
-          "hi_probability": 0.02450350485742092,
-          "en_probability": 0.00041197927203029394
+          "predicted": "kn",
+          "hi_probability": 0.04258795827627182,
+          "en_probability": 8.124601299641654e-05
         },
         {
           "anchor_frame": 75,
           "anchor_seconds": 0.775,
-          "predicted": "gu",
-          "hi_probability": 0.07220186293125153,
-          "en_probability": 3.07372392853722e-05
+          "predicted": "sa",
+          "hi_probability": 0.009816748090088367,
+          "en_probability": 5.318397143128095e-06
         },
         {
           "anchor_frame": 100,
           "anchor_seconds": 1.025,
-          "predicted": "gu",
-          "hi_probability": 0.05641503632068634,
-          "en_probability": 1.870306391538179e-06
+          "predicted": "te",
+          "hi_probability": 0.13523828983306885,
+          "en_probability": 1.4872100564389257e-06
         },
         {
           "anchor_frame": 125,
           "anchor_seconds": 1.275,
           "predicted": "hi",
-          "hi_probability": 0.9608578681945801,
-          "en_probability": 3.492031908081117e-07
+          "hi_probability": 0.8401703238487244,
+          "en_probability": 8.528356261194858e-07
         },
         {
           "anchor_frame": 150,
           "anchor_seconds": 1.525,
           "predicted": "hi",
-          "hi_probability": 0.9917282462120056,
-          "en_probability": 3.4575137197734307e-10
+          "hi_probability": 0.9713377952575684,
+          "en_probability": 2.2505316721321833e-08
         },
         {
           "anchor_frame": 175,
           "anchor_seconds": 1.775,
           "predicted": "hi",
-          "hi_probability": 0.992787778377533,
-          "en_probability": 2.402896284725564e-11
+          "hi_probability": 0.921606719493866,
+          "en_probability": 3.6778322609620773e-09
         },
         {
           "anchor_frame": 200,
           "anchor_seconds": 2.025,
           "predicted": "hi",
-          "hi_probability": 0.9980226755142212,
-          "en_probability": 1.2322684539434192e-11
+          "hi_probability": 0.9964805245399475,
+          "en_probability": 8.342889046275559e-09
         },
         {
           "anchor_frame": 225,
           "anchor_seconds": 2.275,
           "predicted": "hi",
-          "hi_probability": 0.9956023693084717,
-          "en_probability": 9.002954089697146e-13
+          "hi_probability": 0.9986442923545837,
+          "en_probability": 7.262740808755552e-08
         },
         {
           "anchor_frame": 250,
           "anchor_seconds": 2.525,
           "predicted": "hi",
-          "hi_probability": 0.999657154083252,
-          "en_probability": 4.29719736357026e-13
+          "hi_probability": 0.9997405409812927,
+          "en_probability": 1.4869964148900294e-09
         },
         {
           "anchor_frame": 275,
           "anchor_seconds": 2.775,
           "predicted": "hi",
-          "hi_probability": 0.998554527759552,
-          "en_probability": 1.1384067993835956e-10
+          "hi_probability": 0.998661994934082,
+          "en_probability": 2.394304772224132e-07
         },
         {
           "anchor_frame": 300,
           "anchor_seconds": 3.025,
           "predicted": "hi",
-          "hi_probability": 0.9878227114677429,
-          "en_probability": 9.674580248031361e-09
+          "hi_probability": 0.9977555871009827,
+          "en_probability": 3.590113237805781e-06
         },
         {
           "anchor_frame": 325,
           "anchor_seconds": 3.275,
           "predicted": "hi",
-          "hi_probability": 0.9658011794090271,
-          "en_probability": 1.3559841249843885e-07
+          "hi_probability": 0.8556300401687622,
+          "en_probability": 5.151540972292423e-05
         },
         {
           "anchor_frame": 350,
           "anchor_seconds": 3.525,
           "predicted": "hi",
-          "hi_probability": 0.9594978094100952,
-          "en_probability": 5.430517147075875e-10
+          "hi_probability": 0.8567837476730347,
+          "en_probability": 6.308231240836903e-05
         },
         {
           "anchor_frame": 375,
           "anchor_seconds": 3.775,
           "predicted": "hi",
-          "hi_probability": 0.9509165287017822,
-          "en_probability": 9.538165812728039e-10
+          "hi_probability": 0.9396646022796631,
+          "en_probability": 3.6500173337117303e-06
         },
         {
           "anchor_frame": 400,
           "anchor_seconds": 4.025,
           "predicted": "hi",
-          "hi_probability": 0.9415738582611084,
-          "en_probability": 4.310989787370545e-09
+          "hi_probability": 0.9919344186782837,
+          "en_probability": 8.901331966626458e-06
         },
         {
           "anchor_frame": 425,
           "anchor_seconds": 4.275,
           "predicted": "hi",
-          "hi_probability": 0.650729238986969,
-          "en_probability": 5.9507293315164134e-08
+          "hi_probability": 0.9645968675613403,
+          "en_probability": 1.323434025835013e-05
         },
         {
           "anchor_frame": 450,
           "anchor_seconds": 4.525,
-          "predicted": "ur",
-          "hi_probability": 0.01588580757379532,
-          "en_probability": 1.1500349046400515e-06
+          "predicted": "hi",
+          "hi_probability": 0.8257243633270264,
+          "en_probability": 4.703499507741071e-05
         },
         {
           "anchor_frame": 475,
           "anchor_seconds": 4.775,
-          "predicted": "ur",
-          "hi_probability": 0.06832446157932281,
-          "en_probability": 1.5268875586116337e-07
+          "predicted": "hi",
+          "hi_probability": 0.8024709820747375,
+          "en_probability": 0.00012875568063464016
         },
         {
           "anchor_frame": 500,
           "anchor_seconds": 5.025,
-          "predicted": "ur",
-          "hi_probability": 0.18494226038455963,
-          "en_probability": 1.6876687425337877e-07
+          "predicted": "hi",
+          "hi_probability": 0.8797656893730164,
+          "en_probability": 0.012763009406626225
         },
         {
           "anchor_frame": 525,
           "anchor_seconds": 5.275,
-          "predicted": "ur",
-          "hi_probability": 0.2248625010251999,
-          "en_probability": 0.0004392555565573275
+          "predicted": "hi",
+          "hi_probability": 0.8001706004142761,
+          "en_probability": 0.023299990221858025
         },
         {
           "anchor_frame": 550,
           "anchor_seconds": 5.525,
-          "predicted": "ta",
-          "hi_probability": 0.017789114266633987,
-          "en_probability": 0.046064574271440506
+          "predicted": "en",
+          "hi_probability": 0.18183039128780365,
+          "en_probability": 0.6065005660057068
         },
         {
           "anchor_frame": 575,
           "anchor_seconds": 5.775,
-          "predicted": "ta",
-          "hi_probability": 0.08880965411663055,
-          "en_probability": 0.025448907166719437
+          "predicted": "en",
+          "hi_probability": 0.023414645344018936,
+          "en_probability": 0.452102392911911
         },
         {
           "anchor_frame": 600,
           "anchor_seconds": 6.025,
-          "predicted": "hi",
-          "hi_probability": 0.41359570622444153,
-          "en_probability": 0.09233492612838745
+          "predicted": "de",
+          "hi_probability": 0.001285266363993287,
+          "en_probability": 0.2161332368850708
         },
         {
           "anchor_frame": 625,
           "anchor_seconds": 6.275,
           "predicted": "de",
-          "hi_probability": 0.05668530985713005,
-          "en_probability": 0.03097539208829403
+          "hi_probability": 8.949300536187366e-05,
+          "en_probability": 0.10417120903730392
         },
         {
           "anchor_frame": 650,
           "anchor_seconds": 6.525,
           "predicted": "de",
-          "hi_probability": 0.01354313362389803,
-          "en_probability": 0.017299100756645203
+          "hi_probability": 7.267449836945161e-05,
+          "en_probability": 0.01470893993973732
         },
         {
           "anchor_frame": 675,
           "anchor_seconds": 6.775,
           "predicted": "de",
-          "hi_probability": 0.0002231657854281366,
-          "en_probability": 0.019631119444966316
+          "hi_probability": 9.289798981626518e-06,
+          "en_probability": 0.02952663227915764
         },
         {
           "anchor_frame": 700,
           "anchor_seconds": 7.025,
           "predicted": "de",
-          "hi_probability": 3.166685564792715e-05,
-          "en_probability": 0.005275683477520943
+          "hi_probability": 1.8965780327562243e-05,
+          "en_probability": 0.05937519297003746
         },
         {
           "anchor_frame": 725,
           "anchor_seconds": 7.275,
-          "predicted": "de",
-          "hi_probability": 0.003700951114296913,
-          "en_probability": 0.02423665300011635
+          "predicted": "en",
+          "hi_probability": 2.0182384105282836e-05,
+          "en_probability": 0.37124142050743103
         },
         {
           "anchor_frame": 750,
           "anchor_seconds": 7.525,
-          "predicted": "de",
-          "hi_probability": 0.002379496581852436,
-          "en_probability": 0.026592520996928215
+          "predicted": "cy",
+          "hi_probability": 0.00018954958068206906,
+          "en_probability": 0.3254440724849701
         },
         {
           "anchor_frame": 775,
           "anchor_seconds": 7.775,
-          "predicted": "de",
-          "hi_probability": 0.005437455140054226,
-          "en_probability": 0.24977244436740875
+          "predicted": "en",
+          "hi_probability": 7.00620876159519e-05,
+          "en_probability": 0.47131627798080444
         },
         {
           "anchor_frame": 797,
           "anchor_seconds": 7.995,
-          "predicted": "de",
-          "hi_probability": 0.006102960091084242,
-          "en_probability": 0.22832366824150085
+          "predicted": "mt",
+          "hi_probability": 0.0028782205190509558,
+          "en_probability": 0.36002618074417114
         }
       ]
     },
@@ -1440,39 +1445,42 @@
       "model_id": "openai/whisper-small",
       "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
       "parameter_count": 241734912,
+      "load_validation": {
+        "checkpoint_warnings": "none"
+      },
       "accuracy": {
         "clean_16khz": {
           "1": {
-            "correct": 11,
+            "correct": 9,
             "total": 21,
-            "accuracy": 0.5238095238095238
+            "accuracy": 0.42857142857142855
           },
           "2": {
-            "correct": 14,
+            "correct": 17,
             "total": 21,
-            "accuracy": 0.6666666666666666
+            "accuracy": 0.8095238095238095
           },
           "4": {
-            "correct": 16,
+            "correct": 20,
             "total": 21,
-            "accuracy": 0.7619047619047619
+            "accuracy": 0.9523809523809523
           }
         },
         "roundtrip_8khz": {
           "1": {
-            "correct": 10,
+            "correct": 9,
             "total": 21,
-            "accuracy": 0.47619047619047616
+            "accuracy": 0.42857142857142855
           },
           "2": {
-            "correct": 14,
+            "correct": 17,
             "total": 21,
-            "accuracy": 0.6666666666666666
+            "accuracy": 0.8095238095238095
           },
           "4": {
-            "correct": 16,
+            "correct": 19,
             "total": 21,
-            "accuracy": 0.7619047619047619
+            "accuracy": 0.9047619047619048
           }
         }
       },
@@ -1480,25 +1488,27 @@
         "true_switch_seconds": 4.0,
         "persistence_anchors": 3,
         "anchor_hop_ms": 250.0,
-        "first_persistent_target_seconds": 5.525,
-        "first_persistent_target_lag_ms": 1525.0000000000005,
-        "confirmed_target_seconds": 6.025,
-        "confirmed_target_lag_ms": 2025.0000000000005,
+        "first_persistent_target_seconds": 5.025,
+        "first_persistent_target_lag_ms": 1025.0000000000005,
+        "confirmed_target_seconds": 5.525,
+        "confirmed_target_lag_ms": 1525.0000000000005,
         "right_context_ms": 250,
-        "first_persistent_target_available_seconds": 5.775,
-        "availability_adjusted_lag_ms": 1775.0000000000005,
-        "anchor_label_accuracy": 0.7878787878787878,
-        "anchor_correct": 26,
+        "first_persistent_target_available_seconds": 5.275,
+        "availability_adjusted_lag_ms": 1275.0000000000005,
+        "anchor_label_accuracy": 0.8181818181818182,
+        "anchor_correct": 27,
         "anchor_total": 33
       },
       "timing": {
-        "load_wall_seconds": 21.335879322999972,
+        "load_wall_seconds": 24.61375457199938,
+        "batch_size": 2,
+        "timed_batches": 80,
         "timed_requests": 159,
         "timed_audio_seconds": 360.0,
-        "wall_seconds": 163.3625488839998,
-        "process_cpu_seconds": 977.161118,
-        "wall_rtf": 0.45378485801111057,
-        "mean_wall_ms_per_request": 1027.4374143647788,
+        "wall_seconds": 143.964615547,
+        "process_cpu_seconds": 853.17485,
+        "wall_rtf": 0.3999017098527778,
+        "mean_wall_ms_per_request": 905.4378336289308,
         "includes_preprocessing": true,
         "includes_model_load": false
       },
@@ -1509,8 +1519,8 @@
           "predicted": "en",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.01843801513314247,
-          "en_probability": 0.910040557384491
+          "hi_probability": 0.005229041911661625,
+          "en_probability": 0.9092447757720947
         },
         {
           "id": "en_heldout_10",
@@ -1518,8 +1528,8 @@
           "predicted": "en",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.014043875969946384,
-          "en_probability": 0.9317913055419922
+          "hi_probability": 0.01266621332615614,
+          "en_probability": 0.878621518611908
         },
         {
           "id": "en_heldout_10",
@@ -1527,8 +1537,8 @@
           "predicted": "en",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.12504471838474274,
-          "en_probability": 0.7981889247894287
+          "hi_probability": 0.004700329154729843,
+          "en_probability": 0.9531588554382324
         },
         {
           "id": "en_heldout_10",
@@ -1536,8 +1546,8 @@
           "predicted": "en",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.20780940353870392,
-          "en_probability": 0.6723245978355408
+          "hi_probability": 0.012376959435641766,
+          "en_probability": 0.9386245608329773
         },
         {
           "id": "en_heldout_10",
@@ -1545,8 +1555,8 @@
           "predicted": "en",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.1006786972284317,
-          "en_probability": 0.8771580457687378
+          "hi_probability": 0.0005930956685915589,
+          "en_probability": 0.9886153936386108
         },
         {
           "id": "en_heldout_10",
@@ -1554,8 +1564,8 @@
           "predicted": "en",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.08727362751960754,
-          "en_probability": 0.8888438940048218
+          "hi_probability": 0.003154850797727704,
+          "en_probability": 0.9925451874732971
         },
         {
           "id": "en_heldout_11",
@@ -1563,8 +1573,8 @@
           "predicted": "en",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.027189213782548904,
-          "en_probability": 0.8695923686027527
+          "hi_probability": 0.0032994726207107306,
+          "en_probability": 0.9768522381782532
         },
         {
           "id": "en_heldout_11",
@@ -1572,8 +1582,8 @@
           "predicted": "en",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.021687490865588188,
-          "en_probability": 0.8717803359031677
+          "hi_probability": 0.023222949355840683,
+          "en_probability": 0.9486092925071716
         },
         {
           "id": "en_heldout_11",
@@ -1581,8 +1591,8 @@
           "predicted": "en",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.061375491321086884,
-          "en_probability": 0.7702106833457947
+          "hi_probability": 0.007232715841382742,
+          "en_probability": 0.9423843622207642
         },
         {
           "id": "en_heldout_11",
@@ -1590,8 +1600,8 @@
           "predicted": "en",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.04346891865134239,
-          "en_probability": 0.8265287280082703
+          "hi_probability": 0.014823021367192268,
+          "en_probability": 0.8997762799263
         },
         {
           "id": "en_heldout_11",
@@ -1599,8 +1609,8 @@
           "predicted": "en",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.04644270986318588,
-          "en_probability": 0.9107417464256287
+          "hi_probability": 0.00048385668196715415,
+          "en_probability": 0.9964420199394226
         },
         {
           "id": "en_heldout_11",
@@ -1608,8 +1618,8 @@
           "predicted": "en",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.059959303587675095,
-          "en_probability": 0.8553498983383179
+          "hi_probability": 0.0032766549848020077,
+          "en_probability": 0.9914647936820984
         },
         {
           "id": "en_heldout_12",
@@ -1617,8 +1627,8 @@
           "predicted": "en",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.06768101453781128,
-          "en_probability": 0.8723284602165222
+          "hi_probability": 0.0012126228539273143,
+          "en_probability": 0.9814638495445251
         },
         {
           "id": "en_heldout_12",
@@ -1626,8 +1636,8 @@
           "predicted": "en",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.11003381013870239,
-          "en_probability": 0.6748582124710083
+          "hi_probability": 0.004792558494955301,
+          "en_probability": 0.9677062630653381
         },
         {
           "id": "en_heldout_12",
@@ -1635,8 +1645,8 @@
           "predicted": "en",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.06789212673902512,
-          "en_probability": 0.8984014391899109
+          "hi_probability": 0.002482631243765354,
+          "en_probability": 0.9856224656105042
         },
         {
           "id": "en_heldout_12",
@@ -1644,8 +1654,8 @@
           "predicted": "en",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.11136654764413834,
-          "en_probability": 0.8303211331367493
+          "hi_probability": 0.005198664963245392,
+          "en_probability": 0.9779109358787537
         },
         {
           "id": "en_heldout_12",
@@ -1653,8 +1663,8 @@
           "predicted": "en",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.08427868038415909,
-          "en_probability": 0.8917019963264465
+          "hi_probability": 0.0003814348892774433,
+          "en_probability": 0.9949337840080261
         },
         {
           "id": "en_heldout_12",
@@ -1662,827 +1672,827 @@
           "predicted": "en",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.1793593317270279,
-          "en_probability": 0.7859851717948914
+          "hi_probability": 0.0015820240369066596,
+          "en_probability": 0.9943575263023376
         },
         {
           "id": "hi_heldout_10",
           "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.48779183626174927,
-          "en_probability": 0.13597649335861206
-        },
-        {
-          "id": "hi_heldout_10",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.7089872360229492,
-          "en_probability": 0.07558874040842056
-        },
-        {
-          "id": "hi_heldout_10",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.8391219973564148,
-          "en_probability": 0.041860297322273254
-        },
-        {
-          "id": "hi_heldout_10",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.8894737958908081,
-          "en_probability": 0.01904689148068428
-        },
-        {
-          "id": "hi_heldout_10",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.9577834010124207,
-          "en_probability": 0.0006670739967375994
-        },
-        {
-          "id": "hi_heldout_10",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9895269870758057,
-          "en_probability": 0.00017629863577894866
-        },
-        {
-          "id": "hi_heldout_11",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.9757196307182312,
-          "en_probability": 0.0072493902407586575
-        },
-        {
-          "id": "hi_heldout_11",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.954486072063446,
-          "en_probability": 0.009952638298273087
-        },
-        {
-          "id": "hi_heldout_11",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.9774309992790222,
-          "en_probability": 0.009396984241902828
-        },
-        {
-          "id": "hi_heldout_11",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9724976420402527,
-          "en_probability": 0.010203561745584011
-        },
-        {
-          "id": "hi_heldout_11",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.9873206615447998,
-          "en_probability": 0.0013079753844067454
-        },
-        {
-          "id": "hi_heldout_11",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9960440397262573,
-          "en_probability": 0.00017400279466528445
-        },
-        {
-          "id": "hi_heldout_12",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.46103721857070923,
-          "en_probability": 0.09586767107248306
-        },
-        {
-          "id": "hi_heldout_12",
-          "expected": "hi",
-          "predicted": "en",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.07727515697479248,
-          "en_probability": 0.15162457525730133
-        },
-        {
-          "id": "hi_heldout_12",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.9305444359779358,
-          "en_probability": 0.019335463643074036
-        },
-        {
-          "id": "hi_heldout_12",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9417220950126648,
-          "en_probability": 0.012217638082802296
-        },
-        {
-          "id": "hi_heldout_12",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.9919530749320984,
-          "en_probability": 6.336111255222932e-05
-        },
-        {
-          "id": "hi_heldout_12",
-          "expected": "hi",
-          "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9986728429794312,
-          "en_probability": 1.4200113582774065e-05
-        },
-        {
-          "id": "mr_heldout_10",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.5953779816627502,
-          "en_probability": 0.13756559789180756
-        },
-        {
-          "id": "mr_heldout_10",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.5885415077209473,
-          "en_probability": 0.18022418022155762
-        },
-        {
-          "id": "mr_heldout_10",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.4358319640159607,
-          "en_probability": 0.25330087542533875
-        },
-        {
-          "id": "mr_heldout_10",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.44769173860549927,
-          "en_probability": 0.153184175491333
-        },
-        {
-          "id": "mr_heldout_10",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.6372146010398865,
-          "en_probability": 0.050223201513290405
-        },
-        {
-          "id": "mr_heldout_10",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.7755226492881775,
-          "en_probability": 0.013719742186367512
-        },
-        {
-          "id": "mr_heldout_11",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.9378626942634583,
-          "en_probability": 0.03323860839009285
-        },
-        {
-          "id": "mr_heldout_11",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9711936116218567,
-          "en_probability": 0.015761876478791237
-        },
-        {
-          "id": "mr_heldout_11",
-          "expected": "mr",
-          "predicted": "pa",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.23761114478111267,
-          "en_probability": 0.0345819927752018
-        },
-        {
-          "id": "mr_heldout_11",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.4045041501522064,
-          "en_probability": 0.02813999354839325
-        },
-        {
-          "id": "mr_heldout_11",
-          "expected": "mr",
-          "predicted": "mr",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.011653910391032696,
-          "en_probability": 0.0007043633377179503
-        },
-        {
-          "id": "mr_heldout_11",
-          "expected": "mr",
-          "predicted": "mr",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.02472773566842079,
-          "en_probability": 0.0003766964073292911
-        },
-        {
-          "id": "mr_heldout_12",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.6650621891021729,
-          "en_probability": 0.11063849180936813
-        },
-        {
-          "id": "mr_heldout_12",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.776330292224884,
-          "en_probability": 0.024477090686559677
-        },
-        {
-          "id": "mr_heldout_12",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.802036702632904,
-          "en_probability": 0.05868656560778618
-        },
-        {
-          "id": "mr_heldout_12",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.9043788909912109,
-          "en_probability": 0.015601635910570621
-        },
-        {
-          "id": "mr_heldout_12",
-          "expected": "mr",
-          "predicted": "mr",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.40317076444625854,
-          "en_probability": 0.006771138869225979
-        },
-        {
-          "id": "mr_heldout_12",
-          "expected": "mr",
-          "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.5461333990097046,
-          "en_probability": 0.0016258856048807502
-        },
-        {
-          "id": "bn_heldout_10",
-          "expected": "bn",
-          "predicted": "sl",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.003637217916548252,
-          "en_probability": 0.07472483813762665
-        },
-        {
-          "id": "bn_heldout_10",
-          "expected": "bn",
-          "predicted": "hr",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.005985420662909746,
-          "en_probability": 0.0642334520816803
-        },
-        {
-          "id": "bn_heldout_10",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.008039196021854877,
-          "en_probability": 0.03658880665898323
-        },
-        {
-          "id": "bn_heldout_10",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.004412825219333172,
-          "en_probability": 0.02088375948369503
-        },
-        {
-          "id": "bn_heldout_10",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.003625996643677354,
-          "en_probability": 0.00508682569488883
-        },
-        {
-          "id": "bn_heldout_10",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.006268225610256195,
-          "en_probability": 0.006888981442898512
-        },
-        {
-          "id": "bn_heldout_11",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.0127464160323143,
-          "en_probability": 0.03889886662364006
-        },
-        {
-          "id": "bn_heldout_11",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.057114966213703156,
-          "en_probability": 0.0437767393887043
-        },
-        {
-          "id": "bn_heldout_11",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.013911829330027103,
-          "en_probability": 0.013681591488420963
-        },
-        {
-          "id": "bn_heldout_11",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.008578007109463215,
-          "en_probability": 0.013059917837381363
-        },
-        {
-          "id": "bn_heldout_11",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.0025190170854330063,
-          "en_probability": 0.000727940583601594
-        },
-        {
-          "id": "bn_heldout_11",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.002024179557338357,
-          "en_probability": 0.0031617674976587296
-        },
-        {
-          "id": "bn_heldout_12",
-          "expected": "bn",
-          "predicted": "en",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.06808556616306305,
-          "en_probability": 0.4785703122615814
-        },
-        {
-          "id": "bn_heldout_12",
-          "expected": "bn",
-          "predicted": "en",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.1501697599887848,
-          "en_probability": 0.24618689715862274
-        },
-        {
-          "id": "bn_heldout_12",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.03227074071764946,
-          "en_probability": 0.11647524684667587
-        },
-        {
-          "id": "bn_heldout_12",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.09964829683303833,
-          "en_probability": 0.06102996692061424
-        },
-        {
-          "id": "bn_heldout_12",
-          "expected": "bn",
-          "predicted": "hy",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.0012669465504586697,
-          "en_probability": 0.019371917471289635
-        },
-        {
-          "id": "bn_heldout_12",
-          "expected": "bn",
-          "predicted": "bn",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.01243017241358757,
-          "en_probability": 0.06521248072385788
-        },
-        {
-          "id": "ta_heldout_10",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.00759264687076211,
-          "en_probability": 0.05204113572835922
-        },
-        {
-          "id": "ta_heldout_10",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.01364829856902361,
-          "en_probability": 0.061672989279031754
-        },
-        {
-          "id": "ta_heldout_10",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.0006699449149891734,
-          "en_probability": 0.013978659175336361
-        },
-        {
-          "id": "ta_heldout_10",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.0009956622961908579,
-          "en_probability": 0.017854493111371994
-        },
-        {
-          "id": "ta_heldout_10",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.0008651998359709978,
-          "en_probability": 0.005653348285704851
-        },
-        {
-          "id": "ta_heldout_10",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.0008368910057470202,
-          "en_probability": 0.007681776769459248
-        },
-        {
-          "id": "ta_heldout_11",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.0037571778520941734,
-          "en_probability": 0.12080223113298416
-        },
-        {
-          "id": "ta_heldout_11",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.004427046049386263,
-          "en_probability": 0.1412593275308609
-        },
-        {
-          "id": "ta_heldout_11",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.0013847803929820657,
-          "en_probability": 0.019999774172902107
-        },
-        {
-          "id": "ta_heldout_11",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.0016191767062991858,
-          "en_probability": 0.033016763627529144
-        },
-        {
-          "id": "ta_heldout_11",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 8.034707570914179e-05,
-          "en_probability": 0.0019221551483497024
-        },
-        {
-          "id": "ta_heldout_11",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.00012931795208714902,
-          "en_probability": 0.002554984064772725
-        },
-        {
-          "id": "ta_heldout_12",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.003883464029058814,
-          "en_probability": 0.025056663900613785
-        },
-        {
-          "id": "ta_heldout_12",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.006155950948596001,
-          "en_probability": 0.03528717905282974
-        },
-        {
-          "id": "ta_heldout_12",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.003931197803467512,
-          "en_probability": 0.009951656684279442
-        },
-        {
-          "id": "ta_heldout_12",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.005984659306704998,
-          "en_probability": 0.019778864458203316
-        },
-        {
-          "id": "ta_heldout_12",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 8.697615703567863e-05,
-          "en_probability": 0.0006266393465921283
-        },
-        {
-          "id": "ta_heldout_12",
-          "expected": "ta",
-          "predicted": "ta",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.00014095073856879026,
-          "en_probability": 0.0005910255131311715
-        },
-        {
-          "id": "te_heldout_10",
-          "expected": "te",
-          "predicted": "pa",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.08373740315437317,
-          "en_probability": 0.21780523657798767
-        },
-        {
-          "id": "te_heldout_10",
-          "expected": "te",
-          "predicted": "en",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.13760249316692352,
-          "en_probability": 0.2467937022447586
-        },
-        {
-          "id": "te_heldout_10",
-          "expected": "te",
-          "predicted": "en",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.07678799331188202,
-          "en_probability": 0.4652715027332306
-        },
-        {
-          "id": "te_heldout_10",
-          "expected": "te",
-          "predicted": "en",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.12463810294866562,
-          "en_probability": 0.35230621695518494
-        },
-        {
-          "id": "te_heldout_10",
-          "expected": "te",
-          "predicted": "te",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.026249440386891365,
-          "en_probability": 0.008132519200444221
-        },
-        {
-          "id": "te_heldout_10",
-          "expected": "te",
-          "predicted": "te",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.052278898656368256,
-          "en_probability": 0.002513180486857891
-        },
-        {
-          "id": "te_heldout_11",
-          "expected": "te",
-          "predicted": "te",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.12244716286659241,
-          "en_probability": 0.09022688120603561
-        },
-        {
-          "id": "te_heldout_11",
-          "expected": "te",
-          "predicted": "te",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.1726597547531128,
-          "en_probability": 0.05916400998830795
-        },
-        {
-          "id": "te_heldout_11",
-          "expected": "te",
-          "predicted": "te",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.057687122374773026,
-          "en_probability": 0.07478686422109604
-        },
-        {
-          "id": "te_heldout_11",
-          "expected": "te",
-          "predicted": "te",
-          "window_seconds": 2,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.03923729807138443,
-          "en_probability": 0.025158997625112534
-        },
-        {
-          "id": "te_heldout_11",
-          "expected": "te",
-          "predicted": "te",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.044519633054733276,
-          "en_probability": 0.02863137051463127
-        },
-        {
-          "id": "te_heldout_11",
-          "expected": "te",
-          "predicted": "te",
-          "window_seconds": 4,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.02254495769739151,
-          "en_probability": 0.002787904115393758
-        },
-        {
-          "id": "te_heldout_12",
-          "expected": "te",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.6664426326751709,
-          "en_probability": 0.06700774282217026
-        },
-        {
-          "id": "te_heldout_12",
-          "expected": "te",
-          "predicted": "hi",
-          "window_seconds": 1,
-          "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.7155735492706299,
-          "en_probability": 0.0389958992600441
-        },
-        {
-          "id": "te_heldout_12",
-          "expected": "te",
-          "predicted": "en",
-          "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.18965944647789001,
-          "en_probability": 0.2041814774274826
-        },
-        {
-          "id": "te_heldout_12",
-          "expected": "te",
           "predicted": "ru",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.008215955458581448,
+          "en_probability": 0.16968978941440582
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.1407838761806488,
+          "en_probability": 0.2801039516925812
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.5825897455215454,
+          "en_probability": 0.1104947105050087
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "hi",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.06773525476455688,
-          "en_probability": 0.09967391192913055
+          "hi_probability": 0.7726065516471863,
+          "en_probability": 0.0715341567993164
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.8857184052467346,
+          "en_probability": 0.0059223053976893425
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.9390414953231812,
+          "en_probability": 0.006086538080126047
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "de",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.011862573213875294,
+          "en_probability": 0.07047434151172638
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "de",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.013545248657464981,
+          "en_probability": 0.14196091890335083
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.7356679439544678,
+          "en_probability": 0.04150671139359474
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.5498735904693604,
+          "en_probability": 0.04193193092942238
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.8671064376831055,
+          "en_probability": 0.022793959826231003
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.9506394863128662,
+          "en_probability": 0.007343331351876259
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.5666121244430542,
+          "en_probability": 0.19675786793231964
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.8489090204238892,
+          "en_probability": 0.05670244246721268
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.771353542804718,
+          "en_probability": 0.1000439003109932
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.8342458605766296,
+          "en_probability": 0.04515669867396355
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.5676982402801514,
+          "en_probability": 0.004447258077561855
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.8350986242294312,
+          "en_probability": 0.003028327599167824
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "ml",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.09884557873010635,
+          "en_probability": 0.20211723446846008
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.12405341863632202,
+          "en_probability": 0.1958400160074234
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.03616440296173096,
+          "en_probability": 0.06516791135072708
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.039443373680114746,
+          "en_probability": 0.0457407608628273
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.004173616413027048,
+          "en_probability": 0.0032711015082895756
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0027044909074902534,
+          "en_probability": 0.0016785009065642953
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.03616102784872055,
+          "en_probability": 0.24219055473804474
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.05972806364297867,
+          "en_probability": 0.41038501262664795
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0657678171992302,
+          "en_probability": 0.025428639724850655
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.03488744795322418,
+          "en_probability": 0.008844724856317043
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.002066519111394882,
+          "en_probability": 0.000517745444085449
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.006190777290612459,
+          "en_probability": 0.0008479872485622764
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.14754855632781982,
+          "en_probability": 0.11609948426485062
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.16371071338653564,
+          "en_probability": 0.12863251566886902
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.38167721033096313,
+          "en_probability": 0.03595961257815361
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.40490224957466125,
+          "en_probability": 0.018908565863966942
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.4354018568992615,
+          "en_probability": 0.018919289112091064
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.6790263056755066,
+          "en_probability": 0.00847894512116909
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.14031104743480682,
+          "en_probability": 0.24940162897109985
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.2021915763616562,
+          "en_probability": 0.3723549544811249
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.31642380356788635,
+          "en_probability": 0.2378801554441452
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "en",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.22970548272132874,
+          "en_probability": 0.2910133898258209
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.15519355237483978,
+          "en_probability": 0.022130809724330902
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.1193813905119896,
+          "en_probability": 0.020938491448760033
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.12133241444826126,
+          "en_probability": 0.25666287541389465
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.04213039577007294,
+          "en_probability": 0.23038321733474731
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.1360883265733719,
+          "en_probability": 0.05327212065458298
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.11997684836387634,
+          "en_probability": 0.03382663056254387
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.01754603534936905,
+          "en_probability": 0.016758758574724197
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.021240204572677612,
+          "en_probability": 0.008626456372439861
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.1322079747915268,
+          "en_probability": 0.4038933217525482
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.10078965127468109,
+          "en_probability": 0.2518445551395416
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.2862207889556885,
+          "en_probability": 0.004346692003309727
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.06812109798192978,
+          "en_probability": 0.000938328099437058
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.20084093511104584,
+          "en_probability": 0.011160324327647686
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.11086108535528183,
+          "en_probability": 0.004098018631339073
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.009419613517820835,
+          "en_probability": 0.08821242302656174
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.021129772067070007,
+          "en_probability": 0.13814710080623627
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.002638539532199502,
+          "en_probability": 0.03769104182720184
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.002872590906918049,
+          "en_probability": 0.042744312435388565
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0007723917369730771,
+          "en_probability": 0.01017766259610653
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0008534322259947658,
+          "en_probability": 0.010019823908805847
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.008518832735717297,
+          "en_probability": 0.06758546084165573
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.013232346624135971,
+          "en_probability": 0.06502848863601685
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0032092256005853415,
+          "en_probability": 0.01902427151799202
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.004240863956511021,
+          "en_probability": 0.02578202821314335
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.00013243187277112156,
+          "en_probability": 0.0019851212855428457
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.00020995647355448455,
+          "en_probability": 0.0016179040540009737
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.044335491955280304,
+          "en_probability": 0.18828456103801727
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.06604963541030884,
+          "en_probability": 0.21147172152996063
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.005145610310137272,
+          "en_probability": 0.04236522316932678
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.00753612257540226,
+          "en_probability": 0.058433499187231064
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.00012691716256085783,
+          "en_probability": 0.0004010352131444961
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.00019210155005566776,
+          "en_probability": 0.0005251957336440682
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.09691938757896423,
+          "en_probability": 0.40777587890625
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.13142013549804688,
+          "en_probability": 0.4850825369358063
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.04980211332440376,
+          "en_probability": 0.07642395794391632
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.046876631677150726,
+          "en_probability": 0.06996584683656693
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.020757844671607018,
+          "en_probability": 0.012541878037154675
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.03546919301152229,
+          "en_probability": 0.019670503214001656
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.07663613557815552,
+          "en_probability": 0.18370488286018372
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.18879137933254242,
+          "en_probability": 0.08875950425863266
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.038937073200941086,
+          "en_probability": 0.2190372347831726
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0393357127904892,
+          "en_probability": 0.1532565802335739
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.03794429823756218,
+          "en_probability": 0.09246410429477692
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.04089384898543358,
+          "en_probability": 0.03857731819152832
+        },
+        {
+          "id": "te_heldout_12",
+          "expected": "te",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.09175541996955872,
+          "en_probability": 0.22566288709640503
         },
         {
           "id": "te_heldout_12",
           "expected": "te",
           "predicted": "hi",
-          "window_seconds": 4,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.6473858952522278,
-          "en_probability": 0.019841449335217476
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.3536287844181061,
+          "en_probability": 0.2415352612733841
         },
         {
           "id": "te_heldout_12",
           "expected": "te",
-          "predicted": "hi",
+          "predicted": "te",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.030111627653241158,
+          "en_probability": 0.08159321546554565
+        },
+        {
+          "id": "te_heldout_12",
+          "expected": "te",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.09727873653173447,
+          "en_probability": 0.09336148947477341
+        },
+        {
+          "id": "te_heldout_12",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.061318300664424896,
+          "en_probability": 0.028905991464853287
+        },
+        {
+          "id": "te_heldout_12",
+          "expected": "te",
+          "predicted": "te",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.6023687124252319,
-          "en_probability": 0.008041073568165302
+          "hi_probability": 0.07955892384052277,
+          "en_probability": 0.016683900728821754
         },
         {
           "id": "gu_heldout_10",
           "expected": "gu",
-          "predicted": "hi",
+          "predicted": "ms",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.5028956532478333,
-          "en_probability": 0.15823180973529816
+          "hi_probability": 0.05423688516020775,
+          "en_probability": 0.1688978672027588
         },
         {
           "id": "gu_heldout_10",
@@ -2490,62 +2500,62 @@
           "predicted": "hi",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.6146937608718872,
-          "en_probability": 0.09148761630058289
+          "hi_probability": 0.33869388699531555,
+          "en_probability": 0.20894601941108704
+        },
+        {
+          "id": "gu_heldout_10",
+          "expected": "gu",
+          "predicted": "sa",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.10157749056816101,
+          "en_probability": 0.09888087958097458
         },
         {
           "id": "gu_heldout_10",
           "expected": "gu",
           "predicted": "hi",
           "window_seconds": 2,
-          "bandwidth": "clean_16khz",
-          "hi_probability": 0.5133110284805298,
-          "en_probability": 0.1470193713903427
-        },
-        {
-          "id": "gu_heldout_10",
-          "expected": "gu",
-          "predicted": "hi",
-          "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.7636097073554993,
-          "en_probability": 0.01883169263601303
+          "hi_probability": 0.26466599106788635,
+          "en_probability": 0.07140201330184937
         },
         {
           "id": "gu_heldout_10",
           "expected": "gu",
-          "predicted": "hi",
+          "predicted": "gu",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.467365562915802,
-          "en_probability": 0.023615768179297447
+          "hi_probability": 0.10529881715774536,
+          "en_probability": 0.030343472957611084
         },
         {
           "id": "gu_heldout_10",
           "expected": "gu",
-          "predicted": "hi",
+          "predicted": "gu",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.6050806641578674,
-          "en_probability": 0.008699643425643444
+          "hi_probability": 0.07624071091413498,
+          "en_probability": 0.031176742166280746
         },
         {
           "id": "gu_heldout_11",
           "expected": "gu",
-          "predicted": "ne",
+          "predicted": "pt",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.2012457549571991,
-          "en_probability": 0.16857101023197174
+          "hi_probability": 0.04091376066207886,
+          "en_probability": 0.15437482297420502
         },
         {
           "id": "gu_heldout_11",
           "expected": "gu",
-          "predicted": "hi",
+          "predicted": "pt",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.28368687629699707,
-          "en_probability": 0.17118944227695465
+          "hi_probability": 0.010424968786537647,
+          "en_probability": 0.07917722314596176
         },
         {
           "id": "gu_heldout_11",
@@ -2553,8 +2563,8 @@
           "predicted": "gu",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.12988846004009247,
-          "en_probability": 0.020245611667633057
+          "hi_probability": 0.06150820478796959,
+          "en_probability": 0.008335264399647713
         },
         {
           "id": "gu_heldout_11",
@@ -2562,8 +2572,8 @@
           "predicted": "gu",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.07041024416685104,
-          "en_probability": 0.009441481903195381
+          "hi_probability": 0.10955221205949783,
+          "en_probability": 0.0067704059183597565
         },
         {
           "id": "gu_heldout_11",
@@ -2571,8 +2581,8 @@
           "predicted": "gu",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.020077470690011978,
-          "en_probability": 0.0003832054790109396
+          "hi_probability": 0.028561344370245934,
+          "en_probability": 0.0019368145149201155
         },
         {
           "id": "gu_heldout_11",
@@ -2580,8 +2590,8 @@
           "predicted": "gu",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.010121559724211693,
-          "en_probability": 0.00011407585407141596
+          "hi_probability": 0.02023972198367119,
+          "en_probability": 0.001245354302227497
         },
         {
           "id": "gu_heldout_12",
@@ -2589,8 +2599,8 @@
           "predicted": "hi",
           "window_seconds": 1,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.4969000518321991,
-          "en_probability": 0.23783797025680542
+          "hi_probability": 0.3738780617713928,
+          "en_probability": 0.21020714938640594
         },
         {
           "id": "gu_heldout_12",
@@ -2598,8 +2608,8 @@
           "predicted": "hi",
           "window_seconds": 1,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.5448052287101746,
-          "en_probability": 0.0843399316072464
+          "hi_probability": 0.5341760516166687,
+          "en_probability": 0.15282770991325378
         },
         {
           "id": "gu_heldout_12",
@@ -2607,8 +2617,8 @@
           "predicted": "hi",
           "window_seconds": 2,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.6716369390487671,
-          "en_probability": 0.20207242667675018
+          "hi_probability": 0.47045204043388367,
+          "en_probability": 0.2945373058319092
         },
         {
           "id": "gu_heldout_12",
@@ -2616,8 +2626,8 @@
           "predicted": "hi",
           "window_seconds": 2,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.851131021976471,
-          "en_probability": 0.05456308275461197
+          "hi_probability": 0.780867338180542,
+          "en_probability": 0.06463755667209625
         },
         {
           "id": "gu_heldout_12",
@@ -2625,8 +2635,8 @@
           "predicted": "hi",
           "window_seconds": 4,
           "bandwidth": "clean_16khz",
-          "hi_probability": 0.7091422080993652,
-          "en_probability": 0.023838650435209274
+          "hi_probability": 0.4983225166797638,
+          "en_probability": 0.09327445924282074
         },
         {
           "id": "gu_heldout_12",
@@ -2634,8 +2644,8 @@
           "predicted": "hi",
           "window_seconds": 4,
           "bandwidth": "roundtrip_8khz",
-          "hi_probability": 0.6504536271095276,
-          "en_probability": 0.00309521215967834
+          "hi_probability": 0.7113813161849976,
+          "en_probability": 0.0453449971973896
         }
       ],
       "switch_predictions": [
@@ -2643,238 +2653,1681 @@
           "anchor_frame": 0,
           "anchor_seconds": 0.025,
           "predicted": "en",
-          "hi_probability": 0.13246801495552063,
-          "en_probability": 0.3754708170890808
+          "hi_probability": 0.027800578624010086,
+          "en_probability": 0.4978777766227722
         },
         {
           "anchor_frame": 25,
           "anchor_seconds": 0.275,
           "predicted": "hi",
-          "hi_probability": 0.24964642524719238,
-          "en_probability": 0.2019881010055542
+          "hi_probability": 0.5338471531867981,
+          "en_probability": 0.1153794527053833
         },
         {
           "anchor_frame": 50,
           "anchor_seconds": 0.525,
           "predicted": "hi",
-          "hi_probability": 0.37587490677833557,
-          "en_probability": 0.1616719663143158
+          "hi_probability": 0.7472469210624695,
+          "en_probability": 0.1399124413728714
         },
         {
           "anchor_frame": 75,
           "anchor_seconds": 0.775,
           "predicted": "hi",
-          "hi_probability": 0.6195213198661804,
-          "en_probability": 0.09238974004983902
+          "hi_probability": 0.4064817726612091,
+          "en_probability": 0.28345948457717896
         },
         {
           "anchor_frame": 100,
           "anchor_seconds": 1.025,
           "predicted": "hi",
-          "hi_probability": 0.5177630186080933,
-          "en_probability": 0.09558235108852386
+          "hi_probability": 0.3311040699481964,
+          "en_probability": 0.32438361644744873
         },
         {
           "anchor_frame": 125,
           "anchor_seconds": 1.275,
           "predicted": "hi",
-          "hi_probability": 0.8965463042259216,
-          "en_probability": 0.026296809315681458
+          "hi_probability": 0.7108334898948669,
+          "en_probability": 0.18390193581581116
         },
         {
           "anchor_frame": 150,
           "anchor_seconds": 1.525,
           "predicted": "hi",
-          "hi_probability": 0.9568648338317871,
-          "en_probability": 0.005418348591774702
+          "hi_probability": 0.7331953048706055,
+          "en_probability": 0.14092674851417542
         },
         {
           "anchor_frame": 175,
           "anchor_seconds": 1.775,
           "predicted": "hi",
-          "hi_probability": 0.9529532194137573,
-          "en_probability": 0.004395982716232538
+          "hi_probability": 0.7813493013381958,
+          "en_probability": 0.10818056762218475
         },
         {
           "anchor_frame": 200,
           "anchor_seconds": 2.025,
           "predicted": "hi",
-          "hi_probability": 0.946818470954895,
-          "en_probability": 0.01856984943151474
+          "hi_probability": 0.6855743527412415,
+          "en_probability": 0.23122042417526245
         },
         {
           "anchor_frame": 225,
           "anchor_seconds": 2.275,
           "predicted": "hi",
-          "hi_probability": 0.923458456993103,
-          "en_probability": 0.020578740164637566
+          "hi_probability": 0.7578043937683105,
+          "en_probability": 0.17300808429718018
         },
         {
           "anchor_frame": 250,
           "anchor_seconds": 2.525,
           "predicted": "hi",
-          "hi_probability": 0.8990514874458313,
-          "en_probability": 0.020115677267313004
+          "hi_probability": 0.646041750907898,
+          "en_probability": 0.1896468698978424
         },
         {
           "anchor_frame": 275,
           "anchor_seconds": 2.775,
           "predicted": "hi",
-          "hi_probability": 0.7084991335868835,
-          "en_probability": 0.06242374703288078
+          "hi_probability": 0.5739356875419617,
+          "en_probability": 0.12173223495483398
         },
         {
           "anchor_frame": 300,
           "anchor_seconds": 3.025,
           "predicted": "hi",
-          "hi_probability": 0.6278383731842041,
-          "en_probability": 0.08830543607473373
+          "hi_probability": 0.4959561228752136,
+          "en_probability": 0.020902546122670174
         },
         {
           "anchor_frame": 325,
           "anchor_seconds": 3.275,
-          "predicted": "hi",
-          "hi_probability": 0.8685935139656067,
-          "en_probability": 0.01632782258093357
+          "predicted": "ur",
+          "hi_probability": 0.37716493010520935,
+          "en_probability": 0.020850280299782753
         },
         {
           "anchor_frame": 350,
           "anchor_seconds": 3.525,
           "predicted": "hi",
-          "hi_probability": 0.7081981301307678,
-          "en_probability": 0.008243282325565815
+          "hi_probability": 0.5957412123680115,
+          "en_probability": 0.03015914000570774
         },
         {
           "anchor_frame": 375,
           "anchor_seconds": 3.775,
           "predicted": "hi",
-          "hi_probability": 0.8701265454292297,
-          "en_probability": 0.013540075160562992
+          "hi_probability": 0.5494704842567444,
+          "en_probability": 0.02369086444377899
         },
         {
           "anchor_frame": 400,
           "anchor_seconds": 4.025,
           "predicted": "hi",
-          "hi_probability": 0.9461832642555237,
-          "en_probability": 0.005335432942956686
+          "hi_probability": 0.7881643176078796,
+          "en_probability": 0.1371597945690155
         },
         {
           "anchor_frame": 425,
           "anchor_seconds": 4.275,
           "predicted": "hi",
-          "hi_probability": 0.8533390760421753,
-          "en_probability": 0.03863614425063133
+          "hi_probability": 0.4539516568183899,
+          "en_probability": 0.28809279203414917
         },
         {
           "anchor_frame": 450,
           "anchor_seconds": 4.525,
           "predicted": "hi",
-          "hi_probability": 0.7006584405899048,
-          "en_probability": 0.17437174916267395
+          "hi_probability": 0.5284751653671265,
+          "en_probability": 0.3502521216869354
         },
         {
           "anchor_frame": 475,
           "anchor_seconds": 4.775,
           "predicted": "hi",
-          "hi_probability": 0.9095342755317688,
-          "en_probability": 0.0517219640314579
+          "hi_probability": 0.6234464645385742,
+          "en_probability": 0.28704407811164856
         },
         {
           "anchor_frame": 500,
           "anchor_seconds": 5.025,
-          "predicted": "hi",
-          "hi_probability": 0.8824177384376526,
-          "en_probability": 0.07484322786331177
+          "predicted": "en",
+          "hi_probability": 0.33536872267723083,
+          "en_probability": 0.5552831888198853
         },
         {
           "anchor_frame": 525,
           "anchor_seconds": 5.275,
-          "predicted": "hi",
-          "hi_probability": 0.7719736099243164,
-          "en_probability": 0.19552010297775269
+          "predicted": "en",
+          "hi_probability": 0.13449262082576752,
+          "en_probability": 0.8063771724700928
         },
         {
           "anchor_frame": 550,
           "anchor_seconds": 5.525,
           "predicted": "en",
-          "hi_probability": 0.103271484375,
-          "en_probability": 0.8321987390518188
+          "hi_probability": 0.0046158465556800365,
+          "en_probability": 0.9683423042297363
         },
         {
           "anchor_frame": 575,
           "anchor_seconds": 5.775,
           "predicted": "en",
-          "hi_probability": 0.12797127664089203,
-          "en_probability": 0.818927526473999
+          "hi_probability": 0.0009832369396463037,
+          "en_probability": 0.9886770248413086
         },
         {
           "anchor_frame": 600,
           "anchor_seconds": 6.025,
           "predicted": "en",
-          "hi_probability": 0.11344178766012192,
-          "en_probability": 0.8193680047988892
+          "hi_probability": 0.005128977354615927,
+          "en_probability": 0.936312198638916
         },
         {
           "anchor_frame": 625,
           "anchor_seconds": 6.275,
           "predicted": "en",
-          "hi_probability": 0.11624319851398468,
-          "en_probability": 0.8279974460601807
+          "hi_probability": 0.0013596229255199432,
+          "en_probability": 0.961012065410614
         },
         {
           "anchor_frame": 650,
           "anchor_seconds": 6.525,
           "predicted": "en",
-          "hi_probability": 0.09604582190513611,
-          "en_probability": 0.8361465930938721
+          "hi_probability": 0.0034570652060210705,
+          "en_probability": 0.964887797832489
         },
         {
           "anchor_frame": 675,
           "anchor_seconds": 6.775,
           "predicted": "en",
-          "hi_probability": 0.04206160828471184,
-          "en_probability": 0.928570568561554
+          "hi_probability": 0.0022143488749861717,
+          "en_probability": 0.9838505387306213
         },
         {
           "anchor_frame": 700,
           "anchor_seconds": 7.025,
           "predicted": "en",
-          "hi_probability": 0.05829687416553497,
-          "en_probability": 0.9151679873466492
+          "hi_probability": 0.004024236463010311,
+          "en_probability": 0.9807788133621216
         },
         {
           "anchor_frame": 725,
           "anchor_seconds": 7.275,
           "predicted": "en",
-          "hi_probability": 0.02095993608236313,
-          "en_probability": 0.9658876657485962
+          "hi_probability": 0.002149352105334401,
+          "en_probability": 0.9832135438919067
         },
         {
           "anchor_frame": 750,
           "anchor_seconds": 7.525,
           "predicted": "en",
-          "hi_probability": 0.023217156529426575,
-          "en_probability": 0.9599233865737915
+          "hi_probability": 0.009059751406311989,
+          "en_probability": 0.9593904614448547
         },
         {
           "anchor_frame": 775,
           "anchor_seconds": 7.775,
           "predicted": "en",
-          "hi_probability": 0.009461131878197193,
-          "en_probability": 0.9851230978965759
+          "hi_probability": 0.0014710086397826672,
+          "en_probability": 0.9910885095596313
         },
         {
           "anchor_frame": 797,
           "anchor_seconds": 7.995,
           "predicted": "en",
-          "hi_probability": 0.005326309707015753,
-          "en_probability": 0.9786601662635803
+          "hi_probability": 0.0008856391650624573,
+          "en_probability": 0.9896348118782043
+        }
+      ]
+    },
+    "mms-lid-126": {
+      "model_id": "facebook/mms-lid-126",
+      "revision": "53da6e311f3ce48f324fe335924216187e3109a4",
+      "parameter_count": 966089470,
+      "load_validation": {
+        "transformers_legacy_weight_norm_warning": true,
+        "weight_g_exactly_matches_checkpoint": true,
+        "weight_v_exactly_matches_checkpoint": true
+      },
+      "accuracy": {
+        "clean_16khz": {
+          "1": {
+            "correct": 13,
+            "total": 21,
+            "accuracy": 0.6190476190476191
+          },
+          "2": {
+            "correct": 20,
+            "total": 21,
+            "accuracy": 0.9523809523809523
+          },
+          "4": {
+            "correct": 21,
+            "total": 21,
+            "accuracy": 1.0
+          }
+        },
+        "roundtrip_8khz": {
+          "1": {
+            "correct": 16,
+            "total": 21,
+            "accuracy": 0.7619047619047619
+          },
+          "2": {
+            "correct": 19,
+            "total": 21,
+            "accuracy": 0.9047619047619048
+          },
+          "4": {
+            "correct": 21,
+            "total": 21,
+            "accuracy": 1.0
+          }
+        }
+      },
+      "switch": {
+        "true_switch_seconds": 4.0,
+        "persistence_anchors": 3,
+        "anchor_hop_ms": 250.0,
+        "first_persistent_target_seconds": 6.025,
+        "first_persistent_target_lag_ms": 2025.0000000000005,
+        "confirmed_target_seconds": 6.525,
+        "confirmed_target_lag_ms": 2525.0000000000005,
+        "right_context_ms": 250,
+        "first_persistent_target_available_seconds": 6.275,
+        "availability_adjusted_lag_ms": 2275.0000000000005,
+        "anchor_label_accuracy": 0.5151515151515151,
+        "anchor_correct": 17,
+        "anchor_total": 33
+      },
+      "timing": {
+        "load_wall_seconds": 17.535155037999175,
+        "batch_size": 4,
+        "timed_batches": 42,
+        "timed_requests": 159,
+        "timed_audio_seconds": 360.0,
+        "wall_seconds": 81.06524741400062,
+        "process_cpu_seconds": 485.330039,
+        "wall_rtf": 0.2251812428166684,
+        "mean_wall_ms_per_request": 509.8443233584945,
+        "includes_preprocessing": true,
+        "includes_model_load": false
+      },
+      "heldout_predictions": [
+        {
+          "id": "en_heldout_10",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.01183940377086401,
+          "en_probability": 0.5789600014686584
+        },
+        {
+          "id": "en_heldout_10",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.06423062831163406,
+          "en_probability": 0.5249635577201843
+        },
+        {
+          "id": "en_heldout_10",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 8.772665751166642e-05,
+          "en_probability": 0.99093097448349
+        },
+        {
+          "id": "en_heldout_10",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 9.247295383829623e-05,
+          "en_probability": 0.9913495779037476
+        },
+        {
+          "id": "en_heldout_10",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.013529250398278236,
+          "en_probability": 0.8169958591461182
+        },
+        {
+          "id": "en_heldout_10",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0047333817929029465,
+          "en_probability": 0.9310348033905029
+        },
+        {
+          "id": "en_heldout_11",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0004759233561344445,
+          "en_probability": 0.9304701685905457
+        },
+        {
+          "id": "en_heldout_11",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0012466381303966045,
+          "en_probability": 0.7429368495941162
+        },
+        {
+          "id": "en_heldout_11",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.004543103277683258,
+          "en_probability": 0.6409457921981812
+        },
+        {
+          "id": "en_heldout_11",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0008673245902173221,
+          "en_probability": 0.3199736475944519
+        },
+        {
+          "id": "en_heldout_11",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.007396669592708349,
+          "en_probability": 0.7453595399856567
+        },
+        {
+          "id": "en_heldout_11",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0030544039327651262,
+          "en_probability": 0.5566999316215515
+        },
+        {
+          "id": "en_heldout_12",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0012139608152210712,
+          "en_probability": 0.6321972012519836
+        },
+        {
+          "id": "en_heldout_12",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.000891169358510524,
+          "en_probability": 0.8474404811859131
+        },
+        {
+          "id": "en_heldout_12",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.010018461383879185,
+          "en_probability": 0.5549548268318176
+        },
+        {
+          "id": "en_heldout_12",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.010973933152854443,
+          "en_probability": 0.4399818778038025
+        },
+        {
+          "id": "en_heldout_12",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0027034215163439512,
+          "en_probability": 0.8305861949920654
+        },
+        {
+          "id": "en_heldout_12",
+          "expected": "en",
+          "predicted": "en",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.00741761876270175,
+          "en_probability": 0.7832262516021729
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.99297696352005,
+          "en_probability": 1.5197457287285943e-05
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.7895370125770569,
+          "en_probability": 4.3368512706365436e-05
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.9958933591842651,
+          "en_probability": 8.0683084888733e-06
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.9747133255004883,
+          "en_probability": 1.1865222404594533e-05
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.9993842840194702,
+          "en_probability": 9.355539077660069e-06
+        },
+        {
+          "id": "hi_heldout_10",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.9982683658599854,
+          "en_probability": 7.326797458517831e-06
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "sin",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.15094590187072754,
+          "en_probability": 0.0004988323780708015
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.411604642868042,
+          "en_probability": 0.0001239212288055569
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.9730375409126282,
+          "en_probability": 9.353321729577146e-06
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.9220443367958069,
+          "en_probability": 5.663685897161486e-06
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.9980494976043701,
+          "en_probability": 4.652818915928947e-06
+        },
+        {
+          "id": "hi_heldout_11",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.9899019002914429,
+          "en_probability": 5.335403329809196e-06
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.9757422208786011,
+          "en_probability": 0.00014041589747648686
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.5297725796699524,
+          "en_probability": 0.00031701268744654953
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.9967323541641235,
+          "en_probability": 2.3563103241031058e-05
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.9363316297531128,
+          "en_probability": 7.074113091221079e-05
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.9997770190238953,
+          "en_probability": 6.173457222757861e-06
+        },
+        {
+          "id": "hi_heldout_12",
+          "expected": "hi",
+          "predicted": "hi",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.9990992546081543,
+          "en_probability": 7.377338533842703e-06
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 2.7461010176921263e-05,
+          "en_probability": 2.9413959055091254e-06
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 1.893112676043529e-05,
+          "en_probability": 2.0933146060997387e-06
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 8.766651262703817e-06,
+          "en_probability": 4.7303294081757485e-07
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 1.2080810847692192e-05,
+          "en_probability": 6.967232479837548e-07
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 1.0714072232076433e-05,
+          "en_probability": 5.409116852206353e-07
+        },
+        {
+          "id": "mr_heldout_10",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 1.619287286303006e-05,
+          "en_probability": 5.746189799538115e-07
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0024298836942762136,
+          "en_probability": 2.406726525805425e-05
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.002648027613759041,
+          "en_probability": 1.5434905435540713e-05
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.00022665905999019742,
+          "en_probability": 1.407565468980465e-05
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.00016283795412164181,
+          "en_probability": 5.631810381601099e-06
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 2.4444372684229165e-05,
+          "en_probability": 1.1454120567577775e-06
+        },
+        {
+          "id": "mr_heldout_11",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 5.0254009693162516e-05,
+          "en_probability": 1.6192548173421528e-06
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.001310813589952886,
+          "en_probability": 3.33729840349406e-05
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0012061450397595763,
+          "en_probability": 3.26838344335556e-05
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0008235664572566748,
+          "en_probability": 7.916460162959993e-06
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0004391456313896924,
+          "en_probability": 4.965088919561822e-06
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 3.695253690239042e-05,
+          "en_probability": 7.060478992571007e-07
+        },
+        {
+          "id": "mr_heldout_12",
+          "expected": "mr",
+          "predicted": "mr",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 4.960854857927188e-05,
+          "en_probability": 7.647226425433473e-07
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "gu",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.001305909943766892,
+          "en_probability": 0.00045626642531715333
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0010910267010331154,
+          "en_probability": 0.0001911790604935959
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.00016752166266087443,
+          "en_probability": 5.166539722267771e-06
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "gu",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0015123842749744654,
+          "en_probability": 9.708628931548446e-05
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 1.1854834156110883e-05,
+          "en_probability": 1.9222541425278905e-07
+        },
+        {
+          "id": "bn_heldout_10",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 4.893639197689481e-05,
+          "en_probability": 4.46031322098861e-07
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "npi",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.007587269879877567,
+          "en_probability": 3.225355249014683e-05
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "npi",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.00683549651876092,
+          "en_probability": 4.2987277993233874e-05
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 1.5092104149516672e-05,
+          "en_probability": 5.462310923576297e-07
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.00011599362187553197,
+          "en_probability": 2.5930901301762788e-06
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 4.6674795157741755e-06,
+          "en_probability": 1.7551647601976583e-07
+        },
+        {
+          "id": "bn_heldout_11",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 5.880594017071417e-06,
+          "en_probability": 2.0671913603109715e-07
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.005713344551622868,
+          "en_probability": 0.0003412519581615925
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "gu",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.00796501711010933,
+          "en_probability": 0.0003101830661762506
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 1.3601465980173089e-05,
+          "en_probability": 6.503591407636122e-07
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 2.1665648091584444e-05,
+          "en_probability": 6.190396106831031e-07
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 3.6769010876014363e-06,
+          "en_probability": 1.4535534376136638e-07
+        },
+        {
+          "id": "bn_heldout_12",
+          "expected": "bn",
+          "predicted": "bn",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 4.913743396173231e-06,
+          "en_probability": 1.6011215109301702e-07
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 2.9651591830770485e-06,
+          "en_probability": 3.352333442308009e-05
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 4.244989213475492e-06,
+          "en_probability": 2.943373692687601e-05
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 6.535153715958586e-07,
+          "en_probability": 1.007944592856802e-05
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 8.431515539086831e-07,
+          "en_probability": 8.804662684269715e-06
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 3.738487635018828e-07,
+          "en_probability": 7.395682587230112e-06
+        },
+        {
+          "id": "ta_heldout_10",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 4.4533740606311767e-07,
+          "en_probability": 5.8070127124665305e-06
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 4.9335059884469956e-05,
+          "en_probability": 9.907874482451007e-05
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0003269469307269901,
+          "en_probability": 0.00012813137436751276
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 1.6387838286391343e-06,
+          "en_probability": 1.531649468233809e-05
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 2.780732756946236e-06,
+          "en_probability": 1.3362125173443928e-05
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 5.752617653342895e-07,
+          "en_probability": 7.5558309617917985e-06
+        },
+        {
+          "id": "ta_heldout_11",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 7.089155928952096e-07,
+          "en_probability": 6.385731012414908e-06
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 4.678423010773258e-06,
+          "en_probability": 5.3718580602435395e-05
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 5.680169579136418e-06,
+          "en_probability": 2.966521969938185e-05
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 2.1413970898720436e-06,
+          "en_probability": 1.2581513146869838e-05
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 4.0871609598980285e-06,
+          "en_probability": 1.5435321984114125e-05
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 6.376930627993715e-07,
+          "en_probability": 7.635198016942013e-06
+        },
+        {
+          "id": "ta_heldout_12",
+          "expected": "ta",
+          "predicted": "ta",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 8.50151252507203e-07,
+          "en_probability": 8.494312169204932e-06
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "kan",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0029372142162173986,
+          "en_probability": 2.8909624234074727e-05
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "kan",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.002348056761547923,
+          "en_probability": 3.1278621463570744e-05
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0001466649555368349,
+          "en_probability": 3.174030644004233e-05
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.00029309498495422304,
+          "en_probability": 2.888809649448376e-05
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 4.202754837479006e-07,
+          "en_probability": 3.010705711403716e-07
+        },
+        {
+          "id": "te_heldout_10",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 5.160778187018877e-07,
+          "en_probability": 2.7652225753627135e-07
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "gu",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.008679118007421494,
+          "en_probability": 0.0005040156538598239
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0021971408277750015,
+          "en_probability": 0.00030874263029545546
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "gu",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.00883815810084343,
+          "en_probability": 0.0002667840162757784
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "gu",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.006916806101799011,
+          "en_probability": 0.00015127213555388153
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 3.846359686576761e-05,
+          "en_probability": 7.39558890927583e-06
+        },
+        {
+          "id": "te_heldout_11",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 3.434142854530364e-05,
+          "en_probability": 6.227673111425247e-06
+        },
+        {
+          "id": "te_heldout_12",
+          "expected": "te",
+          "predicted": "san",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.034491222351789474,
+          "en_probability": 0.0004086263943463564
+        },
+        {
+          "id": "te_heldout_12",
+          "expected": "te",
+          "predicted": "san",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.060014694929122925,
+          "en_probability": 0.000431804422987625
+        },
+        {
+          "id": "te_heldout_12",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0022860162425786257,
+          "en_probability": 6.754155765520409e-05
+        },
+        {
+          "id": "te_heldout_12",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.011421822011470795,
+          "en_probability": 0.00020597832917701453
+        },
+        {
+          "id": "te_heldout_12",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 2.2590534172195476e-06,
+          "en_probability": 6.327251753646124e-07
+        },
+        {
+          "id": "te_heldout_12",
+          "expected": "te",
+          "predicted": "te",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 3.4983354453288484e-06,
+          "en_probability": 7.340704542002641e-07
+        },
+        {
+          "id": "gu_heldout_10",
+          "expected": "gu",
+          "predicted": "zlm",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0076169162057340145,
+          "en_probability": 0.0006188256666064262
+        },
+        {
+          "id": "gu_heldout_10",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.011013084091246128,
+          "en_probability": 0.0002626336645334959
+        },
+        {
+          "id": "gu_heldout_10",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.001057376037351787,
+          "en_probability": 7.31971795175923e-06
+        },
+        {
+          "id": "gu_heldout_10",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0006388369365595281,
+          "en_probability": 9.11774350242922e-06
+        },
+        {
+          "id": "gu_heldout_10",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 5.4588585953752045e-06,
+          "en_probability": 2.2951714981900295e-06
+        },
+        {
+          "id": "gu_heldout_10",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 7.498415016016224e-06,
+          "en_probability": 1.8837273501048912e-06
+        },
+        {
+          "id": "gu_heldout_11",
+          "expected": "gu",
+          "predicted": "slv",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.00022949189587961882,
+          "en_probability": 0.000721528718713671
+        },
+        {
+          "id": "gu_heldout_11",
+          "expected": "gu",
+          "predicted": "slv",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 8.566420547140297e-06,
+          "en_probability": 3.6781750623049447e-06
+        },
+        {
+          "id": "gu_heldout_11",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0001555026537971571,
+          "en_probability": 5.053135282651056e-06
+        },
+        {
+          "id": "gu_heldout_11",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 9.37887016334571e-05,
+          "en_probability": 3.5191546885471325e-06
+        },
+        {
+          "id": "gu_heldout_11",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 1.1046430699934717e-05,
+          "en_probability": 1.597783693796373e-06
+        },
+        {
+          "id": "gu_heldout_11",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 1.4021662536833901e-05,
+          "en_probability": 1.6888459413166856e-06
+        },
+        {
+          "id": "gu_heldout_12",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 1,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.0026561771519482136,
+          "en_probability": 5.225887434789911e-05
+        },
+        {
+          "id": "gu_heldout_12",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 1,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0019871899858117104,
+          "en_probability": 3.129817559965886e-05
+        },
+        {
+          "id": "gu_heldout_12",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 2,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 0.000634640222415328,
+          "en_probability": 8.263981726486236e-06
+        },
+        {
+          "id": "gu_heldout_12",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 2,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.0011494766222313046,
+          "en_probability": 7.82152983447304e-06
+        },
+        {
+          "id": "gu_heldout_12",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 4,
+          "bandwidth": "clean_16khz",
+          "hi_probability": 2.806800875987392e-05,
+          "en_probability": 2.6518723643675912e-06
+        },
+        {
+          "id": "gu_heldout_12",
+          "expected": "gu",
+          "predicted": "gu",
+          "window_seconds": 4,
+          "bandwidth": "roundtrip_8khz",
+          "hi_probability": 0.00011998334230156615,
+          "en_probability": 3.7663144212274347e-06
+        }
+      ],
+      "switch_predictions": [
+        {
+          "anchor_frame": 0,
+          "anchor_seconds": 0.025,
+          "predicted": "fas",
+          "hi_probability": 0.013339292258024216,
+          "en_probability": 0.011700225062668324
+        },
+        {
+          "anchor_frame": 25,
+          "anchor_seconds": 0.275,
+          "predicted": "hye",
+          "hi_probability": 0.012315395288169384,
+          "en_probability": 0.002940697595477104
+        },
+        {
+          "anchor_frame": 50,
+          "anchor_seconds": 0.525,
+          "predicted": "sin",
+          "hi_probability": 0.14186584949493408,
+          "en_probability": 0.0014426634879782796
+        },
+        {
+          "anchor_frame": 75,
+          "anchor_seconds": 0.775,
+          "predicted": "gu",
+          "hi_probability": 0.23126675188541412,
+          "en_probability": 0.000989342457614839
+        },
+        {
+          "anchor_frame": 100,
+          "anchor_seconds": 1.025,
+          "predicted": "hi",
+          "hi_probability": 0.6606972217559814,
+          "en_probability": 0.001056746463291347
+        },
+        {
+          "anchor_frame": 125,
+          "anchor_seconds": 1.275,
+          "predicted": "hi",
+          "hi_probability": 0.962833821773529,
+          "en_probability": 0.0002324530214536935
+        },
+        {
+          "anchor_frame": 150,
+          "anchor_seconds": 1.525,
+          "predicted": "hi",
+          "hi_probability": 0.9906358122825623,
+          "en_probability": 0.00010530047438805923
+        },
+        {
+          "anchor_frame": 175,
+          "anchor_seconds": 1.775,
+          "predicted": "hi",
+          "hi_probability": 0.9974741339683533,
+          "en_probability": 1.708083800622262e-05
+        },
+        {
+          "anchor_frame": 200,
+          "anchor_seconds": 2.025,
+          "predicted": "hi",
+          "hi_probability": 0.997265100479126,
+          "en_probability": 1.2341601177467965e-05
+        },
+        {
+          "anchor_frame": 225,
+          "anchor_seconds": 2.275,
+          "predicted": "hi",
+          "hi_probability": 0.9966338276863098,
+          "en_probability": 1.142221753980266e-05
+        },
+        {
+          "anchor_frame": 250,
+          "anchor_seconds": 2.525,
+          "predicted": "hi",
+          "hi_probability": 0.9907295107841492,
+          "en_probability": 2.1949697838863358e-05
+        },
+        {
+          "anchor_frame": 275,
+          "anchor_seconds": 2.775,
+          "predicted": "hi",
+          "hi_probability": 0.9968434572219849,
+          "en_probability": 8.968219844973646e-06
+        },
+        {
+          "anchor_frame": 300,
+          "anchor_seconds": 3.025,
+          "predicted": "pan",
+          "hi_probability": 0.29275456070899963,
+          "en_probability": 0.00012075118138454854
+        },
+        {
+          "anchor_frame": 325,
+          "anchor_seconds": 3.275,
+          "predicted": "pan",
+          "hi_probability": 0.010598697699606419,
+          "en_probability": 5.8447785704629496e-05
+        },
+        {
+          "anchor_frame": 350,
+          "anchor_seconds": 3.525,
+          "predicted": "pan",
+          "hi_probability": 0.08715718984603882,
+          "en_probability": 8.124012674670666e-05
+        },
+        {
+          "anchor_frame": 375,
+          "anchor_seconds": 3.775,
+          "predicted": "pan",
+          "hi_probability": 0.11498239636421204,
+          "en_probability": 5.5693551985314116e-05
+        },
+        {
+          "anchor_frame": 400,
+          "anchor_seconds": 4.025,
+          "predicted": "sco",
+          "hi_probability": 0.002674621529877186,
+          "en_probability": 9.964119090000167e-05
+        },
+        {
+          "anchor_frame": 425,
+          "anchor_seconds": 4.275,
+          "predicted": "pan",
+          "hi_probability": 0.018158964812755585,
+          "en_probability": 0.00013513882004190236
+        },
+        {
+          "anchor_frame": 450,
+          "anchor_seconds": 4.525,
+          "predicted": "pan",
+          "hi_probability": 0.03149859979748726,
+          "en_probability": 0.00035084609407931566
+        },
+        {
+          "anchor_frame": 475,
+          "anchor_seconds": 4.775,
+          "predicted": "pan",
+          "hi_probability": 0.08408164978027344,
+          "en_probability": 0.0003642897354438901
+        },
+        {
+          "anchor_frame": 500,
+          "anchor_seconds": 5.025,
+          "predicted": "hi",
+          "hi_probability": 0.790346086025238,
+          "en_probability": 0.001238322234712541
+        },
+        {
+          "anchor_frame": 525,
+          "anchor_seconds": 5.275,
+          "predicted": "hi",
+          "hi_probability": 0.748310387134552,
+          "en_probability": 0.008465126156806946
+        },
+        {
+          "anchor_frame": 550,
+          "anchor_seconds": 5.525,
+          "predicted": "sin",
+          "hi_probability": 0.10083495825529099,
+          "en_probability": 0.3483746349811554
+        },
+        {
+          "anchor_frame": 575,
+          "anchor_seconds": 5.775,
+          "predicted": "sin",
+          "hi_probability": 0.00022532210277859122,
+          "en_probability": 0.017038093879818916
+        },
+        {
+          "anchor_frame": 600,
+          "anchor_seconds": 6.025,
+          "predicted": "en",
+          "hi_probability": 3.364865551702678e-05,
+          "en_probability": 0.9928163290023804
+        },
+        {
+          "anchor_frame": 625,
+          "anchor_seconds": 6.275,
+          "predicted": "en",
+          "hi_probability": 8.757979958318174e-05,
+          "en_probability": 0.9818552732467651
+        },
+        {
+          "anchor_frame": 650,
+          "anchor_seconds": 6.525,
+          "predicted": "en",
+          "hi_probability": 0.00020324200158938766,
+          "en_probability": 0.9808881282806396
+        },
+        {
+          "anchor_frame": 675,
+          "anchor_seconds": 6.775,
+          "predicted": "en",
+          "hi_probability": 0.00016846982180140913,
+          "en_probability": 0.9886429905891418
+        },
+        {
+          "anchor_frame": 700,
+          "anchor_seconds": 7.025,
+          "predicted": "en",
+          "hi_probability": 0.00026847387198358774,
+          "en_probability": 0.9928544163703918
+        },
+        {
+          "anchor_frame": 725,
+          "anchor_seconds": 7.275,
+          "predicted": "en",
+          "hi_probability": 0.00949564203619957,
+          "en_probability": 0.9384320974349976
+        },
+        {
+          "anchor_frame": 750,
+          "anchor_seconds": 7.525,
+          "predicted": "en",
+          "hi_probability": 0.013539522886276245,
+          "en_probability": 0.9305546879768372
+        },
+        {
+          "anchor_frame": 775,
+          "anchor_seconds": 7.775,
+          "predicted": "en",
+          "hi_probability": 0.016712620854377747,
+          "en_probability": 0.9066534638404846
+        },
+        {
+          "anchor_frame": 797,
+          "anchor_seconds": 7.995,
+          "predicted": "en",
+          "hi_probability": 0.006077291909605265,
+          "en_probability": 0.9688547849655151
         }
       ]
     }
   },
   "experiment": "teacher-bakeoff",
-  "updated_utc": "2026-09-25T18:15:36.778365+00:00",
+  "updated_utc": "2026-09-25T18:36:10.694488+00:00",
   "manifest": "data/generated/manifest.jsonl",
   "heldout_ids": [
     "en_heldout_10",
@@ -2900,6 +4353,7 @@
     "gu_heldout_12"
   ],
   "switch_id": "switch_hi_en_eval",
+  "input_sha256": "7534159b4ab07f9fce2ed5028b6f4fee4b971d63129f20727b95e40af59f7ded",
   "language_codes": [
     "en",
     "hi",
