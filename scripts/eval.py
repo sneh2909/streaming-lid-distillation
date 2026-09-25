@@ -17,25 +17,15 @@ import numpy as np
 import torch
 
 from streaming_lid.audio import LogMelFrontend, load_audio
-from streaming_lid.config import (
-    ALGORITHMIC_LATENCY_MS,
-    CHUNK_FRAMES,
-    CHUNK_MS,
-    HOP_LENGTH,
-    LABEL_DELAY_FRAMES,
-    LANGUAGE_CODES,
-    MODEL_LOOKAHEAD_FRAMES,
-    SAMPLE_RATE,
-    TEACHER_NAME,
-    WIN_LENGTH,
-)
 from streaming_lid.data import (
     TeacherTargetCache,
+    file_sha256,
     read_manifest,
     require_speaker_disjoint,
     resolve_audio_path,
 )
 from streaming_lid.model import CausalLIDStudent
+from streaming_lid.run_identity import validate_evaluation_run_contract
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,25 +46,40 @@ def parse_args() -> argparse.Namespace:
 
 
 def aligned_classes(
-    student_logits: torch.Tensor, teacher_probs: torch.Tensor, length: int
+    student_logits: torch.Tensor,
+    teacher_probs: torch.Tensor,
+    length: int,
+    *,
+    delay_frames: int,
+    lookahead_frames: int,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    valid_targets = length - LABEL_DELAY_FRAMES - MODEL_LOOKAHEAD_FRAMES
+    valid_targets = length - delay_frames - lookahead_frames
     if valid_targets <= 0:
         return torch.empty(0, dtype=torch.long), torch.empty(0, dtype=torch.long)
-    student_class = student_logits[
-        LABEL_DELAY_FRAMES : LABEL_DELAY_FRAMES + valid_targets
-    ].argmax(-1)
+    student_class = student_logits[delay_frames : delay_frames + valid_targets].argmax(
+        -1
+    )
     teacher_class = teacher_probs[:valid_targets].argmax(-1)
     return student_class, teacher_class
 
 
-def chunk_availability_times(num_frames: int) -> np.ndarray:
+def chunk_availability_times(
+    num_frames: int,
+    *,
+    chunk_frames: int,
+    lookahead_frames: int,
+    hop_length: int,
+    win_length: int,
+    sample_rate: int,
+) -> np.ndarray:
     """Wall-clock audio time at which each chunk's logits become available."""
     times = np.empty(num_frames, dtype=np.float32)
-    for start in range(0, num_frames, CHUNK_FRAMES):
-        n_emit = min(CHUNK_FRAMES, num_frames - start)
-        latest_feature = start + n_emit - 1 + MODEL_LOOKAHEAD_FRAMES
-        available_seconds = (latest_feature * HOP_LENGTH + WIN_LENGTH) / SAMPLE_RATE
+    for start in range(0, num_frames, chunk_frames):
+        n_emit = min(chunk_frames, num_frames - start)
+        latest_feature = start + n_emit - 1 + lookahead_frames
+        available_seconds = (
+            latest_feature * hop_length + win_length
+        ) / sample_rate
         times[start : start + n_emit] = available_seconds
     return times
 
@@ -104,11 +109,15 @@ def smooth_posteriors(probabilities: np.ndarray, new_weight: float) -> np.ndarra
 
 
 def detect_hi_to_en_switch(
-    probabilities: np.ndarray, availability_seconds: np.ndarray
+    probabilities: np.ndarray,
+    availability_seconds: np.ndarray,
+    *,
+    language_codes: tuple[str, ...],
+    chunk_ms: float,
 ) -> tuple[float | None, dict]:
     """Chunk-rate EMA + margin + dwell, after a stable initial Hindi commit."""
-    hi = LANGUAGE_CODES.index("hi")
-    en = LANGUAGE_CODES.index("en")
+    hi = language_codes.index("hi")
+    en = language_codes.index("en")
     challenger_chunks = 0
     threshold = 0.60
     margin = 0.10
@@ -137,7 +146,7 @@ def detect_hi_to_en_switch(
                 "threshold": threshold,
                 "margin": margin,
                 "dwell_chunks": dwell_chunks,
-                "dwell_ms": dwell_chunks * CHUNK_MS,
+                "dwell_ms": dwell_chunks * chunk_ms,
                 "ema_new_weight": ema_new_weight,
                 "initial_commit_seconds": initial_commit_seconds,
             }
@@ -145,7 +154,7 @@ def detect_hi_to_en_switch(
         "threshold": threshold,
         "margin": margin,
         "dwell_chunks": dwell_chunks,
-        "dwell_ms": dwell_chunks * CHUNK_MS,
+        "dwell_ms": dwell_chunks * chunk_ms,
         "ema_new_weight": ema_new_weight,
         "initial_commit_seconds": initial_commit_seconds,
     }
@@ -156,17 +165,20 @@ def benchmark_rtf(
     frontend: LogMelFrontend,
     waveforms: list[torch.Tensor],
     repeats: int,
+    *,
+    sample_rate: int,
+    chunk_frames: int,
 ) -> tuple[float, list[float]]:
-    total_audio_seconds = sum(len(waveform) for waveform in waveforms) / SAMPLE_RATE
+    total_audio_seconds = sum(len(waveform) for waveform in waveforms) / sample_rate
     with torch.inference_mode():
         warm_features = frontend(waveforms[0])
-        model.streaming_forward(warm_features)
+        model.streaming_forward(warm_features, chunk_frames=chunk_frames)
         timings = []
         for _ in range(repeats):
             start = time.perf_counter()
             for waveform in waveforms:
                 features = frontend(waveform)
-                model.streaming_forward(features)
+                model.streaming_forward(features, chunk_frames=chunk_frames)
             timings.append(time.perf_counter() - start)
     rtfs = [elapsed / total_audio_seconds for elapsed in timings]
     return float(np.median(rtfs)), rtfs
@@ -175,20 +187,38 @@ def benchmark_rtf(
 def main() -> None:
     args = parse_args()
     torch.set_num_threads(args.threads)
+    checkpoint_sha256 = file_sha256(args.checkpoint)
     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
-    if tuple(checkpoint["languages"]) != LANGUAGE_CODES:
-        raise ValueError("checkpoint language order differs from current configuration")
+    records = read_manifest(args.manifest)
+    speaker_audit = require_speaker_disjoint(records)
+    target_cache = TeacherTargetCache(args.manifest, args.targets_dir)
+    # Evaluation is also the release gate: validate every indexed target/audio,
+    # not only the clips that happen to contribute to the headline metrics.
+    target_cache.validate_all()
+    train_metrics_path = args.results_dir / "train_metrics.json"
+    train_metrics = json.loads(train_metrics_path.read_text(encoding="utf-8"))
+    run_identity = validate_evaluation_run_contract(
+        checkpoint=checkpoint,
+        checkpoint_sha256=checkpoint_sha256,
+        train_metrics=train_metrics,
+        records=records,
+        manifest_path=args.manifest,
+        target_cache_identity=target_cache.identity,
+        target_metadata_path=target_cache.targets_dir / "metadata.json",
+    )
+    pipeline = run_identity["pipeline"]
+    language_codes = tuple(pipeline["language_codes"])
+    frontend_config = pipeline["frontend"]
+    distillation_config = pipeline["distillation"]
+    streaming_config = pipeline["streaming"]
+    label_delay_frames = int(distillation_config["label_delay_frames"])
+    lookahead_frames = int(distillation_config["model_lookahead_frames"])
+    chunk_frames = int(streaming_config["chunk_frames"])
+
     model = CausalLIDStudent(**checkpoint["model_kwargs"])
     model.load_state_dict(checkpoint["model_state"])
     model.eval()
     frontend = LogMelFrontend().eval()
-    records = read_manifest(args.manifest)
-    speaker_audit = require_speaker_disjoint(records)
-    target_cache = TeacherTargetCache(args.manifest, args.targets_dir)
-    if checkpoint.get("target_cache") != target_cache.identity:
-        raise ValueError(
-            "checkpoint target-cache identity differs from evaluation targets"
-        )
     heldout = [record for record in records if record["split"] == "heldout"]
     train_records = [record for record in records if record["split"] == "train"]
     switch_records = [record for record in records if record["split"] == "switch"]
@@ -211,7 +241,7 @@ def main() -> None:
             "student_clip_correct": 0,
             "teacher_clip_correct": 0,
         }
-        for language in LANGUAGE_CODES
+        for language in language_codes
     }
     with torch.inference_mode():
         for item in heldout:
@@ -219,7 +249,9 @@ def main() -> None:
             heldout_waveforms.append(waveform)
             features = frontend(waveform)
             full_logits = model(features).squeeze(0)
-            streamed_logits = model.streaming_forward(features).squeeze(0)
+            streamed_logits = model.streaming_forward(
+                features, chunk_frames=chunk_frames
+            ).squeeze(0)
             stable_frames = len(full_logits) - model.lookahead_frames
             torch.testing.assert_close(
                 full_logits[:stable_frames],
@@ -235,20 +267,24 @@ def main() -> None:
                 )
             )
             student_class, teacher_class = aligned_classes(
-                streamed_logits, teacher_probs, len(features[0])
+                streamed_logits,
+                teacher_probs,
+                len(features[0]),
+                delay_frames=label_delay_frames,
+                lookahead_frames=lookahead_frames,
             )
             clip_total = len(student_class)
             if clip_total == 0:
                 raise ValueError(f"held-out clip {item['id']} has no aligned frames")
-            expected_index = LANGUAGE_CODES.index(item["language"])
+            expected_index = language_codes.index(item["language"])
             clip_agreement_correct = int((student_class == teacher_class).sum())
             clip_student_label_correct = int((student_class == expected_index).sum())
             clip_teacher_label_correct = int((teacher_class == expected_index).sum())
             student_prediction_index = int(
-                torch.bincount(student_class, minlength=len(LANGUAGE_CODES)).argmax()
+                torch.bincount(student_class, minlength=len(language_codes)).argmax()
             )
             teacher_prediction_index = int(
-                torch.bincount(teacher_class, minlength=len(LANGUAGE_CODES)).argmax()
+                torch.bincount(teacher_class, minlength=len(language_codes)).argmax()
             )
             student_clip_is_correct = student_prediction_index == expected_index
             teacher_clip_is_correct = teacher_prediction_index == expected_index
@@ -278,10 +314,10 @@ def main() -> None:
                     "teacher_label_accuracy": (
                         clip_teacher_label_correct / clip_total
                     ),
-                    "student_clip_prediction": LANGUAGE_CODES[
+                    "student_clip_prediction": language_codes[
                         student_prediction_index
                     ],
-                    "teacher_clip_prediction": LANGUAGE_CODES[
+                    "teacher_clip_prediction": language_codes[
                         teacher_prediction_index
                     ],
                     "frames": clip_total,
@@ -335,21 +371,33 @@ def main() -> None:
     switch_waveform = load_audio(resolve_audio_path(switch_item, args.manifest))
     with torch.inference_mode():
         switch_features = frontend(switch_waveform)
-        switch_logits = model.streaming_forward(switch_features).squeeze(0)
+        switch_logits = model.streaming_forward(
+            switch_features, chunk_frames=chunk_frames
+        ).squeeze(0)
         switch_probabilities = torch.softmax(switch_logits, dim=-1).numpy()
     teacher_switch = target_cache.load(
         switch_item,
         "teacher_probs",
         expected_frames=len(switch_features[0]),
     )
-    availability = chunk_availability_times(len(switch_probabilities))
+    availability = chunk_availability_times(
+        len(switch_probabilities),
+        chunk_frames=chunk_frames,
+        lookahead_frames=lookahead_frames,
+        hop_length=int(frontend_config["hop_length"]),
+        win_length=int(frontend_config["win_length"]),
+        sample_rate=int(frontend_config["sample_rate"]),
+    )
     # Frames before D have no corresponding teacher target and are never trained.
     student_chunks, student_chunk_times = chunk_posteriors(
-        switch_probabilities, availability, min_frame=LABEL_DELAY_FRAMES
+        switch_probabilities, availability, min_frame=label_delay_frames
     )
     student_smoothed = smooth_posteriors(student_chunks, new_weight=0.30)
     detected_seconds, detector_config = detect_hi_to_en_switch(
-        student_chunks, student_chunk_times
+        student_chunks,
+        student_chunk_times,
+        language_codes=language_codes,
+        chunk_ms=float(streaming_config["chunk_ms"]),
     )
     true_switch_seconds = float(switch_item["segments"][0]["end_seconds"])
     switch_lag_ms = (
@@ -360,10 +408,11 @@ def main() -> None:
 
     args.results_dir.mkdir(parents=True, exist_ok=True)
     target_time = (
-        np.arange(len(teacher_switch)) * HOP_LENGTH + WIN_LENGTH
-    ) / SAMPLE_RATE
-    hi = LANGUAGE_CODES.index("hi")
-    en = LANGUAGE_CODES.index("en")
+        np.arange(len(teacher_switch)) * int(frontend_config["hop_length"])
+        + int(frontend_config["win_length"])
+    ) / int(frontend_config["sample_rate"])
+    hi = language_codes.index("hi")
+    en = language_codes.index("en")
     figure, axis = plt.subplots(figsize=(10, 4.8))
     axis.plot(
         target_time,
@@ -412,9 +461,13 @@ def main() -> None:
     plt.close(figure)
 
     cpu_rtf, benchmark_rtfs = benchmark_rtf(
-        model, frontend, heldout_waveforms, repeats=args.benchmark_repeats
+        model,
+        frontend,
+        heldout_waveforms,
+        repeats=args.benchmark_repeats,
+        sample_rate=int(frontend_config["sample_rate"]),
+        chunk_frames=chunk_frames,
     )
-    train_metrics = json.loads((args.results_dir / "train_metrics.json").read_text())
     finite_eval = (
         math.isfinite(heldout_teacher_agreement)
         and math.isfinite(heldout_student_label_accuracy)
@@ -424,6 +477,10 @@ def main() -> None:
         and np.isfinite(teacher_switch).all()
     )
     eval_metrics = {
+        "run_id": checkpoint["run_id"],
+        "run_identity": run_identity,
+        "checkpoint_sha256": checkpoint_sha256,
+        "evaluation_run_identity_validated": True,
         "heldout_teacher_agreement_micro": heldout_teacher_agreement,
         "heldout_teacher_agreement_macro": heldout_teacher_agreement_macro,
         "heldout_student_label_accuracy_micro": heldout_student_label_accuracy,
@@ -449,11 +506,24 @@ def main() -> None:
         "nan_free": bool(finite_eval),
     }
     (args.results_dir / "eval_metrics.json").write_text(
-        json.dumps(eval_metrics, indent=2) + "\n"
+        json.dumps(eval_metrics, indent=2, allow_nan=False) + "\n"
     )
     summary = {
-        "teacher_name": TEACHER_NAME,
-        "languages": list(LANGUAGE_CODES),
+        "run_id": checkpoint["run_id"],
+        "run_identity": run_identity,
+        "run_identity_schema_version": run_identity["schema_version"],
+        "checkpoint_sha256": checkpoint_sha256,
+        "model_state_sha256": run_identity["model_state_sha256"],
+        "pipeline_source_sha256": run_identity["pipeline"]["source"][
+            "source_sha256"
+        ],
+        "audio_files_sha256": run_identity["corpus"]["audio_files_sha256"],
+        "target_metadata_sha256": run_identity["target_cache"][
+            "metadata_sha256"
+        ],
+        "evaluation_run_identity_validated": True,
+        "teacher_name": pipeline["teacher"]["model_id"],
+        "languages": list(language_codes),
         "n_train_clips": len(train_records),
         "n_train_monolingual_clips": train_metrics["n_train_monolingual_clips"],
         "n_train_switch_clips": train_metrics["n_train_switch_clips"],
@@ -481,7 +551,7 @@ def main() -> None:
             "target_generator_source_sha256"
         ],
         "student_params": model.parameter_count,
-        "algorithmic_latency_ms": ALGORITHMIC_LATENCY_MS,
+        "algorithmic_latency_ms": streaming_config["algorithmic_latency_ms"],
         "provisional_tail_withheld": True,
         "withheld_tail_frames": model.lookahead_frames,
         "cpu_rtf": cpu_rtf,
@@ -523,7 +593,9 @@ def main() -> None:
         "switch_lag_ms": switch_lag_ms,
         "nan_free": bool(train_metrics["nan_free"] and finite_eval),
     }
-    (args.results_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    (args.results_dir / "summary.json").write_text(
+        json.dumps(summary, indent=2, allow_nan=False) + "\n"
+    )
     print(
         f"heldout teacher agreement={heldout_teacher_agreement:.3f}; "
         f"student label accuracy={heldout_student_label_accuracy:.3f}; "

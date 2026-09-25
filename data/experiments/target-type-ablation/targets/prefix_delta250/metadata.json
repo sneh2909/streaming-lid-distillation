@@ -4,9 +4,9 @@
   "analysis_version": "target-type-ablation-v3",
   "variant": "prefix_delta250",
   "input_sha256": "ed1c02ea8036372143a7373fca971d1f3b6f64ce9514f7ec75bfee44d1fc9f59",
-  "run_identity_sha256": "da7401f33b70d428f029c1466c0b9447831c7a1102ab9824d4feb58752486a9e",
+  "run_identity_sha256": "24052c0e7baccd40c1289f70ca59fa71b3489d4146ae669fb76917aa7fe2d417",
   "driver_sha256": "d04982511e70d63f9df9f5651d3d6666d479aa5eaddabcf05c055d00dd5c1af0",
-  "pipeline_source_sha256": "873d5713540a128580eaf858450410979200fd53eab6b7ed0b6e37c2415e234e",
+  "pipeline_source_sha256": "2ea3a73a7107da56e769927afe1ca59167b0e2f35bde111e098824a35ee90a63",
   "teacher_identity": {
     "model_id": "speechbrain/lang-id-voxlingua107-ecapa",
     "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
@@ -50,13 +50,13 @@
     "future_context_ms": 250.0,
     "context_valid_at_tested_latency": true
   },
-  "generated_utc": "2026-09-25T19:53:47.008560+00:00",
+  "generated_utc": "2026-09-25T20:08:05.768252+00:00",
   "summary": {
     "clips": 94,
     "anchors": 1786,
     "frames": 41195,
     "known_label_frame_accuracy_micro_all_splits": 0.7915038232795242,
-    "generation_wall_seconds": 295.4984386619999,
+    "generation_wall_seconds": 258.31787751199954,
     "per_clip": [
       {
         "id": "en_train_00",

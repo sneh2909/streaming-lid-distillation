@@ -1,5 +1,9 @@
 {
   "optimizer_steps": 1600,
+  "requested_optimizer_steps": 1600,
+  "successful_optimizer_steps": 1600,
+  "post_update_checks": 1600,
+  "all_requested_steps_completed": true,
   "batch_size": 7,
   "n_train_clips": 71,
   "n_train_monolingual_clips": 70,
@@ -3269,6 +3273,9 @@
   "first_10_mean_loss": 6.870420122146607,
   "last_10_mean_loss": 1.4402906596660614,
   "loss_decreased": true,
+  "loss_and_gradient_histories_finite": true,
+  "post_update_model_state_finite": true,
+  "post_update_optimizer_state_finite": true,
   "nan_free": true,
   "real_audio_optimizer_step": true
 }

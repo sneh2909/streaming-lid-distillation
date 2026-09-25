@@ -27,11 +27,19 @@ from streaming_lid.data import (
     DistillationDataset,
     TeacherTargetCache,
     collate_distillation_batch,
+    file_sha256,
     read_manifest,
     require_speaker_disjoint,
 )
 from streaming_lid.loss import delayed_distillation_loss
 from streaming_lid.model import CausalLIDStudent
+from streaming_lid.run_identity import (
+    CHECKPOINT_SCHEMA_VERSION,
+    build_run_identity,
+    configured_model_kwargs,
+    run_id_for_identity,
+    training_configuration,
+)
 
 
 def positive_int_arg(value: str) -> int:
@@ -223,7 +231,8 @@ def main() -> None:
         num_workers=0,
         drop_last=True,
     )
-    model = CausalLIDStudent(num_languages=len(LANGUAGE_CODES))
+    model_kwargs = configured_model_kwargs()
+    model = CausalLIDStudent(**model_kwargs)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=args.learning_rate, weight_decay=1e-4
     )
@@ -307,22 +316,6 @@ def main() -> None:
     ]:
         raise RuntimeError(f"training contract failed: {training_contract}")
 
-    args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
-    checkpoint = {
-        "model_state": model.state_dict(),
-        "languages": list(LANGUAGE_CODES),
-        "teacher": TEACHER_NAME,
-        "target_cache": target_cache.identity,
-        "steps": successful_steps,
-        "training_contract": training_contract,
-        "seed": args.seed,
-        "model_kwargs": {
-            "num_languages": len(LANGUAGE_CODES),
-            "lookahead_frames": MODEL_LOOKAHEAD_FRAMES,
-        },
-    }
-    torch.save(checkpoint, args.checkpoint)
-
     window = min(10, len(losses))
     first_mean = float(np.mean(losses[:window]))
     last_mean = float(np.mean(losses[-window:]))
@@ -333,7 +326,7 @@ def main() -> None:
         language: sum(item["language"] == language for item in monolingual_train)
         for language in LANGUAGE_CODES
     }
-    metrics = {
+    training_evidence = {
         "optimizer_steps": successful_steps,
         "requested_optimizer_steps": training_contract[
             "requested_optimizer_steps"
@@ -374,6 +367,43 @@ def main() -> None:
         "real_audio_optimizer_step": training_contract[
             "real_audio_optimizer_step"
         ],
+    }
+    run_identity = build_run_identity(
+        records=records,
+        manifest_path=args.manifest,
+        target_cache_identity=target_cache.identity,
+        target_metadata_path=target_cache.targets_dir / "metadata.json",
+        training=training_configuration(
+            steps=args.steps,
+            batch_size=args.batch_size,
+            learning_rate=args.learning_rate,
+            threads=args.threads,
+            seed=args.seed,
+        ),
+        model_state=model.state_dict(),
+    )
+    run_id = run_id_for_identity(run_identity)
+    checkpoint = {
+        "checkpoint_schema_version": CHECKPOINT_SCHEMA_VERSION,
+        "run_id": run_id,
+        "run_identity": run_identity,
+        "model_state": model.state_dict(),
+        "languages": list(LANGUAGE_CODES),
+        "teacher": TEACHER_NAME,
+        "target_cache": target_cache.identity,
+        "steps": successful_steps,
+        "training_contract": training_contract,
+        "training_evidence": training_evidence,
+        "seed": args.seed,
+        "model_kwargs": model_kwargs,
+    }
+    args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(checkpoint, args.checkpoint)
+    metrics = {
+        "run_id": run_id,
+        "run_identity": run_identity,
+        "checkpoint_sha256": file_sha256(args.checkpoint),
+        **training_evidence,
     }
     args.results_dir.mkdir(parents=True, exist_ok=True)
     (args.results_dir / "train_metrics.json").write_text(

@@ -29,7 +29,7 @@
   "algorithmic_latency_ms": 435.0,
   "provisional_tail_withheld": true,
   "withheld_tail_frames": 4,
-  "cpu_rtf": 0.008213411003995995,
+  "cpu_rtf": 0.007145746247592647,
   "losses": [
     7.402693748474121,
     7.465206623077393,
@@ -1633,6 +1633,13 @@
     0.8395682573318481
   ],
   "optimizer_steps": 1600,
+  "requested_optimizer_steps": 1600,
+  "successful_optimizer_steps": 1600,
+  "post_update_checks": 1600,
+  "all_requested_steps_completed": true,
+  "real_audio_optimizer_step": true,
+  "post_update_model_state_finite": true,
+  "post_update_optimizer_state_finite": true,
   "examples_seen": 11200,
   "effective_epochs": 157.74647887323943,
   "first_10_mean_loss": 6.870420122146607,
