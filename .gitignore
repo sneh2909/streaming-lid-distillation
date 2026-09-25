@@ -14,3 +14,8 @@ __pycache__/
 .env
 # assignment brief kept local (not ours to publish)
 assignment.md
+data/raw/
+data/generated/
+data/targets/
+data/manifests/
+results/teachers/*.npz
