@@ -18,3 +18,16 @@ __pycache__/
 .pytest_cache/
 # assignment brief kept local (not ours to publish)
 assignment.md
+.loop/
+review/scratch/
+# any audio / weights / large arrays anywhere (experiments too)
+**/*.wav
+**/*.flac
+**/*.mp3
+**/*.ogg
+**/*.safetensors
+**/*.bin
+**/*.onnx
+**/*.npy
+**/*.npz
+**/*.pth
