@@ -49,7 +49,22 @@ def _valid_contract(tmp_path: Path) -> dict:
         model_state=model_state,
     )
     run_id = run_id_for_identity(run_identity)
-    training_evidence = {"successful_optimizer_steps": 1, "losses": [1.0]}
+    training_contract = {
+        "requested_optimizer_steps": 1,
+        "successful_optimizer_steps": 1,
+        "post_update_checks": 1,
+        "all_requested_steps_completed": True,
+        "loss_and_gradient_histories_finite": True,
+        "post_update_model_state_finite": True,
+        "post_update_optimizer_state_finite": True,
+        "real_audio_optimizer_step": True,
+        "nan_free": True,
+    }
+    training_evidence = {
+        **training_contract,
+        "batch_size": 1,
+        "losses": [1.0],
+    }
     checkpoint_sha256 = "c" * 64
     checkpoint = {
         "checkpoint_schema_version": CHECKPOINT_SCHEMA_VERSION,
@@ -62,6 +77,7 @@ def _valid_contract(tmp_path: Path) -> dict:
         "model_kwargs": configured_model_kwargs(),
         "seed": 7,
         "steps": 1,
+        "training_contract": training_contract,
         "training_evidence": training_evidence,
     }
     train_metrics = {

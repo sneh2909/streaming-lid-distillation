@@ -283,6 +283,32 @@ def validate_evaluation_run_contract(
     training_evidence = checkpoint.get("training_evidence")
     if not isinstance(training_evidence, dict):
         raise ValueError("checkpoint is missing bound training evidence")
+    training_settings = run_identity.get("training", {})
+    evidence_expectations = {
+        "requested_optimizer_steps": training_settings.get("requested_steps"),
+        "batch_size": training_settings.get("batch_size"),
+    }
+    for key, expected in evidence_expectations.items():
+        if training_evidence.get(key) != expected:
+            raise ValueError(
+                f"training evidence field {key!r} contradicts the run identity"
+            )
+    contract_keys = (
+        "requested_optimizer_steps",
+        "successful_optimizer_steps",
+        "post_update_checks",
+        "all_requested_steps_completed",
+        "loss_and_gradient_histories_finite",
+        "post_update_model_state_finite",
+        "post_update_optimizer_state_finite",
+        "real_audio_optimizer_step",
+        "nan_free",
+    )
+    expected_training_contract = {
+        key: training_evidence.get(key) for key in contract_keys
+    }
+    if checkpoint.get("training_contract") != expected_training_contract:
+        raise ValueError("checkpoint training contract contradicts its evidence")
     expected_train_metrics = {
         "run_id": expected_run_id,
         "run_identity": run_identity,

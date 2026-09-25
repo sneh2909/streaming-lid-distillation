@@ -13868,7 +13868,7 @@
   "analysis_version": "target-type-ablation-v3",
   "experiment": "target-type-ablation",
   "question": "How do full-utterance, centred two-second, and growing-prefix teacher targets affect the same delayed causal TCN?",
-  "updated_utc": "2026-09-25T20:11:49.279960+00:00",
+  "updated_utc": "2026-09-25T20:22:45.699354+00:00",
   "manifest": "data/generated/manifest.jsonl",
   "all_input_sha256": "ed1c02ea8036372143a7373fca971d1f3b6f64ce9514f7ec75bfee44d1fc9f59",
   "evaluation_input_sha256": "7b78eb2981dacc8a01b1e1fad6b98da1fbceebdb0aba4a2597751f36ebe94a79",
@@ -14107,6 +14107,42 @@
       "clips_compared": 21,
       "max_abs_raw_posterior_difference": 0.0,
       "max_abs_soft_target_difference": 0.0
-    }
+    },
+    "identical_initial_state_across_arms": true,
+    "identical_batch_order_across_arms": true,
+    "all_training_finite": true,
+    "pipeline_launch_snapshot_bound": true,
+    "pipeline_source_matches_launch_snapshot_at_end": false,
+    "pipeline_source_change_detected_files": [
+      "scripts/train.py",
+      "scripts/eval.py"
+    ],
+    "driver_unchanged_during_run": true,
+    "teacher_artifact_unchanged_during_run": true,
+    "inputs_unchanged_during_run": true,
+    "measurement_arms_complete": true,
+    "completion_note": "All three arms were atomically saved before an unbounded remote snapshot recheck was interrupted; teacher artifact and input hashes were then revalidated directly from local bytes."
+  },
+  "comparisons": {
+    "heldout_known_label_macro_by_variant": {
+      "full_utterance": 0.17780488138361777,
+      "centred_2s": 0.17360391707053388,
+      "prefix_delta250": 0.18246941171490805
+    },
+    "heldout_known_label_macro_best": "prefix_delta250",
+    "switch_outside_collar_macro_by_variant": {
+      "full_utterance": 0.0,
+      "centred_2s": 0.0006915629322268327,
+      "prefix_delta250": 0.006915629322268326
+    },
+    "switch_outside_collar_macro_best": "prefix_delta250",
+    "policy_switch_detections_out_of_2_by_variant": {
+      "full_utterance": 0,
+      "centred_2s": 0,
+      "prefix_delta250": 0
+    },
+    "context_valid_variants": [
+      "prefix_delta250"
+    ]
   }
 }
