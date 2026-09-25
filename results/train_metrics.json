@@ -49,6 +49,18 @@
     "train_evaluation_speaker_overlap": [],
     "speaker_disjoint": true
   },
+  "target_cache": {
+    "schema_version": 2,
+    "target_configuration_sha256": "74455af59c641d6e66f78596cf9b5cf01d539f80e8c3b1edb5f69760a4df2803",
+    "manifest_records_sha256": "467db812084ee2d01bbff1f078d8aadee34871069ee83b875530c86d5e0a127e",
+    "target_files_sha256": "ef44a892f5264bd09cf76ba66260d87e98f3b55d555f3f71e3f0809e1ed67a32",
+    "teacher_revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+    "teacher_artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
+    "target_generator_source_sha256": "1dc0c8609a02174384e09585afaaa0e15346dbb48feb56f8e51939403cb88ff7",
+    "provenance_validated": true,
+    "validated_clips": 71,
+    "indexed_clips": 94
+  },
   "student_params": 42567,
   "losses": [
     7.402693748474121,

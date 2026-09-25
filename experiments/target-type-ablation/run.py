@@ -49,6 +49,35 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+PIPELINE_SOURCES = (
+    "scripts/teacher_targets.py",
+    "scripts/train.py",
+    "scripts/eval.py",
+    "src/streaming_lid/audio.py",
+    "src/streaming_lid/config.py",
+    "src/streaming_lid/data.py",
+    "src/streaming_lid/loss.py",
+    "src/streaming_lid/model.py",
+)
+
+
+def snapshot_pipeline_sources_before_import() -> tuple[str, dict[str, str]]:
+    """Bind the exact source snapshot that this Python process imports."""
+    combined = hashlib.sha256()
+    per_file = {}
+    for relative_path in PIPELINE_SOURCES:
+        contents = (REPO_ROOT / relative_path).read_bytes()
+        per_file[relative_path] = hashlib.sha256(contents).hexdigest()
+        combined.update(relative_path.encode("utf-8"))
+        combined.update(contents)
+    return combined.hexdigest(), per_file
+
+
+(
+    PIPELINE_SOURCE_SHA256_AT_IMPORT,
+    PIPELINE_SOURCE_FILE_SHA256_AT_IMPORT,
+) = snapshot_pipeline_sources_before_import()
+
 # Reuse the production experiment's target interpolation, label mapping, data
 # loading, model, loss, batching, and emitted-chunk timing/smoothing code.
 from scripts.eval import (  # noqa: E402
@@ -111,16 +140,6 @@ POLICY_DWELL_CHUNKS = 3
 POLICY_EMA_NEW_WEIGHT = 0.30
 PERSISTENCE_CHUNKS = 3
 BOUNDARY_COLLAR_MS = 250
-PIPELINE_SOURCES = (
-    "scripts/teacher_targets.py",
-    "scripts/train.py",
-    "scripts/eval.py",
-    "src/streaming_lid/audio.py",
-    "src/streaming_lid/config.py",
-    "src/streaming_lid/data.py",
-    "src/streaming_lid/loss.py",
-    "src/streaming_lid/model.py",
-)
 
 
 @dataclass(frozen=True)
@@ -1301,7 +1320,7 @@ def main() -> None:
         + [item for item in switch_records if item["id"] == "switch_hi_en_eval"],
         manifest,
     )
-    source_sha256 = pipeline_source_fingerprint()
+    source_sha256 = PIPELINE_SOURCE_SHA256_AT_IMPORT
     driver_sha256 = driver_fingerprint()
     dependencies = dependency_versions()
     teacher_snapshot, teacher_identity = resolve_teacher_artifact()
@@ -1359,6 +1378,7 @@ def main() -> None:
             "driver_sha256": driver_sha256,
             "pipeline_source_sha256": source_sha256,
             "pipeline_source_files": list(PIPELINE_SOURCES),
+            "pipeline_source_file_sha256": PIPELINE_SOURCE_FILE_SHA256_AT_IMPORT,
             "dependencies": dependencies,
             "teacher_identity": teacher_identity,
             "language_codes": list(LANGUAGE_CODES),
@@ -1500,7 +1520,8 @@ def main() -> None:
                 result["training"]["nan_free"]
                 for result in output["arms"].values()
             ),
-            "pipeline_source_unchanged_during_run": (
+            "pipeline_launch_snapshot_bound": True,
+            "pipeline_source_matches_launch_snapshot_at_end": (
                 pipeline_source_fingerprint() == source_sha256
             ),
             "driver_unchanged_during_run": (
@@ -1520,7 +1541,7 @@ def main() -> None:
             "identical_initial_state_across_arms",
             "identical_batch_order_across_arms",
             "all_training_finite",
-            "pipeline_source_unchanged_during_run",
+            "pipeline_launch_snapshot_bound",
             "driver_unchanged_during_run",
             "teacher_artifact_unchanged_during_run",
             "inputs_unchanged_during_run",

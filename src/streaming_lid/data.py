@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.metadata
 import json
+import platform
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -13,7 +15,7 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 
-from .audio import LogMelFrontend, load_audio
+from .audio import LogMelFrontend, feature_frame_count, load_audio
 from .config import (
     HOP_LENGTH,
     LANGUAGE_CODES,
@@ -22,14 +24,24 @@ from .config import (
     SAMPLE_RATE,
     TEACHER_FUTURE_MS,
     TEACHER_HOP_FRAMES,
+    TEACHER_ARTIFACT_FILES,
+    TEACHER_ARTIFACT_SHA256,
+    TEACHER_LANGUAGE_INDICES,
     TEACHER_NAME,
     TEACHER_PAST_MS,
+    TEACHER_REVISION,
     TEACHER_TEMPERATURE,
     WIN_LENGTH,
 )
 
 
-TARGET_CACHE_SCHEMA_VERSION = 1
+TARGET_CACHE_SCHEMA_VERSION = 2
+TARGET_GENERATOR_SOURCE_FILES = (
+    "scripts/teacher_targets.py",
+    "src/streaming_lid/audio.py",
+    "src/streaming_lid/config.py",
+    "src/streaming_lid/data.py",
+)
 TARGET_PROBABILITY_KEYS = (
     "teacher_probs",
     "teacher_soft_targets",
@@ -68,12 +80,57 @@ def canonical_json_sha256(value: Any) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def teacher_artifact_identity() -> dict[str, Any]:
+    return {
+        "model_id": TEACHER_NAME,
+        "revision": TEACHER_REVISION,
+        "artifact_sha256": TEACHER_ARTIFACT_SHA256,
+        "files": {
+            filename: dict(properties)
+            for filename, properties in TEACHER_ARTIFACT_FILES.items()
+        },
+    }
+
+
+def target_generator_identity() -> dict[str, Any]:
+    """Fingerprint target-producing source plus its runtime dependencies."""
+    repository_root = Path(__file__).resolve().parents[2]
+    files = {
+        relative_path: {
+            "sha256": file_sha256(repository_root / relative_path),
+            "bytes": (repository_root / relative_path).stat().st_size,
+        }
+        for relative_path in TARGET_GENERATOR_SOURCE_FILES
+    }
+    dependencies = {
+        "python": platform.python_version(),
+        "numpy": np.__version__,
+        "torch": torch.__version__,
+        "torchaudio": importlib.metadata.version("torchaudio"),
+        "soundfile": importlib.metadata.version("soundfile"),
+        "speechbrain": importlib.metadata.version("speechbrain"),
+        "huggingface_hub": importlib.metadata.version("huggingface-hub"),
+    }
+    source_sha256 = canonical_json_sha256(files)
+    return {
+        "source_sha256": source_sha256,
+        "identity_sha256": canonical_json_sha256(
+            {"source_sha256": source_sha256, "dependencies": dependencies}
+        ),
+        "files": files,
+        "dependencies": dependencies,
+    }
+
+
 def target_cache_configuration() -> dict[str, Any]:
     """Return every code/config choice that determines cached target semantics."""
     return {
         "schema_version": TARGET_CACHE_SCHEMA_VERSION,
-        "teacher": TEACHER_NAME,
+        "teacher": teacher_artifact_identity(),
         "language_codes": list(LANGUAGE_CODES),
+        "teacher_language_indices": dict(
+            zip(LANGUAGE_CODES, TEACHER_LANGUAGE_INDICES, strict=True)
+        ),
         "temperature": TEACHER_TEMPERATURE,
         "probability_space": "teacher_log_posterior_restricted_and_renormalized",
         "interpolation": "linear_probability",
@@ -87,6 +144,7 @@ def target_cache_configuration() -> dict[str, Any]:
         "window_past_ms": TEACHER_PAST_MS,
         "window_future_ms": TEACHER_FUTURE_MS,
         "target_hop_frames": TEACHER_HOP_FRAMES,
+        "target_generator": target_generator_identity(),
     }
 
 
@@ -153,7 +211,9 @@ def load_teacher_target_array(
     with np.load(path, allow_pickle=False) as target_file:
         if "language_codes" not in target_file:
             raise ValueError(f"target cache {path} is missing language_codes")
-        actual_languages = tuple(str(code) for code in target_file["language_codes"].tolist())
+        actual_languages = tuple(
+            str(code) for code in target_file["language_codes"].tolist()
+        )
         if actual_languages != expected_languages:
             raise ValueError(
                 f"target cache {path} language order {actual_languages} differs "
@@ -202,10 +262,12 @@ class TeacherTargetCache:
         try:
             self.metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError) as error:
-            raise ValueError(f"cannot read teacher target metadata {metadata_path}: {error}") from error
+            raise ValueError(
+                f"cannot read teacher target metadata {metadata_path}: {error}"
+            ) from error
 
         expected_configuration = target_cache_configuration()
-        expected_configuration_hash = target_configuration_sha256()
+        expected_configuration_hash = canonical_json_sha256(expected_configuration)
         if self.metadata.get("schema_version") != TARGET_CACHE_SCHEMA_VERSION:
             raise ValueError(
                 "target cache schema differs from current configuration: "
@@ -213,9 +275,23 @@ class TeacherTargetCache:
                 f"expected {TARGET_CACHE_SCHEMA_VERSION}"
             )
         if self.metadata.get("target_configuration") != expected_configuration:
-            raise ValueError("target cache configuration differs from current configuration")
-        if self.metadata.get("target_configuration_sha256") != expected_configuration_hash:
-            raise ValueError("target cache configuration SHA-256 is missing or inconsistent")
+            raise ValueError(
+                "target cache configuration differs from current configuration"
+            )
+        if self.metadata.get("teacher_identity") != expected_configuration["teacher"]:
+            raise ValueError("target cache teacher artifact identity is inconsistent")
+        if (
+            self.metadata.get("target_generator")
+            != expected_configuration["target_generator"]
+        ):
+            raise ValueError("target cache generator identity is inconsistent")
+        if (
+            self.metadata.get("target_configuration_sha256")
+            != expected_configuration_hash
+        ):
+            raise ValueError(
+                "target cache configuration SHA-256 is missing or inconsistent"
+            )
 
         expected_manifest_hash = manifest_records_sha256(self.records)
         if self.metadata.get("manifest_records_sha256") != expected_manifest_hash:
@@ -253,6 +329,11 @@ class TeacherTargetCache:
             "target_configuration_sha256": expected_configuration_hash,
             "manifest_records_sha256": expected_manifest_hash,
             "target_files_sha256": expected_target_files_hash,
+            "teacher_revision": TEACHER_REVISION,
+            "teacher_artifact_sha256": TEACHER_ARTIFACT_SHA256,
+            "target_generator_source_sha256": expected_configuration[
+                "target_generator"
+            ]["source_sha256"],
         }
         self._validated_ids: set[str] = set()
 
@@ -290,7 +371,10 @@ class TeacherTargetCache:
             raise ValueError(f"target cache file SHA-256 mismatch for {clip_id}")
 
         with np.load(target_path, allow_pickle=False) as target_file:
-            if int(_npz_scalar(target_file, "cache_schema_version", target_path)) != TARGET_CACHE_SCHEMA_VERSION:
+            cache_schema = int(
+                _npz_scalar(target_file, "cache_schema_version", target_path)
+            )
+            if cache_schema != TARGET_CACHE_SCHEMA_VERSION:
                 raise ValueError(f"target cache schema mismatch inside {target_path}")
             string_expectations = {
                 "clip_id": clip_id,
@@ -301,6 +385,11 @@ class TeacherTargetCache:
                     "target_configuration_sha256"
                 ],
                 "teacher_name": TEACHER_NAME,
+                "teacher_revision": TEACHER_REVISION,
+                "teacher_artifact_sha256": TEACHER_ARTIFACT_SHA256,
+                "target_generator_source_sha256": self.identity[
+                    "target_generator_source_sha256"
+                ],
             }
             for key, expected in string_expectations.items():
                 actual = str(_npz_scalar(target_file, key, target_path))
@@ -309,7 +398,8 @@ class TeacherTargetCache:
                         f"target cache {target_path} field {key!r} is {actual!r}, "
                         f"expected {expected!r}"
                     )
-            if int(_npz_scalar(target_file, "num_frames", target_path)) != entry.get("frames"):
+            cached_frames = int(_npz_scalar(target_file, "num_frames", target_path))
+            if cached_frames != entry.get("frames"):
                 raise ValueError(f"target cache frame metadata mismatch for {clip_id}")
 
         value = load_teacher_target_array(
@@ -325,10 +415,11 @@ class TeacherTargetCache:
     def validate_all(self) -> dict[str, Any]:
         """Validate every cache entry and return a serializable audit."""
         for item in self.records:
+            waveform = load_audio(resolve_audio_path(item, self.manifest_path))
             self.load(
                 item,
                 "teacher_soft_targets",
-                expected_frames=int(self.entries_by_id[item["id"]]["frames"]),
+                expected_frames=feature_frame_count(len(waveform)),
             )
         return self.audit()
 

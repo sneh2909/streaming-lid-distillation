@@ -4,7 +4,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from streaming_lid.config import LANGUAGE_CODES, TEACHER_NAME
+from streaming_lid.config import (
+    LANGUAGE_CODES,
+    TEACHER_ARTIFACT_SHA256,
+    TEACHER_NAME,
+    TEACHER_REVISION,
+)
 from streaming_lid.data import (
     TARGET_CACHE_SCHEMA_VERSION,
     TeacherTargetCache,
@@ -15,6 +20,7 @@ from streaming_lid.data import (
     manifest_records_sha256,
     target_cache_configuration,
     target_configuration_sha256,
+    target_generator_identity,
 )
 
 
@@ -30,6 +36,7 @@ def _write_target_file(
     audio_hash: str,
     *,
     language_codes: tuple[str, ...] = LANGUAGE_CODES,
+    teacher_revision: str = TEACHER_REVISION,
 ) -> None:
     probabilities = _probabilities(3)
     np.savez_compressed(
@@ -48,6 +55,11 @@ def _write_target_file(
         manifest_record_sha256=np.asarray(manifest_record_sha256(item)),
         target_configuration_sha256=np.asarray(target_configuration_sha256()),
         teacher_name=np.asarray(TEACHER_NAME),
+        teacher_revision=np.asarray(teacher_revision),
+        teacher_artifact_sha256=np.asarray(TEACHER_ARTIFACT_SHA256),
+        target_generator_source_sha256=np.asarray(
+            target_generator_identity()["source_sha256"]
+        ),
     )
 
 
@@ -69,10 +81,13 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
     target_path = targets_dir / "clip.npz"
     audio_hash = file_sha256(audio_path)
     _write_target_file(target_path, item, audio_hash)
+    configuration = target_cache_configuration()
     metadata = {
         "schema_version": TARGET_CACHE_SCHEMA_VERSION,
-        "target_configuration": target_cache_configuration(),
-        "target_configuration_sha256": target_configuration_sha256(),
+        "teacher_identity": configuration["teacher"],
+        "target_generator": configuration["target_generator"],
+        "target_configuration": configuration,
+        "target_configuration_sha256": canonical_json_sha256(configuration),
         "manifest_records_sha256": manifest_records_sha256([item]),
         "target_files_sha256": canonical_json_sha256(
             {item["id"]: file_sha256(target_path)}
@@ -134,6 +149,39 @@ def test_strict_cache_rejects_changed_manifest(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="different manifest"):
         TeacherTargetCache(manifest_path, targets_dir)
+
+
+def test_strict_cache_rejects_changed_target_configuration(tmp_path: Path) -> None:
+    manifest_path, targets_dir, _ = _write_valid_cache(tmp_path)
+    metadata_path = targets_dir / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    metadata["target_configuration"]["temperature"] = 99.0
+    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="configuration differs"):
+        TeacherTargetCache(manifest_path, targets_dir)
+
+
+def test_strict_cache_rejects_wrong_pinned_teacher(tmp_path: Path) -> None:
+    manifest_path, targets_dir, item = _write_valid_cache(tmp_path)
+    target_path = targets_dir / "clip.npz"
+    _write_target_file(
+        target_path,
+        item,
+        file_sha256(tmp_path / "clip.wav"),
+        teacher_revision="mutable-main",
+    )
+    metadata_path = targets_dir / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    metadata["clips"][0]["target_file_sha256"] = file_sha256(target_path)
+    metadata["target_files_sha256"] = canonical_json_sha256(
+        {item["id"]: file_sha256(target_path)}
+    )
+    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+    cache = TeacherTargetCache(manifest_path, targets_dir)
+
+    with pytest.raises(ValueError, match="teacher_revision"):
+        cache.load(item, "teacher_soft_targets", expected_frames=3)
 
 
 def test_strict_cache_rejects_modified_target_file(tmp_path: Path) -> None:

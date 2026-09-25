@@ -1,5 +1,59 @@
 {
   "teacher_name": "speechbrain/lang-id-voxlingua107-ecapa",
+  "teacher_identity": {
+    "model_id": "speechbrain/lang-id-voxlingua107-ecapa",
+    "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+    "artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
+    "files": {
+      "classifier.ckpt": {
+        "sha256": "a50d9024ff58d317031c9787d4c6c614d454a87a8ef32f9d36338cd3ff57adbc",
+        "bytes": 762555
+      },
+      "embedding_model.ckpt": {
+        "sha256": "ab750d5c06d713477045fa798fab5d33e959dbc0dfe4de510a9a47844c79a19a",
+        "bytes": 84474355
+      },
+      "hyperparams.yaml": {
+        "sha256": "88fec9791a8416a152fb10834327e18d38e5bf7a351e9b714e08cdc4af05de6f",
+        "bytes": 1519
+      },
+      "label_encoder.txt": {
+        "sha256": "9f566d83c4f19168be4a0bf86c0c7dac7d3264a95105bcbf33a7c32b83ccc17f",
+        "bytes": 2204
+      }
+    }
+  },
+  "target_generator": {
+    "source_sha256": "1dc0c8609a02174384e09585afaaa0e15346dbb48feb56f8e51939403cb88ff7",
+    "identity_sha256": "9c6e8ad167ba4366572906624871b60bb0314c07d25e1479a839a367ba8858f2",
+    "files": {
+      "scripts/teacher_targets.py": {
+        "sha256": "000ad02a047d158e11a3966bdc1ddad57d3828b4d6b082c71817ca8b056e6906",
+        "bytes": 13316
+      },
+      "src/streaming_lid/audio.py": {
+        "sha256": "4cce5b81f784526f92d61fce0dbd65f3a3a90069134717da4f7d54a2736260cd",
+        "bytes": 2032
+      },
+      "src/streaming_lid/config.py": {
+        "sha256": "292846eed09b81f245664a68466cfa6e064fdf410bf3f1a7077932f624900894",
+        "bytes": 2539
+      },
+      "src/streaming_lid/data.py": {
+        "sha256": "db354712097122f7374d664202842dba8ef2891324fe4e3d643cc0cc9ddd954d",
+        "bytes": 22078
+      }
+    },
+    "dependencies": {
+      "python": "3.10.12",
+      "numpy": "2.2.6",
+      "torch": "2.6.0+cpu",
+      "torchaudio": "2.6.0+cpu",
+      "soundfile": "0.13.1",
+      "speechbrain": "1.0.3",
+      "huggingface_hub": "0.24.7"
+    }
+  },
   "languages": [
     "en",
     "hi",
@@ -48,5 +102,17 @@
     ],
     "train_evaluation_speaker_overlap": [],
     "speaker_disjoint": true
+  },
+  "target_cache": {
+    "schema_version": 2,
+    "target_configuration_sha256": "74455af59c641d6e66f78596cf9b5cf01d539f80e8c3b1edb5f69760a4df2803",
+    "manifest_records_sha256": "467db812084ee2d01bbff1f078d8aadee34871069ee83b875530c86d5e0a127e",
+    "target_files_sha256": "ef44a892f5264bd09cf76ba66260d87e98f3b55d555f3f71e3f0809e1ed67a32",
+    "teacher_revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+    "teacher_artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
+    "target_generator_source_sha256": "1dc0c8609a02174384e09585afaaa0e15346dbb48feb56f8e51939403cb88ff7",
+    "provenance_validated": true,
+    "validated_clips": 94,
+    "indexed_clips": 94
   }
 }

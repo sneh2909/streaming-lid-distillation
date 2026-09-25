@@ -29,7 +29,7 @@ Important outputs are:
 - `results/train_metrics.json`: loss and gradient history plus the real-audio/no-NaN assertions.
 - `results/eval_metrics.json`: per-clip teacher agreement, known-label accuracy, speaker audit, stable-emission audit, policy settings, RTF, and switch outcome.
 - `results/switch_plot.png`: offline teacher posteriors and emitted student chunk-EMA posteriors.
-- `results/teacher_metrics.json`: target-generation audit.
+- `results/teacher_metrics.json`: target-generation and 94-file provenance audit.
 
 ## Data and split
 
@@ -41,7 +41,7 @@ This is voice-disjoint only at the provider's synthetic voice-ID level; it is no
 
 ## Teacher choice and targets
 
-The frozen teacher is [`speechbrain/lang-id-voxlingua107-ecapa`](https://huggingface.co/speechbrain/lang-id-voxlingua107-ecapa). It is purpose-built for LID, directly exposes normalized scores for all seven chosen languages, uses full-window attentive statistics, and is cheap enough to run repeatedly on CPU. The isolated [`teacher-bakeoff`](experiments/teacher-bakeoff/REPORT.md) retained it: across the same 21 held-out clips at 1/2/4 s, restricted seven-way accuracy was 58/63 for ECAPA, 54/63 for MMS-LID-126, and 42/63 for Whisper-small; ECAPA was also 8.4× and 15.9× cheaper by wall time. This clean synthetic comparison is not a production teacher benchmark, but neither challenger earned a switch.
+The frozen teacher is [`speechbrain/lang-id-voxlingua107-ecapa`](https://huggingface.co/speechbrain/lang-id-voxlingua107-ecapa), pinned to revision `0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9`. Before inference, target generation verifies SHA-256 and byte size for both weight files, `hyperparams.yaml`, and `label_encoder.txt` (combined artifact hash `f193a054…c0f706`), overrides SpeechBrain's pretrainer path to that resolved snapshot, and asserts the seven selected label indices. The teacher is purpose-built for LID, uses full-window attentive statistics, and is cheap enough to run repeatedly on CPU. The isolated [`teacher-bakeoff`](experiments/teacher-bakeoff/REPORT.md) retained it: across the same 21 held-out clips at 1/2/4 s, restricted seven-way accuracy was 58/63 for ECAPA, 54/63 for MMS-LID-126, and 42/63 for Whisper-small; ECAPA was also 8.4× and 15.9× cheaper by wall time. This clean synthetic comparison is not a production teacher benchmark, but neither challenger earned a switch.
 
 The teacher's 107-way log posterior is restricted to the seven supported deployment languages, renormalized, and softened at temperature `T=2`. Production would retain out-of-set mass as an unknown-language signal; discarding it here keeps the student head and objective focused.
 
@@ -52,6 +52,8 @@ There are two target regimes:
 
 This mixed strategy is intentional: a converged target is useful only under the stationary-language assumption; local targets are mandatory once that assumption is false.
 
+Target caches are fail-closed rather than trusted by filename. Every `.npz` records the exact ordered language codes, clip/target kind, frame count, pinned teacher revision/artifact hash, target-generator source hash, canonical manifest-record hash, source-WAV SHA-256, and complete target-configuration hash. The generator identity covers its four source files and exact Python/library versions; the directory index additionally hashes the complete manifest and target-file set. Target generation reopens and validates all 94 files; training validates its 71 clips, writes the same identity into the checkpoint, and evaluation rejects a checkpoint/cache mismatch. Probability shape, finiteness, non-negativity, normalization, and hard/soft frame counts are checked before use.
+
 ## Future-information asymmetry and objective
 
 Log-mels use a 25 ms window, 10 ms hop, `center=False`, and no whole-utterance normalization. The student stacks four future feature frames (`L=4`, 40 ms) and emits the label for teacher frame `i` at student frame `i+D`, where `D=21` (210 ms). Therefore its latest raw feature is
@@ -60,7 +62,9 @@ Log-mels use a 25 ms window, 10 ms hop, `center=False`, and no whole-utterance n
 i + D + L = i + 25 frames = i + 250 ms,
 ```
 
-exactly the end of the switch teacher's local window. It is not asked to imitate information that will be unavailable online. The padding mask additionally requires `i+D+L < sequence_length`, so padded right context cannot enter the loss.
+exactly the end of a switch-teacher window evaluated at frame `i`. The padding mask additionally requires `i+D+L < sequence_length`, so padded right context cannot enter the loss.
+
+There is one important residual mismatch: switch posteriors are evaluated only every 25 frames and linearly interpolated. A target between anchors uses the *next* anchor, whose own window ends 250 ms later; its effective future horizon is therefore 250–490 ms, while the aligned student has 250 ms. Exact anchor frames are context-matched, but 24/25 interpolated frames are not. The submitted run is retained as honest plumbing evidence, not as a latency-valid switch result. The next method fix is a previous-anchor hold, per-frame teacher inference, or reserving the anchor hop inside the evidence budget before any delay sweep.
 
 For batch item `b`, teacher posterior `q`, student logits `z`, temperature `T`, validity mask `m`, and early evidence ramp `w`, training minimizes
 
@@ -72,7 +76,7 @@ L_KD = T^2 * ------------------------------------------------------------------ 
 w[i] = min((i + 1) / 100, 1).
 ```
 
-The `T²` term preserves gradient scale under softening. For switch clips, `q[b,i]` is the local window posterior above. For monolingual clips it is the converged utterance posterior; the ramp acknowledges that the teacher's confidence is not reproducible at the very start. This is knowledge distillation only—human/TTS language labels are used to build and audit the split, not in the optimization loss.
+The `T²` term preserves gradient scale under softening. For switch clips, `q[b,i]` is the interpolated local-window posterior, with the horizon caveat above. For monolingual clips it is the converged utterance posterior; the ramp acknowledges that the teacher's confidence is not reproducible at the very start. This is knowledge distillation only—human/TTS language labels are used to build and audit the split, not in the optimization loss.
 
 A target contributes only when `i+D+L < sequence_length`. If that condition is false for every item in a batch, the loss raises a clear error instead of returning zero and allowing a fake zero-gradient optimizer step. At the default `D=21`, `L=4` boundary, length 25 is rejected and length 26 supplies exactly the first valid target frame; the regression test checks that this frame backpropagates a nonzero gradient.
 
@@ -86,7 +90,7 @@ The conservative worst-case algorithmic model latency is **435 ms**:
 25 ms analysis frame + (210 ms label delay + 40 ms lookahead) + 160 ms chunk = 435 ms.
 ```
 
-Past context adds compute but no algorithmic latency. On one CPU thread, including log-mel extraction and the deliberately uncached overlap, measured median RTF is **0.0057** (about 174× real time). Routing policy smoothing/dwell is separate from model latency.
+Past context adds compute but no algorithmic latency. On six Torch CPU threads, including log-mel extraction and the deliberately uncached overlap, measured median replay RTF is **0.0082** (about 122× real time). Routing policy smoothing/dwell is separate from model latency.
 
 ## Submitted sanity results
 
@@ -96,6 +100,7 @@ These values are from the included `results/` artifacts, not aspirational number
 |---|---:|
 | Monolingual train / held-out clips | 70 / 21 |
 | Train / held-out synthetic voice IDs | 14 / 7 (no overlap) |
+| Provenance-validated target cache | 94/94 files; schema 2 |
 | Optimizer steps; effective epochs | 1,600; 157.7465 |
 | First 10-step mean KD loss | 6.8704 |
 | Last 10-step mean KD loss | 1.4403 |
@@ -107,7 +112,7 @@ These values are from the included `results/` artifacts, not aspirational number
 | Hindi→English switch outcome | missed; lag `null` |
 | Student parameters | 42,567 |
 | Provisional end-tail outputs withheld | 4 frames |
-| Single-thread CPU RTF | 0.0057 |
+| Six-thread CPU replay RTF | 0.0082 |
 
 Agreement is not called accuracy: `eval_metrics.json` reports both student↔teacher agreement and student/teacher accuracy against the known synthesis language. The frozen teacher is correct on all 21 held-out monolingual clips, while the student generalises poorly to their unseen voices. On the held-out Hindi→English switch, the illustrative policy never establishes even its initial Hindi commit, so no English commit exists and lag is `null`; a miss is not assigned a flattering latency. The policy averages each 160 ms chunk, applies an EMA with new weight 0.30, and requires posterior ≥0.60, a 0.10 margin, and three consecutive chunks. This operating point is not calibrated on the tiny dataset; `DESIGN.md` describes how to set it properly.
 
@@ -116,16 +121,17 @@ Agreement is not called accuracy: `eval_metrics.json` reports both student↔tea
 - `tests/test_alignment.py` proves `teacher[i] ↔ student[i+D]`, validates the valid-tail mask, rejects an all-invalid `length=D+L` batch, and proves `D+L+1` backpropagates.
 - `tests/test_causality.py` changes every feature after `t+L` and requires outputs through `t` to be bit-identical; it also checks stable chunk/full equivalence and growing-prefix emission without duplicates.
 - `tests/test_data_split.py` checks the manifest speaker audit, including speakers inherited by switch clips, and proves overlap is rejected.
+- `tests/test_target_cache.py` rejects reordered class columns, changed waveform/manifest/config content, and modified target files while accepting a fully content-bound cache.
 - `scripts/prepare_data.py`, `teacher_targets.py`, `train.py`, and `eval.py` are the single entry points for each stage.
 - `src/streaming_lid/` holds configuration, frontend, model, loss, and dataset code.
 - `DESIGN.md` is the Part 2 live-ASR design.
 
 ## Implemented versus intentionally out of scope
 
-Implemented: reproducible multi-voice audio acquisition with retry-safe, voice-qualified caching; enforced voice-disjoint train/evaluation manifests; frozen real teacher inference; soft temporal targets; special handling of switch clips; streaming-safe features; bounded-lookahead causal model with stable stateful emissions; delayed KL with an explicit no-valid-frame guard; real backward/optimizer steps; separate agreement and known-label metrics; stable chunk-equivalence and causality tests; RTF; hysteretic switch measurement; and the requested plot/JSON outputs.
+Implemented: reproducible multi-voice audio acquisition with retry-safe, voice-qualified caching; enforced voice-disjoint train/evaluation manifests; pinned and artifact-hashed frozen teacher inference; content-bound target caches with generator-source, ordered-class, and probability validation; soft temporal targets; special handling of switch clips; streaming-safe features; bounded-lookahead causal model with stable stateful emissions; delayed KL with an explicit no-valid-frame guard; real backward/optimizer steps; separate agreement and known-label metrics; stable chunk-equivalence and causality tests; RTF; hysteretic switch measurement; and the requested plot/JSON outputs.
 
 Intentionally not implemented: a real telephony/VAD frontend, an ASR server/router, probability calibration on representative calls, an unknown-language head, checkpoint export/quantization, or convergence training. With more compute/data I would train on speaker-disjoint FLEURS/Common Voice plus anonymized 8 kHz call audio, add codec/noise/reverb augmentation and an `other` class, tune thresholds on a cost-weighted dev set, and report confidence intervals, false switches/hour, miss rate, and lag percentiles.
 
 ## Final summary and open issues
 
-The CPU path works and the optimization plumbing is sound: it executes 1,600 real updates without NaNs, reduces the 10-step mean KD loss from 6.8704 to 1.4403, and preserves causal/chunk-equivalent behavior. The speaker-disjoint evaluation also overturns the earlier apparent success: despite a perfect held-out teacher, the student achieves only 18.51% frame accuracy and misses the Hindi→English switch. The principal open issue is unseen-voice generalisation, before latency tuning; a seen-voice/provider ablation is still needed to attribute the cause. These synthetic results are sanity/failure evidence only; the policy is uncalibrated, and seven-way renormalization cannot reject an unsupported language.
+The CPU path works and the optimization plumbing is sound: it executes 1,600 real updates without NaNs, reduces the 10-step mean KD loss from 6.8704 to 1.4403, and preserves causal/chunk-equivalent behavior. The speaker-disjoint evaluation also overturns the earlier apparent success: despite a perfect held-out teacher, the student achieves only 18.51% frame accuracy and misses the Hindi→English switch. Before latency tuning, the interpolated switch targets need a causally valid availability contract; independently, a seen-voice/provider ablation is needed to attribute the poor unseen-voice transfer. These synthetic results are sanity/failure evidence only; the policy is uncalibrated, and seven-way renormalization cannot reject an unsupported language.

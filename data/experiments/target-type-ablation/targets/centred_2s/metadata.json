@@ -1,7 +1,35 @@
 {
   "experiment": "target-type-ablation",
+  "schema_version": 2,
+  "analysis_version": "target-type-ablation-v2",
   "variant": "centred_2s",
   "input_sha256": "ed1c02ea8036372143a7373fca971d1f3b6f64ce9514f7ec75bfee44d1fc9f59",
+  "run_identity_sha256": "1d2d889abf733b9797a981e6d65809726d4d4822460d0877bd91fbe97a4c75c7",
+  "driver_sha256": "910b89fb772af1b13c64b366ad19a1b62a5b31b2f9136f77e5901625896350e9",
+  "pipeline_source_sha256": "2d867c795fbbfa665b198be015e7bbf129c008dd9a7560e9f2d4543aa9c4094b",
+  "teacher_identity": {
+    "model_id": "speechbrain/lang-id-voxlingua107-ecapa",
+    "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+    "artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
+    "files": {
+      "classifier.ckpt": {
+        "sha256": "a50d9024ff58d317031c9787d4c6c614d454a87a8ef32f9d36338cd3ff57adbc",
+        "bytes": 762555
+      },
+      "embedding_model.ckpt": {
+        "sha256": "ab750d5c06d713477045fa798fab5d33e959dbc0dfe4de510a9a47844c79a19a",
+        "bytes": 84474355
+      },
+      "hyperparams.yaml": {
+        "sha256": "88fec9791a8416a152fb10834327e18d38e5bf7a351e9b714e08cdc4af05de6f",
+        "bytes": 1519
+      },
+      "label_encoder.txt": {
+        "sha256": "9f566d83c4f19168be4a0bf86c0c7dac7d3264a95105bcbf33a7c32b83ccc17f",
+        "bytes": 2204
+      }
+    }
+  },
   "language_codes": [
     "en",
     "hi",
@@ -23,13 +51,13 @@
     "context_valid_at_tested_latency": false,
     "future_context_excess_ms": 750.0
   },
-  "generated_utc": "2026-09-25T18:59:32.403567+00:00",
+  "generated_utc": "2026-09-25T19:29:09.628051+00:00",
   "summary": {
     "clips": 94,
     "anchors": 1786,
     "frames": 41195,
     "known_label_frame_accuracy_micro_all_splits": 0.8551523243112028,
-    "generation_wall_seconds": 95.25013059600042,
+    "generation_wall_seconds": 109.58265206900069,
     "per_clip": [
       {
         "id": "en_train_00",

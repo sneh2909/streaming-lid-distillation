@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--results-dir", type=Path, default=Path("results"))
     parser.add_argument("--benchmark-repeats", type=int, default=5)
-    parser.add_argument("--threads", type=int, default=1)
+    parser.add_argument("--threads", type=int, default=6)
     return parser.parse_args()
 
 
@@ -473,6 +473,13 @@ def main() -> None:
             "manifest_records_sha256"
         ],
         "target_files_sha256": target_cache.identity["target_files_sha256"],
+        "teacher_revision": target_cache.identity["teacher_revision"],
+        "teacher_artifact_sha256": target_cache.identity[
+            "teacher_artifact_sha256"
+        ],
+        "target_generator_source_sha256": target_cache.identity[
+            "target_generator_source_sha256"
+        ],
         "student_params": model.parameter_count,
         "algorithmic_latency_ms": ALGORITHMIC_LATENCY_MS,
         "provisional_tail_withheld": True,

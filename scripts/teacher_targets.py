@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import warnings
 from pathlib import Path
@@ -19,8 +20,12 @@ from streaming_lid.config import (
     SAMPLE_RATE,
     TEACHER_FUTURE_MS,
     TEACHER_HOP_FRAMES,
+    TEACHER_ARTIFACT_FILES,
+    TEACHER_ARTIFACT_SHA256,
+    TEACHER_LANGUAGE_INDICES,
     TEACHER_NAME,
     TEACHER_PAST_MS,
+    TEACHER_REVISION,
     TEACHER_TEMPERATURE,
     WIN_LENGTH,
 )
@@ -35,8 +40,8 @@ from streaming_lid.data import (
     require_speaker_disjoint,
     resolve_audio_path,
     target_cache_configuration,
-    target_configuration_sha256,
     target_kind_for_item,
+    teacher_artifact_identity,
 )
 
 
@@ -90,7 +95,49 @@ def label_indices(teacher: EncoderClassifier) -> list[int]:
         if len(matches) != 1:
             raise ValueError(f"expected one teacher label for {code}, found {matches}")
         result.append(matches[0])
+    if tuple(result) != TEACHER_LANGUAGE_INDICES:
+        raise ValueError(
+            "pinned teacher label map differs from configured language indices: "
+            f"found {tuple(result)}, expected {TEACHER_LANGUAGE_INDICES}"
+        )
     return result
+
+
+def resolve_teacher_artifact() -> tuple[Path, dict]:
+    """Download/resolve the pinned snapshot and verify every consumed artifact."""
+    from huggingface_hub import snapshot_download
+
+    snapshot = Path(
+        snapshot_download(
+            repo_id=TEACHER_NAME,
+            revision=TEACHER_REVISION,
+            allow_patterns=list(TEACHER_ARTIFACT_FILES),
+        )
+    ).resolve()
+    file_records = {}
+    combined = hashlib.sha256()
+    for filename in TEACHER_ARTIFACT_FILES:
+        path = snapshot / filename
+        if not path.is_file():
+            raise FileNotFoundError(f"pinned teacher artifact is missing {path}")
+        sha256 = file_sha256(path)
+        size = path.stat().st_size
+        file_records[filename] = {"sha256": sha256, "bytes": size}
+        combined.update(filename.encode("utf-8"))
+        combined.update(bytes.fromhex(sha256))
+    actual = {
+        "model_id": TEACHER_NAME,
+        "revision": TEACHER_REVISION,
+        "artifact_sha256": combined.hexdigest(),
+        "files": file_records,
+    }
+    expected = teacher_artifact_identity()
+    if actual != expected or actual["artifact_sha256"] != TEACHER_ARTIFACT_SHA256:
+        raise ValueError(
+            "resolved teacher artifacts differ from the pinned identity; "
+            f"found {actual}, expected {expected}"
+        )
+    return snapshot, actual
 
 
 def interpolate_posteriors(
@@ -120,10 +167,18 @@ def main() -> None:
     torch.set_num_threads(args.threads)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     warnings.filterwarnings("ignore", message=".*custom_fwd.*deprecated.*")
-    print(f"loading frozen teacher {TEACHER_NAME}", flush=True)
+    teacher_snapshot, resolved_teacher_identity = resolve_teacher_artifact()
+    pinned_savedir = (
+        args.model_dir.resolve()
+        / f"{TEACHER_REVISION}-{TEACHER_ARTIFACT_SHA256[:12]}"
+    )
+    print(
+        f"loading frozen teacher {TEACHER_NAME}@{TEACHER_REVISION[:8]}", flush=True
+    )
     teacher = EncoderClassifier.from_hparams(
-        source=TEACHER_NAME,
-        savedir=str(args.model_dir),
+        source=str(teacher_snapshot),
+        savedir=str(pinned_savedir),
+        overrides={"pretrained_path": str(teacher_snapshot)},
         run_opts={"device": "cpu"},
     )
     teacher.eval()
@@ -132,7 +187,8 @@ def main() -> None:
     records = read_manifest(args.manifest)
     speaker_audit = require_speaker_disjoint(records)
     target_configuration = target_cache_configuration()
-    target_configuration_hash = target_configuration_sha256()
+    target_configuration_hash = canonical_json_sha256(target_configuration)
+    generator_identity = target_configuration["target_generator"]
     manifest_hash = manifest_records_sha256(records)
     summary_records = []
 
@@ -191,6 +247,11 @@ def main() -> None:
             manifest_record_sha256=np.asarray(record_hash),
             target_configuration_sha256=np.asarray(target_configuration_hash),
             teacher_name=np.asarray(TEACHER_NAME),
+            teacher_revision=np.asarray(TEACHER_REVISION),
+            teacher_artifact_sha256=np.asarray(TEACHER_ARTIFACT_SHA256),
+            target_generator_source_sha256=np.asarray(
+                generator_identity["source_sha256"]
+            ),
         )
 
         predicted = raw_anchors.argmax(axis=-1)
@@ -225,6 +286,8 @@ def main() -> None:
     metadata = {
         "schema_version": TARGET_CACHE_SCHEMA_VERSION,
         "teacher": TEACHER_NAME,
+        "teacher_identity": resolved_teacher_identity,
+        "target_generator": generator_identity,
         "languages": list(LANGUAGE_CODES),
         "temperature": TEACHER_TEMPERATURE,
         "window_past_ms": TEACHER_PAST_MS,
@@ -251,6 +314,8 @@ def main() -> None:
     args.results_dir.mkdir(parents=True, exist_ok=True)
     teacher_metrics = {
         "teacher_name": TEACHER_NAME,
+        "teacher_identity": resolved_teacher_identity,
+        "target_generator": generator_identity,
         "languages": list(LANGUAGE_CODES),
         "n_clips": len(records),
         "n_converged_utterance_targets": sum(
