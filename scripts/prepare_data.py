@@ -4,10 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import importlib.metadata
 import json
+import os
+import platform
+import shutil
 import tempfile
 import time
 from pathlib import Path
+from typing import Any
 
 import edge_tts
 import miniaudio
@@ -16,10 +21,34 @@ import soundfile as sf
 from gtts import gTTS
 
 from streaming_lid.config import LANGUAGES, SAMPLE_RATE
-from streaming_lid.data import require_speaker_disjoint
+from streaming_lid.data import (
+    canonical_json_sha256,
+    file_sha256,
+    read_manifest,
+    require_speaker_disjoint,
+)
 
 TRAIN_CLIPS_PER_LANGUAGE = 10
 HELDOUT_CLIPS_PER_LANGUAGE = 3
+CORPUS_SCHEMA_VERSION = 1
+CORPUS_RECIPE_VERSION = 1
+SILENCE_THRESHOLD = 0.003
+TRIM_MARGIN_SECONDS = 0.08
+PEAK_LIMIT = 0.95
+WAV_SUBTYPE = "PCM_16"
+EDGE_SYNTHESIS_OPTIONS = {
+    "rate": "+0%",
+    "volume": "+0%",
+    "pitch": "+0Hz",
+    "boundary": "SentenceBoundary",
+    "connect_timeout": 10,
+    "receive_timeout": 60,
+}
+GTTS_SYNTHESIS_OPTIONS = {
+    "slow": False,
+    "tld": "com",
+    "lang_check": True,
+}
 # Each language uses its gTTS locale voice plus a male Edge voice in training.
 # Evaluation uses an unseen female Edge voice. These are synthetic voice
 # identities, not claims about unique human speakers. Provider and broad gender
@@ -143,6 +172,167 @@ SENTENCES = {
 }
 
 
+def corpus_generator_identity() -> dict[str, Any]:
+    """Describe the exact local recipe implementation and client runtime."""
+    source_path = Path(__file__).resolve()
+    dependencies = {
+        distribution: importlib.metadata.version(distribution)
+        for distribution in (
+            "edge-tts",
+            "gTTS",
+            "miniaudio",
+            "numpy",
+            "soundfile",
+        )
+    }
+    return {
+        "recipe_version": CORPUS_RECIPE_VERSION,
+        "source": {
+            "path": "scripts/prepare_data.py",
+            "sha256": file_sha256(source_path),
+            "bytes": source_path.stat().st_size,
+        },
+        "runtime": {
+            "python": platform.python_version(),
+            "dependencies": dependencies,
+        },
+    }
+
+
+def audio_processing_recipe() -> dict[str, Any]:
+    return {
+        "decoder": "miniaudio.decode_file",
+        "decoded_format": "FLOAT32",
+        "channels": 1,
+        "sample_rate": SAMPLE_RATE,
+        "silence_threshold": SILENCE_THRESHOLD,
+        "trim_margin_seconds": TRIM_MARGIN_SECONDS,
+        "peak_limit": PEAK_LIMIT,
+        "wav_subtype": WAV_SUBTYPE,
+    }
+
+
+def tts_audio_recipe(
+    *,
+    text: str,
+    language: str,
+    voice: str,
+    generator_identity: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return every declared input that should invalidate a cached TTS WAV."""
+    if voice.startswith("gtts:"):
+        provider = "gtts"
+        options = dict(GTTS_SYNTHESIS_OPTIONS)
+        service_revision = "not exposed by gTTS"
+    else:
+        provider = "edge-tts"
+        options = dict(EDGE_SYNTHESIS_OPTIONS)
+        service_revision = "not exposed by edge-tts"
+    return {
+        "kind": "tts",
+        "schema_version": CORPUS_RECIPE_VERSION,
+        "text": text,
+        "language": language,
+        "provider": provider,
+        "voice": voice,
+        "provider_options": options,
+        "provider_service_revision": service_revision,
+        "audio_processing": audio_processing_recipe(),
+        "generator": generator_identity or corpus_generator_identity(),
+    }
+
+
+def switch_audio_recipe(
+    *,
+    first_id: str,
+    second_id: str,
+    first_audio_sha256: str,
+    second_audio_sha256: str,
+    generator_identity: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "kind": "fixed_duration_concatenation",
+        "schema_version": CORPUS_RECIPE_VERSION,
+        "components": [
+            {"id": first_id, "audio_sha256": first_audio_sha256},
+            {"id": second_id, "audio_sha256": second_audio_sha256},
+        ],
+        "segment_seconds": 4.0,
+        "short_clip_policy": "right_zero_pad",
+        "long_clip_policy": "right_truncate",
+        "sample_rate": SAMPLE_RATE,
+        "wav_subtype": WAV_SUBTYPE,
+        "generator": generator_identity,
+    }
+
+
+def inspect_wav(path: Path) -> tuple[np.ndarray, float, str]:
+    """Validate one published waveform and return samples, duration, and hash."""
+    info = sf.info(path)
+    if info.samplerate != SAMPLE_RATE:
+        raise ValueError(f"unexpected sample rate for {path}: {info.samplerate}")
+    if info.channels != 1:
+        raise ValueError(f"expected mono audio for {path}, found {info.channels} channels")
+    if info.subtype != WAV_SUBTYPE:
+        raise ValueError(f"unexpected WAV subtype for {path}: {info.subtype}")
+    samples, rate = sf.read(path, dtype="float32", always_2d=False)
+    if rate != SAMPLE_RATE:
+        raise ValueError(f"unexpected sample rate for {path}: {rate}")
+    samples = np.asarray(samples, dtype=np.float32)
+    if samples.ndim != 1 or not len(samples):
+        raise ValueError(f"audio must be a non-empty mono waveform: {path}")
+    if not np.isfinite(samples).all():
+        raise ValueError(f"audio contains non-finite samples: {path}")
+    if float(np.max(np.abs(samples))) <= SILENCE_THRESHOLD:
+        raise ValueError(f"audio is silent at threshold {SILENCE_THRESHOLD}: {path}")
+    return samples, len(samples) / SAMPLE_RATE, file_sha256(path)
+
+
+def finalize_staged_wav(
+    temporary_path: Path, *, clip_id: str
+) -> tuple[Path, float, str]:
+    """Rename a validated staged WAV to an immutable byte-addressed name."""
+    _, duration_seconds, audio_sha256 = inspect_wav(temporary_path)
+    final_path = temporary_path.with_name(f"{clip_id}--sha256-{audio_sha256}.wav")
+    if final_path != temporary_path:
+        os.replace(temporary_path, final_path)
+    return final_path, duration_seconds, audio_sha256
+
+
+def reusable_audio_path(
+    existing_record: dict[str, Any] | None,
+    *,
+    expected_recipe: dict[str, Any],
+    output_dir: Path,
+) -> Path | None:
+    """Return a verified immutable cache entry, never a legacy filename guess."""
+    if not existing_record:
+        return None
+    expected_recipe_sha256 = canonical_json_sha256(expected_recipe)
+    if existing_record.get("corpus_schema_version") != CORPUS_SCHEMA_VERSION:
+        return None
+    if existing_record.get("audio_recipe") != expected_recipe:
+        return None
+    if existing_record.get("audio_recipe_sha256") != expected_recipe_sha256:
+        return None
+    declared_audio_sha256 = existing_record.get("audio_sha256")
+    relative_path = existing_record.get("audio_path")
+    if not isinstance(declared_audio_sha256, str) or not isinstance(relative_path, str):
+        return None
+    try:
+        root = output_dir.resolve()
+        candidate = (output_dir / relative_path).resolve(strict=True)
+        candidate.relative_to(root)
+        _, _, actual_audio_sha256 = inspect_wav(candidate)
+    except (OSError, ValueError):
+        return None
+    if actual_audio_sha256 != declared_audio_sha256:
+        return None
+    if candidate.name != f"{existing_record['id']}--sha256-{actual_audio_sha256}.wav":
+        return None
+    return candidate
+
+
 def decode_and_write(temporary_name: str, output_path: Path) -> None:
     """Decode an MP3 response, trim silence, peak-limit, and write PCM WAV."""
     decoded = miniaudio.decode_file(
@@ -152,16 +342,16 @@ def decode_and_write(temporary_name: str, output_path: Path) -> None:
         sample_rate=SAMPLE_RATE,
     )
     samples = np.frombuffer(decoded.samples, dtype=np.float32).copy()
-    active = np.flatnonzero(np.abs(samples) > 0.003)
+    active = np.flatnonzero(np.abs(samples) > SILENCE_THRESHOLD)
     if len(active):
-        margin = int(0.08 * SAMPLE_RATE)
+        margin = int(TRIM_MARGIN_SECONDS * SAMPLE_RATE)
         begin = max(0, int(active[0]) - margin)
         end = min(len(samples), int(active[-1]) + margin + 1)
         samples = samples[begin:end]
     peak = float(np.max(np.abs(samples))) if len(samples) else 0.0
-    if peak > 0.95:
-        samples *= 0.95 / peak
-    sf.write(output_path, samples, SAMPLE_RATE, subtype="PCM_16")
+    if peak > PEAK_LIMIT:
+        samples *= PEAK_LIMIT / peak
+    sf.write(output_path, samples, SAMPLE_RATE, subtype=WAV_SUBTYPE)
 
 
 def synthesize(text: str, language: str, voice: str, output_path: Path) -> None:
@@ -175,9 +365,17 @@ def synthesize(text: str, language: str, voice: str, output_path: Path) -> None:
             ) as temporary:
                 temporary_name = temporary.name
             if voice.startswith("gtts:"):
-                gTTS(text=text, lang=language, slow=False).save(temporary_name)
+                gTTS(
+                    text=text,
+                    lang=language,
+                    **GTTS_SYNTHESIS_OPTIONS,
+                ).save(temporary_name)
             else:
-                edge_tts.Communicate(text=text, voice=voice).save_sync(temporary_name)
+                edge_tts.Communicate(
+                    text=text,
+                    voice=voice,
+                    **EDGE_SYNTHESIS_OPTIONS,
+                ).save_sync(temporary_name)
             decode_and_write(temporary_name, output_path)
             return
         except Exception:
@@ -215,7 +413,7 @@ def write_switch(
         raise ValueError("source clips must already be 16 kHz")
     segment_seconds = 4.0
     joined = np.concatenate([four_second_segment(first), four_second_segment(second)])
-    sf.write(output_path, joined, SAMPLE_RATE, subtype="PCM_16")
+    sf.write(output_path, joined, SAMPLE_RATE, subtype=WAV_SUBTYPE)
     return {
         "duration_seconds": len(joined) / SAMPLE_RATE,
         "segments": [
@@ -233,6 +431,124 @@ def write_switch(
     }
 
 
+def write_manifest(path: Path, records: list[dict[str, Any]]) -> None:
+    with path.open("w", encoding="utf-8") as handle:
+        for record in records:
+            handle.write(
+                json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n"
+            )
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def validate_staged_corpus(
+    records: list[dict[str, Any]],
+    root: Path,
+    *,
+    expected_split_counts: dict[str, int] | None = None,
+) -> dict[str, Any]:
+    """Fail before publication unless metadata and every referenced WAV agree."""
+    expected_split_counts = expected_split_counts or {
+        "train": len(LANGUAGES) * TRAIN_CLIPS_PER_LANGUAGE + 1,
+        "heldout": len(LANGUAGES) * HELDOUT_CLIPS_PER_LANGUAGE,
+        "switch": 2,
+    }
+    ids = [record.get("id") for record in records]
+    if any(not isinstance(clip_id, str) or not clip_id for clip_id in ids):
+        raise ValueError("every corpus record must have a non-empty string ID")
+    if len(set(ids)) != len(ids):
+        raise ValueError("corpus contains duplicate clip IDs")
+    actual_split_counts: dict[str, int] = {}
+    audio_paths: set[str] = set()
+    for record in records:
+        split = record.get("split")
+        if split not in expected_split_counts:
+            raise ValueError(f"record {record['id']} has unknown split {split!r}")
+        actual_split_counts[split] = actual_split_counts.get(split, 0) + 1
+        relative_path = record.get("audio_path")
+        if not isinstance(relative_path, str) or not relative_path:
+            raise ValueError(f"record {record['id']} has no audio path")
+        if relative_path in audio_paths:
+            raise ValueError(f"multiple records reference {relative_path}")
+        audio_paths.add(relative_path)
+        try:
+            resolved_root = root.resolve()
+            audio_path = (root / relative_path).resolve(strict=True)
+            audio_path.relative_to(resolved_root)
+        except (OSError, ValueError) as error:
+            raise ValueError(
+                f"record {record['id']} has an invalid audio path {relative_path!r}"
+            ) from error
+        _, duration_seconds, audio_sha256 = inspect_wav(audio_path)
+        if record.get("audio_sha256") != audio_sha256:
+            raise ValueError(f"record {record['id']} audio checksum does not match")
+        expected_name = f"{record['id']}--sha256-{audio_sha256}.wav"
+        if audio_path.name != expected_name:
+            raise ValueError(
+                f"record {record['id']} is not content-addressed as {expected_name}"
+            )
+        recipe = record.get("audio_recipe")
+        if not isinstance(recipe, dict):
+            raise ValueError(f"record {record['id']} has no audio recipe")
+        if record.get("audio_recipe_sha256") != canonical_json_sha256(recipe):
+            raise ValueError(f"record {record['id']} recipe checksum does not match")
+        if record.get("corpus_schema_version") != CORPUS_SCHEMA_VERSION:
+            raise ValueError(f"record {record['id']} has the wrong corpus schema")
+        if abs(float(record.get("duration_seconds", -1)) - round(duration_seconds, 4)) > 5e-5:
+            raise ValueError(f"record {record['id']} duration does not match its WAV")
+    if actual_split_counts != expected_split_counts:
+        raise ValueError(
+            f"corpus split counts {actual_split_counts} differ from "
+            f"expected {expected_split_counts}"
+        )
+    speaker_audit = require_speaker_disjoint(records)
+    return {
+        "n_records": len(records),
+        "split_counts": actual_split_counts,
+        "speaker_audit": speaker_audit,
+        "manifest_records_sha256": canonical_json_sha256(records),
+        "audio_files_sha256": canonical_json_sha256(
+            {record["id"]: record["audio_sha256"] for record in records}
+        ),
+    }
+
+
+def publish_staged_corpus(
+    staging_dir: Path,
+    output_dir: Path,
+    records: list[dict[str, Any]],
+    *,
+    expected_split_counts: dict[str, int] | None = None,
+) -> dict[str, Any]:
+    """Publish immutable audio first and atomically switch the manifest last.
+
+    A failed synthesis never calls this function. A failure while moving new
+    audio can leave only unreferenced content-addressed files; the prior
+    manifest and every path it references remain unchanged.
+    """
+    audit = validate_staged_corpus(
+        records,
+        staging_dir,
+        expected_split_counts=expected_split_counts,
+    )
+    staged_manifest = staging_dir / "manifest.jsonl"
+    write_manifest(staged_manifest, records)
+    output_audio_dir = output_dir / "audio"
+    output_audio_dir.mkdir(parents=True, exist_ok=True)
+    for record in records:
+        staged_audio = staging_dir / record["audio_path"]
+        published_audio = output_dir / record["audio_path"]
+        if published_audio.exists():
+            if file_sha256(published_audio) == record["audio_sha256"]:
+                staged_audio.unlink()
+                continue
+        os.replace(staged_audio, published_audio)
+    # The manifest is the release pointer. Content names include their bytes,
+    # so publishing them cannot mutate anything referenced by the old pointer.
+    os.replace(staged_manifest, output_dir / "manifest.jsonl")
+    return audit
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=Path("data/generated"))
@@ -244,131 +560,198 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    audio_dir = args.output_dir / "audio"
-    audio_dir.mkdir(parents=True, exist_ok=True)
-    records: list[dict] = []
+    args.output_dir.parent.mkdir(parents=True, exist_ok=True)
+    existing_manifest = args.output_dir / "manifest.jsonl"
+    existing_records_by_id: dict[str, dict[str, Any]] = {}
+    if existing_manifest.exists():
+        existing_records = read_manifest(existing_manifest)
+        existing_records_by_id = {
+            record["id"]: record for record in existing_records
+        }
+        if len(existing_records_by_id) != len(existing_records):
+            raise ValueError("existing manifest contains duplicate clip IDs")
 
+    generator_identity = corpus_generator_identity()
     expected_sentences = TRAIN_CLIPS_PER_LANGUAGE + HELDOUT_CLIPS_PER_LANGUAGE
-    for language, name in LANGUAGES.items():
-        if len(SENTENCES[language]) != expected_sentences:
-            raise ValueError(
-                f"{language} needs {expected_sentences} sentences, "
-                f"found {len(SENTENCES[language])}"
+    reused_clips = 0
+    synthesized_clips = 0
+    with tempfile.TemporaryDirectory(
+        prefix=f".{args.output_dir.name}-stage-", dir=args.output_dir.parent
+    ) as temporary_directory:
+        staging_dir = Path(temporary_directory)
+        audio_dir = staging_dir / "audio"
+        audio_dir.mkdir(parents=True)
+        records: list[dict[str, Any]] = []
+
+        for language, name in LANGUAGES.items():
+            if len(SENTENCES[language]) != expected_sentences:
+                raise ValueError(
+                    f"{language} needs {expected_sentences} sentences, "
+                    f"found {len(SENTENCES[language])}"
+                )
+            for sentence_index, text in enumerate(SENTENCES[language]):
+                split = (
+                    "train"
+                    if sentence_index < TRAIN_CLIPS_PER_LANGUAGE
+                    else "heldout"
+                )
+                if split == "heldout":
+                    voice = EDGE_VOICES[language]["female"]
+                    source = "Microsoft Edge TTS via edge-tts"
+                elif sentence_index < 5:
+                    voice = f"gtts:{language}:default"
+                    source = "gTTS"
+                else:
+                    voice = EDGE_VOICES[language]["male"]
+                    source = "Microsoft Edge TTS via edge-tts"
+                clip_id = f"{language}_{split}_{sentence_index:02d}"
+                recipe = tts_audio_recipe(
+                    text=text,
+                    language=language,
+                    voice=voice,
+                    generator_identity=generator_identity,
+                )
+                pending_path = audio_dir / f"{clip_id}--pending.wav"
+                cached_path = None
+                if not args.force:
+                    cached_path = reusable_audio_path(
+                        existing_records_by_id.get(clip_id),
+                        expected_recipe=recipe,
+                        output_dir=args.output_dir,
+                    )
+                if cached_path is None:
+                    print(
+                        f"synthesizing {clip_id} with {voice}: {text}",
+                        flush=True,
+                    )
+                    synthesize(text, language, voice, pending_path)
+                    synthesized_clips += 1
+                else:
+                    shutil.copy2(cached_path, pending_path)
+                    reused_clips += 1
+                staged_path, duration_seconds, audio_sha256 = finalize_staged_wav(
+                    pending_path,
+                    clip_id=clip_id,
+                )
+                rounded_duration = round(duration_seconds, 4)
+                records.append(
+                    {
+                        "corpus_schema_version": CORPUS_SCHEMA_VERSION,
+                        "id": clip_id,
+                        "audio_path": f"audio/{staged_path.name}",
+                        "audio_sha256": audio_sha256,
+                        "audio_recipe_sha256": canonical_json_sha256(recipe),
+                        "audio_recipe": recipe,
+                        "split": split,
+                        "language": language,
+                        "language_name": name,
+                        "duration_seconds": rounded_duration,
+                        "source": source,
+                        "speaker_id": voice,
+                        "synthetic_voice": True,
+                        "text": text,
+                        "segments": [
+                            {
+                                "language": language,
+                                "start_seconds": 0.0,
+                                "end_seconds": rounded_duration,
+                            }
+                        ],
+                    }
+                )
+
+        by_id = {record["id"]: record for record in records}
+        switches = [
+            (
+                "switch_hi_en_train",
+                "hi_train_00",
+                "en_train_00",
+                "hi",
+                "en",
+                "train",
+            ),
+            (
+                "switch_hi_en_eval",
+                "hi_heldout_10",
+                "en_heldout_10",
+                "hi",
+                "en",
+                "switch",
+            ),
+            (
+                "switch_en_hi_eval",
+                "en_heldout_10",
+                "hi_heldout_10",
+                "en",
+                "hi",
+                "switch",
+            ),
+        ]
+        for (
+            clip_id,
+            first_id,
+            second_id,
+            first_language,
+            second_language,
+            split,
+        ) in switches:
+            pending_path = audio_dir / f"{clip_id}--pending.wav"
+            switch_info = write_switch(
+                staging_dir / by_id[first_id]["audio_path"],
+                staging_dir / by_id[second_id]["audio_path"],
+                pending_path,
+                first_language,
+                second_language,
             )
-        for sentence_index, text in enumerate(SENTENCES[language]):
-            split = (
-                "train"
-                if sentence_index < TRAIN_CLIPS_PER_LANGUAGE
-                else "heldout"
+            staged_path, duration_seconds, audio_sha256 = finalize_staged_wav(
+                pending_path,
+                clip_id=clip_id,
             )
-            if split == "heldout":
-                voice = EDGE_VOICES[language]["female"]
-                source = "Microsoft Edge TTS via edge-tts"
-            elif sentence_index < 5:
-                voice = f"gtts:{language}:default"
-                source = "gTTS"
-            else:
-                voice = EDGE_VOICES[language]["male"]
-                source = "Microsoft Edge TTS via edge-tts"
-            clip_id = f"{language}_{split}_{sentence_index:02d}"
-            voice_slug = voice.lower().replace(":", "-")
-            output_path = audio_dir / f"{clip_id}--{voice_slug}.wav"
-            if args.force or not output_path.exists():
-                print(f"synthesizing {clip_id} with {voice}: {text}", flush=True)
-                synthesize(text, language, voice, output_path)
-            samples, rate = sf.read(output_path, dtype="float32")
-            if rate != SAMPLE_RATE:
-                raise ValueError(f"unexpected sample rate for {output_path}: {rate}")
+            recipe = switch_audio_recipe(
+                first_id=first_id,
+                second_id=second_id,
+                first_audio_sha256=by_id[first_id]["audio_sha256"],
+                second_audio_sha256=by_id[second_id]["audio_sha256"],
+                generator_identity=generator_identity,
+            )
             records.append(
                 {
+                    "corpus_schema_version": CORPUS_SCHEMA_VERSION,
                     "id": clip_id,
-                    "audio_path": f"audio/{output_path.name}",
+                    "audio_path": f"audio/{staged_path.name}",
+                    "audio_sha256": audio_sha256,
+                    "audio_recipe_sha256": canonical_json_sha256(recipe),
+                    "audio_recipe": recipe,
                     "split": split,
-                    "language": language,
-                    "language_name": name,
-                    "duration_seconds": round(len(samples) / SAMPLE_RATE, 4),
-                    "source": source,
-                    "speaker_id": voice,
-                    "synthetic_voice": True,
-                    "text": text,
-                    "segments": [
-                        {
-                            "language": language,
-                            "start_seconds": 0.0,
-                            "end_seconds": round(len(samples) / SAMPLE_RATE, 4),
-                        }
+                    "language": "mixed",
+                    "language_name": (
+                        f"{LANGUAGES[first_language]} to "
+                        f"{LANGUAGES[second_language]}"
+                    ),
+                    "source": "self-concatenated synthetic speech",
+                    "speaker_ids": [
+                        by_id[first_id]["speaker_id"],
+                        by_id[second_id]["speaker_id"],
                     ],
+                    "component_ids": [first_id, second_id],
+                    "synthetic_voice": True,
+                    "text": (
+                        f"{by_id[first_id]['text']} | {by_id[second_id]['text']}"
+                    ),
+                    "duration_seconds": round(duration_seconds, 4),
+                    "segments": switch_info["segments"],
                 }
             )
 
-    by_id = {record["id"]: record for record in records}
-    switches = [
-        ("switch_hi_en_train", "hi_train_00", "en_train_00", "hi", "en", "train"),
-        (
-            "switch_hi_en_eval",
-            "hi_heldout_10",
-            "en_heldout_10",
-            "hi",
-            "en",
-            "switch",
-        ),
-        (
-            "switch_en_hi_eval",
-            "en_heldout_10",
-            "hi_heldout_10",
-            "en",
-            "hi",
-            "switch",
-        ),
-    ]
-    for (
-        clip_id,
-        first_id,
-        second_id,
-        first_language,
-        second_language,
-        split,
-    ) in switches:
-        output_path = audio_dir / f"{clip_id}.wav"
-        switch_info = write_switch(
-            args.output_dir / by_id[first_id]["audio_path"],
-            args.output_dir / by_id[second_id]["audio_path"],
-            output_path,
-            first_language,
-            second_language,
-        )
-        records.append(
-            {
-                "id": clip_id,
-                "audio_path": f"audio/{output_path.name}",
-                "split": split,
-                "language": "mixed",
-                "language_name": (
-                    f"{LANGUAGES[first_language]} to {LANGUAGES[second_language]}"
-                ),
-                "source": "self-concatenated synthetic speech",
-                "speaker_ids": [
-                    by_id[first_id]["speaker_id"],
-                    by_id[second_id]["speaker_id"],
-                ],
-                "synthetic_voice": True,
-                "text": f"{by_id[first_id]['text']} | {by_id[second_id]['text']}",
-                **switch_info,
-            }
-        )
+        audit = publish_staged_corpus(staging_dir, args.output_dir, records)
 
-    speaker_audit = require_speaker_disjoint(records)
     manifest_path = args.output_dir / "manifest.jsonl"
-    with manifest_path.open("w", encoding="utf-8") as handle:
-        for record in records:
-            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
-    counts = {
-        split: sum(record["split"] == split for record in records)
-        for split in ("train", "heldout", "switch")
-    }
     print(
-        f"wrote {manifest_path} with {len(records)} clips: {counts}; "
-        f"train/evaluation speakers disjoint={speaker_audit['speaker_disjoint']}",
+        f"published {manifest_path} with {audit['n_records']} clips: "
+        f"{audit['split_counts']}; reused={reused_clips}, "
+        f"synthesized={synthesized_clips}; train/evaluation speakers "
+        f"disjoint={audit['speaker_audit']['speaker_disjoint']}; "
+        f"manifest_records_sha256={audit['manifest_records_sha256']}",
         flush=True,
     )
 

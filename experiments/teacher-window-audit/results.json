@@ -3,15 +3,15 @@
   "analysis_version": "teacher-window-audit-v1",
   "experiment": "teacher-window-audit",
   "question": "Which availability-valid ECAPA local target window transitions fast enough for a causal student without losing non-boundary Hindi/English target accuracy?",
-  "generated_utc": "2026-09-25T20:36:02.133142+00:00",
-  "run_identity_sha256": "a7ae9dd91130304a460dd65a538ab687b46baabd28678b7ee3a80dd3ab4d213b",
+  "generated_utc": "2026-09-25T20:38:25.893087+00:00",
+  "run_identity_sha256": "609e6b9b4cd8b8ef6855cf6be87c02c3a349fe55a9ec27c1945c6434d092890d",
   "run_identity": {
     "experiment": "teacher-window-audit",
     "schema_version": 1,
     "analysis_version": "teacher-window-audit-v1",
     "evaluation_input_sha256": "c0a4dc40eac162301d1ab08bf20644f053ea1d5e6fa2b777fe25a36b6db2f3c1",
-    "main_heldout_target_files_sha256": "9fe6978ec1719646ae09c34aaab361b753bd08832d62559f4450fe839abeae51",
-    "driver_sha256": "cf6a8dd295a74f8f7f8f38bebc9da6b9801e7f8efa136af916276a21c4412b84",
+    "main_evaluation_target_files_sha256": "02086a9563ea29264d7602ccbebee6a37e06d592cb7a02284359e70139e87867",
+    "driver_sha256": "8c71bd7caad87a3e1d336f5a751529d1112d61172cc0bb91e5b7946eb791be3d",
     "pipeline_source_sha256": "1e70bafd4ed0c2c9707d9602e718cb4d9d6ab49a83373fd8e40df18dea844357",
     "teacher_identity": {
       "model_id": "speechbrain/lang-id-voxlingua107-ecapa",
@@ -110,7 +110,7 @@
   },
   "manifest": "data/generated/manifest.jsonl",
   "evaluation_input_sha256": "c0a4dc40eac162301d1ab08bf20644f053ea1d5e6fa2b777fe25a36b6db2f3c1",
-  "main_heldout_target_files_sha256": "9fe6978ec1719646ae09c34aaab361b753bd08832d62559f4450fe839abeae51",
+  "main_evaluation_target_files_sha256": "02086a9563ea29264d7602ccbebee6a37e06d592cb7a02284359e70139e87867",
   "pipeline_source_file_sha256": {
     "scripts/teacher_targets.py": "000ad02a047d158e11a3966bdc1ddad57d3828b4d6b082c71817ca8b056e6906",
     "src/streaming_lid/audio.py": "4cce5b81f784526f92d61fce0dbd65f3a3a90069134717da4f7d54a2736260cd",
@@ -216,7 +216,7 @@
     "fresh_correct": 21,
     "main_cache_correct": 21,
     "max_abs_posterior_difference_from_main_cache": 2.384185791015625e-07,
-    "wall_seconds": 4.2629123300012,
+    "wall_seconds": 3.7024915710007917,
     "per_clip": [
       {
         "id": "en_heldout_10",
@@ -409,6 +409,24 @@
       }
     ]
   },
+  "current_window_anchor_parity_with_main": {
+    "clips": 2,
+    "anchor_frames_equal": true,
+    "max_abs_anchor_posterior_difference": 0.0,
+    "exact_posterior_match": true,
+    "per_clip": [
+      {
+        "id": "switch_hi_en_eval",
+        "anchor_frames_equal": true,
+        "max_abs_anchor_posterior_difference": 0.0
+      },
+      {
+        "id": "switch_en_hi_eval",
+        "anchor_frames_equal": true,
+        "max_abs_anchor_posterior_difference": 0.0
+      }
+    ]
+  },
   "arms": {
     "current_1750p_250f": {
       "definition": {
@@ -462,8 +480,8 @@
             "semantic_onset_lag_ms_p95_detected_only": 1512.5000000000005,
             "onset_availability_lag_ms_median_detected_only": 1650.0000000000005,
             "onset_availability_lag_ms_p95_detected_only": 1762.5000000000005,
-            "confirmation_availability_lag_ms_median_detected_only": 1900.0000000000005,
-            "confirmation_availability_lag_ms_p95_detected_only": 2012.5000000000005,
+            "confirmation_availability_lag_ms_median_detected_only": 1650.0000000000005,
+            "confirmation_availability_lag_ms_p95_detected_only": 1762.5000000000005,
             "detected_only_n": 2
           },
           "250": {
@@ -498,10 +516,10 @@
           "model_loading_excluded": true,
           "requests": 66,
           "request_audio_seconds": 132.0,
-          "wall_seconds": 8.045448845001374,
-          "cpu_seconds": 41.470729883000004,
-          "wall_rtf_over_teacher_request_audio": 0.060950370037889195,
-          "cpu_rtf_over_teacher_request_audio": 0.31417219608333335
+          "wall_seconds": 4.1237552919992595,
+          "cpu_seconds": 23.939901526,
+          "wall_rtf_over_teacher_request_audio": 0.031240570393933784,
+          "cpu_rtf_over_teacher_request_audio": 0.18136289034848485
         },
         "per_clip": [
           {
@@ -546,10 +564,10 @@
                 "semantic_onset_lag_ms": 1525.0000000000005,
                 "onset_available_seconds": 5.775,
                 "onset_availability_lag_ms": 1775.0000000000005,
-                "semantic_confirmation_seconds": 5.775,
-                "semantic_confirmation_lag_ms": 1775.0000000000005,
-                "confirmation_available_seconds": 6.025,
-                "confirmation_availability_lag_ms": 2025.0000000000005
+                "semantic_confirmation_seconds": 5.525,
+                "semantic_confirmation_lag_ms": 1525.0000000000005,
+                "confirmation_available_seconds": 5.775,
+                "confirmation_availability_lag_ms": 1775.0000000000005
               },
               "250": {
                 "stability_horizon_ms": 250,
@@ -1252,17 +1270,17 @@
               "0": {
                 "stability_horizon_ms": 0,
                 "source_armed": true,
-                "source_confirmation_seconds": 1.275,
+                "source_confirmation_seconds": 1.025,
                 "detected": true,
                 "premature_target_onset_seconds": 0.025,
                 "semantic_onset_seconds": 5.275,
                 "semantic_onset_lag_ms": 1275.0000000000005,
                 "onset_available_seconds": 5.525,
                 "onset_availability_lag_ms": 1525.0000000000005,
-                "semantic_confirmation_seconds": 5.525,
-                "semantic_confirmation_lag_ms": 1525.0000000000005,
-                "confirmation_available_seconds": 5.775,
-                "confirmation_availability_lag_ms": 1775.0000000000005
+                "semantic_confirmation_seconds": 5.275,
+                "semantic_confirmation_lag_ms": 1275.0000000000005,
+                "confirmation_available_seconds": 5.525,
+                "confirmation_availability_lag_ms": 1525.0000000000005
               },
               "250": {
                 "stability_horizon_ms": 250,
@@ -1985,8 +2003,8 @@
             "semantic_onset_lag_ms_p95_detected_only": 975.0000000000005,
             "onset_availability_lag_ms_median_detected_only": 775.0000000000005,
             "onset_availability_lag_ms_p95_detected_only": 1225.0000000000005,
-            "confirmation_availability_lag_ms_median_detected_only": 900.0000000000005,
-            "confirmation_availability_lag_ms_p95_detected_only": 1462.5000000000005,
+            "confirmation_availability_lag_ms_median_detected_only": 775.0000000000005,
+            "confirmation_availability_lag_ms_p95_detected_only": 1225.0000000000005,
             "detected_only_n": 2
           },
           "250": {
@@ -2021,10 +2039,10 @@
           "model_loading_excluded": true,
           "requests": 66,
           "request_audio_seconds": 66.0,
-          "wall_seconds": 2.120037057000445,
-          "cpu_seconds": 12.363905967000008,
-          "wall_rtf_over_teacher_request_audio": 0.032121773590915836,
-          "cpu_rtf_over_teacher_request_audio": 0.1873319085909092
+          "wall_seconds": 2.0293318909989466,
+          "cpu_seconds": 11.892107809000002,
+          "wall_rtf_over_teacher_request_audio": 0.030747452893923433,
+          "cpu_rtf_over_teacher_request_audio": 0.1801834516515152
         },
         "per_clip": [
           {
@@ -2069,10 +2087,10 @@
                 "semantic_onset_lag_ms": 1025.0000000000005,
                 "onset_available_seconds": 5.275,
                 "onset_availability_lag_ms": 1275.0000000000005,
-                "semantic_confirmation_seconds": 5.275,
-                "semantic_confirmation_lag_ms": 1275.0000000000005,
-                "confirmation_available_seconds": 5.525,
-                "confirmation_availability_lag_ms": 1525.0000000000005
+                "semantic_confirmation_seconds": 5.025,
+                "semantic_confirmation_lag_ms": 1025.0000000000005,
+                "confirmation_available_seconds": 5.275,
+                "confirmation_availability_lag_ms": 1275.0000000000005
               },
               "250": {
                 "stability_horizon_ms": 250,
@@ -2775,7 +2793,7 @@
               "0": {
                 "stability_horizon_ms": 0,
                 "source_armed": true,
-                "source_confirmation_seconds": 0.275,
+                "source_confirmation_seconds": 0.025,
                 "detected": true,
                 "premature_target_onset_seconds": null,
                 "semantic_onset_seconds": 4.025,
@@ -3508,8 +3526,8 @@
             "semantic_onset_lag_ms_p95_detected_only": 25.000000000000355,
             "onset_availability_lag_ms_median_detected_only": 25.000000000000355,
             "onset_availability_lag_ms_p95_detected_only": 25.000000000000355,
-            "confirmation_availability_lag_ms_median_detected_only": 150.00000000000034,
-            "confirmation_availability_lag_ms_p95_detected_only": 262.50000000000034,
+            "confirmation_availability_lag_ms_median_detected_only": 25.000000000000355,
+            "confirmation_availability_lag_ms_p95_detected_only": 25.000000000000355,
             "detected_only_n": 2
           },
           "250": {
@@ -3544,10 +3562,10 @@
           "model_loading_excluded": true,
           "requests": 66,
           "request_audio_seconds": 33.0,
-          "wall_seconds": 1.2835100049996981,
-          "cpu_seconds": 7.321788815000005,
-          "wall_rtf_over_teacher_request_audio": 0.03889424257574843,
-          "cpu_rtf_over_teacher_request_audio": 0.22187238833333348
+          "wall_seconds": 1.0744897089989536,
+          "cpu_seconds": 6.252954706000004,
+          "wall_rtf_over_teacher_request_audio": 0.0325602942120895,
+          "cpu_rtf_over_teacher_request_audio": 0.18948347593939407
         },
         "per_clip": [
           {
@@ -3592,10 +3610,10 @@
                 "semantic_onset_lag_ms": 25.000000000000355,
                 "onset_available_seconds": 4.025,
                 "onset_availability_lag_ms": 25.000000000000355,
-                "semantic_confirmation_seconds": 4.275,
-                "semantic_confirmation_lag_ms": 275.00000000000034,
-                "confirmation_available_seconds": 4.275,
-                "confirmation_availability_lag_ms": 275.00000000000034
+                "semantic_confirmation_seconds": 4.025,
+                "semantic_confirmation_lag_ms": 25.000000000000355,
+                "confirmation_available_seconds": 4.025,
+                "confirmation_availability_lag_ms": 25.000000000000355
               },
               "250": {
                 "stability_horizon_ms": 250,
@@ -5031,8 +5049,8 @@
             "semantic_onset_lag_ms_p95_detected_only": 1225.0000000000005,
             "onset_availability_lag_ms_median_detected_only": 775.0000000000005,
             "onset_availability_lag_ms_p95_detected_only": 1225.0000000000005,
-            "confirmation_availability_lag_ms_median_detected_only": 900.0000000000005,
-            "confirmation_availability_lag_ms_p95_detected_only": 1462.5000000000005,
+            "confirmation_availability_lag_ms_median_detected_only": 775.0000000000005,
+            "confirmation_availability_lag_ms_p95_detected_only": 1225.0000000000005,
             "detected_only_n": 2
           },
           "250": {
@@ -5067,10 +5085,10 @@
           "model_loading_excluded": true,
           "requests": 66,
           "request_audio_seconds": 66.0,
-          "wall_seconds": 2.1883074950001173,
-          "cpu_seconds": 12.541111854999997,
-          "wall_rtf_over_teacher_request_audio": 0.033156174166668446,
-          "cpu_rtf_over_teacher_request_audio": 0.19001684628787874
+          "wall_seconds": 2.0081275909997203,
+          "cpu_seconds": 11.62326769900001,
+          "wall_rtf_over_teacher_request_audio": 0.030426175621207883,
+          "cpu_rtf_over_teacher_request_audio": 0.1761101166515153
         },
         "per_clip": [
           {
@@ -5115,10 +5133,10 @@
                 "semantic_onset_lag_ms": 1275.0000000000005,
                 "onset_available_seconds": 5.275,
                 "onset_availability_lag_ms": 1275.0000000000005,
-                "semantic_confirmation_seconds": 5.525,
-                "semantic_confirmation_lag_ms": 1525.0000000000005,
-                "confirmation_available_seconds": 5.525,
-                "confirmation_availability_lag_ms": 1525.0000000000005
+                "semantic_confirmation_seconds": 5.275,
+                "semantic_confirmation_lag_ms": 1275.0000000000005,
+                "confirmation_available_seconds": 5.275,
+                "confirmation_availability_lag_ms": 1275.0000000000005
               },
               "250": {
                 "stability_horizon_ms": 250,
@@ -5821,7 +5839,7 @@
               "0": {
                 "stability_horizon_ms": 0,
                 "source_armed": true,
-                "source_confirmation_seconds": 0.525,
+                "source_confirmation_seconds": 0.275,
                 "detected": true,
                 "premature_target_onset_seconds": null,
                 "semantic_onset_seconds": 4.275,
@@ -6554,8 +6572,8 @@
             "semantic_onset_lag_ms_p95_detected_only": 1762.5000000000005,
             "onset_availability_lag_ms_median_detected_only": 1650.0000000000005,
             "onset_availability_lag_ms_p95_detected_only": 1762.5000000000005,
-            "confirmation_availability_lag_ms_median_detected_only": 1900.0000000000005,
-            "confirmation_availability_lag_ms_p95_detected_only": 2012.5000000000005,
+            "confirmation_availability_lag_ms_median_detected_only": 1650.0000000000005,
+            "confirmation_availability_lag_ms_p95_detected_only": 1762.5000000000005,
             "detected_only_n": 2
           },
           "250": {
@@ -6590,10 +6608,10 @@
           "model_loading_excluded": true,
           "requests": 66,
           "request_audio_seconds": 132.0,
-          "wall_seconds": 5.07953151699985,
-          "cpu_seconds": 26.587998514999995,
-          "wall_rtf_over_teacher_request_audio": 0.03848129937121099,
-          "cpu_rtf_over_teacher_request_audio": 0.20142423117424238
+          "wall_seconds": 3.9093643289998,
+          "cpu_seconds": 22.81822012500001,
+          "wall_rtf_over_teacher_request_audio": 0.029616396431816665,
+          "cpu_rtf_over_teacher_request_audio": 0.17286530397727282
         },
         "per_clip": [
           {
@@ -6638,10 +6656,10 @@
                 "semantic_onset_lag_ms": 1775.0000000000005,
                 "onset_available_seconds": 5.775,
                 "onset_availability_lag_ms": 1775.0000000000005,
-                "semantic_confirmation_seconds": 6.025,
-                "semantic_confirmation_lag_ms": 2025.0000000000005,
-                "confirmation_available_seconds": 6.025,
-                "confirmation_availability_lag_ms": 2025.0000000000005
+                "semantic_confirmation_seconds": 5.775,
+                "semantic_confirmation_lag_ms": 1775.0000000000005,
+                "confirmation_available_seconds": 5.775,
+                "confirmation_availability_lag_ms": 1775.0000000000005
               },
               "250": {
                 "stability_horizon_ms": 250,
@@ -7344,17 +7362,17 @@
               "0": {
                 "stability_horizon_ms": 0,
                 "source_armed": true,
-                "source_confirmation_seconds": 1.525,
+                "source_confirmation_seconds": 1.275,
                 "detected": true,
                 "premature_target_onset_seconds": 0.275,
                 "semantic_onset_seconds": 5.525,
                 "semantic_onset_lag_ms": 1525.0000000000005,
                 "onset_available_seconds": 5.525,
                 "onset_availability_lag_ms": 1525.0000000000005,
-                "semantic_confirmation_seconds": 5.775,
-                "semantic_confirmation_lag_ms": 1775.0000000000005,
-                "confirmation_available_seconds": 5.775,
-                "confirmation_availability_lag_ms": 1775.0000000000005
+                "semantic_confirmation_seconds": 5.525,
+                "semantic_confirmation_lag_ms": 1525.0000000000005,
+                "confirmation_available_seconds": 5.525,
+                "confirmation_availability_lag_ms": 1525.0000000000005
               },
               "250": {
                 "stability_horizon_ms": 250,
@@ -8077,8 +8095,8 @@
             "semantic_onset_lag_ms_p95_detected_only": 1525.0000000000005,
             "onset_availability_lag_ms_median_detected_only": 1525.0000000000005,
             "onset_availability_lag_ms_p95_detected_only": 1525.0000000000005,
-            "confirmation_availability_lag_ms_median_detected_only": 1775.0000000000005,
-            "confirmation_availability_lag_ms_p95_detected_only": 1775.0000000000005,
+            "confirmation_availability_lag_ms_median_detected_only": 1525.0000000000005,
+            "confirmation_availability_lag_ms_p95_detected_only": 1525.0000000000005,
             "detected_only_n": 1
           },
           "250": {
@@ -8113,10 +8131,10 @@
           "model_loading_excluded": true,
           "requests": 66,
           "request_audio_seconds": 266.99,
-          "wall_seconds": 29.000070526000854,
-          "cpu_seconds": 156.714948122,
-          "wall_rtf_over_teacher_request_audio": 0.1086185644630917,
-          "cpu_rtf_over_teacher_request_audio": 0.5869693551144238
+          "wall_seconds": 17.04187763200025,
+          "cpu_seconds": 92.16978881299998,
+          "wall_rtf_over_teacher_request_audio": 0.0638296476721984,
+          "cpu_rtf_over_teacher_request_audio": 0.3452181310648338
         },
         "per_clip": [
           {
@@ -8874,10 +8892,10 @@
                 "semantic_onset_lag_ms": 1525.0000000000005,
                 "onset_available_seconds": 5.525,
                 "onset_availability_lag_ms": 1525.0000000000005,
-                "semantic_confirmation_seconds": 5.775,
-                "semantic_confirmation_lag_ms": 1775.0000000000005,
-                "confirmation_available_seconds": 5.775,
-                "confirmation_availability_lag_ms": 1775.0000000000005
+                "semantic_confirmation_seconds": 5.525,
+                "semantic_confirmation_lag_ms": 1525.0000000000005,
+                "confirmation_available_seconds": 5.525,
+                "confirmation_availability_lag_ms": 1525.0000000000005
               },
               "250": {
                 "stability_horizon_ms": 250,
@@ -9652,12 +9670,13 @@
     "speaker_disjoint": true,
     "teacher_artifact_matches_main": true,
     "main_monolingual_teacher_accuracy_reproduced": true,
+    "current_window_anchor_calls_match_main_exactly": true,
     "all_probabilities_finite_and_normalized": true,
     "all_expansions_use_previous_anchor_hold": true,
     "driver_unchanged_during_run": true,
     "pipeline_sources_unchanged_during_run": true,
     "evaluation_inputs_unchanged_during_run": true,
-    "main_heldout_targets_unchanged_during_run": true
+    "main_evaluation_targets_unchanged_during_run": true
   },
   "limitations": [
     "Only two mirrored synthetic switch clips are available, so p95 is descriptive rather than a population estimate.",

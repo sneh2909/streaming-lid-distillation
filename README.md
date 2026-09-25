@@ -21,7 +21,7 @@ uv run python scripts/eval.py
 uv run pytest -q
 ```
 
-The defaults reproduce the submitted run: 1,600 optimizer steps, batch size 7, learning rate `1e-3`, and CPU only. Steps, batch size, and thread count must be positive integers; the learning rate must be positive and finite. Incomplete final batches are dropped, so every update has the same batch size, and training rejects a batch size larger than the split instead of looping over an empty loader. On this 20-core/13 GB host the full cached run is comfortably under 30 minutes; network speed dominates a first run. `prepare_data.py --force` refreshes TTS audio. Audio filenames include the voice ID, so a changed split cannot reuse a stale recording. Audio, teacher targets, caches, checkpoints, and `.venv` are ignored by Git.
+The defaults reproduce the submitted run: 1,600 optimizer steps, batch size 7, learning rate `1e-3`, and CPU only. Steps, batch size, and thread count must be positive integers; the learning rate must be positive and finite. Incomplete final batches are dropped, so every update has the same batch size, and training rejects a batch size larger than the split instead of looping over an empty loader. On this 20-core/13 GB host the full cached run is comfortably under 30 minutes; network speed dominates a first run. `prepare_data.py --force` refreshes TTS audio. Each manifest row binds its text, language, provider, exact voice, synthesis options, client versions, audio-processing recipe, generator-source hash, and resulting WAV SHA-256. The script builds and validates a complete sibling staging corpus, publishes byte-addressed WAVs, and atomically replaces the manifest last; a failed refresh cannot leave the live manifest pointing at a partially updated corpus. Audio, teacher targets, caches, checkpoints, and `.venv` are ignored by Git.
 
 Important outputs are:
 
@@ -33,7 +33,7 @@ Important outputs are:
 
 ## Data and split
 
-`scripts/prepare_data.py` synthesizes PCM WAVs at 16 kHz through gTTS and Microsoft Edge TTS, then decodes MP3 responses in-process with `miniaudio`. The manifest contains 70 balanced monolingual training clips (10 per language), 21 held-out monolingual clips (3 per language), one 4 s Hindi + 4 s English training concatenation, and two held-out 8 s switch clips in opposite directions. Thus `n_train_clips=71`. The training switch uses training voices; both evaluation switches use held-out voices.
+`scripts/prepare_data.py` synthesizes PCM WAVs at 16 kHz through gTTS and Microsoft Edge TTS, then decodes MP3 responses in-process with `miniaudio`. Cache reuse requires both an exact canonical recipe and matching WAV bytes; changing text, voice, options, client/generator identity, or audio bytes causes a miss. Remote provider model revisions are not exposed by either client, so that limitation is recorded explicitly and `--force` is the refresh mechanism. The manifest contains 70 balanced monolingual training clips (10 per language), 21 held-out monolingual clips (3 per language), one 4 s Hindi + 4 s English training concatenation, and two held-out 8 s switch clips in opposite directions. Thus `n_train_clips=71`. The training switch uses training voices; both evaluation switches use held-out voices.
 
 For each language, training uses five utterances from the locale's gTTS voice and five from a named male Edge voice. Held-out text is spoken by a named female Edge voice that occurs nowhere in training. The manifest records these voice IDs, and every pipeline stage rejects any overlap between training and evaluation IDs. There are 14 training and 7 held-out synthetic voice IDs with zero overlap. The 1,600 updates consume 11,200 examples, or 157.7465 effective passes over the 71-clip training split, versus about 267 passes in the previous 21-clip run.
 
@@ -54,7 +54,7 @@ This mixed strategy is intentional: a converged target is useful only under the 
 
 Target caches are fail-closed rather than trusted by filename. Every `.npz` records the exact ordered language codes, clip/target kind, frame count, pinned teacher revision/artifact hash, target-generator source hash, canonical manifest-record hash, source-WAV SHA-256, and complete target-configuration hash. The generator identity covers its four source files and exact Python/library versions; the directory index additionally hashes the complete manifest and target-file set. Target generation reopens and validates all 94 files; training validates its 71 clips, and evaluation revalidates all 94 as a release gate. Probability shape, finiteness, non-negativity, normalization, and hard/soft frame counts are checked before use.
 
-The student checkpoint is also the authoritative run bundle. Its content-derived run ID binds the final model-state hash, all 94 current audio hashes, exact manifest and target index, teacher, complete frontend/model/loss/timing configuration, pipeline source, and training settings. `train_metrics.json` is copied into the checkpoint as immutable training evidence, then published with the checkpoint file hash. Evaluation refuses to score unless the current corpus/targets/source still match and the external training metrics equal that checkpoint-bound payload exactly. The submitted run is `lidrun-1c3d0003…370d7`; `results/summary.json` records the full identities and `evaluation_run_identity_validated=true`.
+The student checkpoint is also the authoritative run bundle. Its content-derived run ID binds the final model-state hash, all 94 current audio hashes, exact manifest and target index, teacher, complete frontend/model/loss/timing configuration, pipeline source, and training settings. `train_metrics.json` is copied into the checkpoint as immutable training evidence, then published with the checkpoint file hash. Evaluation refuses to score unless the current corpus/targets/source still match and the external training metrics equal that checkpoint-bound payload exactly. The submitted run is `lidrun-cc5e6cf7…ffd504`; `results/summary.json` records the full identities and `evaluation_run_identity_validated=true`.
 
 ## Future-information asymmetry and objective
 
@@ -69,6 +69,8 @@ exactly the end of a switch-teacher window evaluated at frame `i`. The padding m
 There is one important residual mismatch: switch posteriors are evaluated only every 25 frames and linearly interpolated. A target between anchors uses the *next* anchor, whose own window ends 250 ms later; its effective future horizon is therefore 250–490 ms, while the aligned student has 250 ms. Exact anchor frames are context-matched, but 24/25 interpolated frames are not. The submitted run is retained as honest plumbing evidence, not as a latency-valid switch result. The next method fix is a previous-anchor hold, per-frame teacher inference, or reserving the anchor hop inside the evidence budget before any delay sweep.
 
 The isolated [`target-type-ablation`](experiments/target-type-ablation/REPORT.md) already uses previous-anchor hold for a fair pure-target comparison. It rejects full-utterance, centred-2 s, and cumulative-prefix targets as replacements: all three students missed both switches, and the context-valid prefix arm gained only 0.47 frame-macro points over naive full targets while doubling unmatched EMA churn to 118.11 changes/min. That is a rejection guardrail, not validation of the main mixed targets; removing linear-interpolation leakage from the main cache remains open.
+
+The subsequent [`teacher-window-audit`](experiments/teacher-window-audit/REPORT.md) also rejected every tested shorter bounded, causal-rolling, and cumulative-prefix teacher window: early crossings were unstable or the accuracy/churn cost was too large. It therefore defers the target-by-delay sweep. This still does not validate the current mixed target, whose own stable transition is too slow; a different availability-valid trajectory is needed after the interpolation fix.
 
 For batch item `b`, teacher posterior `q`, student logits `z`, temperature `T`, validity mask `m`, and early evidence ramp `w`, training minimizes
 
@@ -94,7 +96,7 @@ The conservative worst-case algorithmic model latency is **435 ms**:
 25 ms analysis frame + (210 ms label delay + 40 ms lookahead) + 160 ms chunk = 435 ms.
 ```
 
-Past context adds compute but no algorithmic latency. On six Torch CPU threads, including log-mel extraction and the deliberately uncached overlap, measured median replay RTF is **0.0084** (about 120× real time). Routing policy smoothing/dwell is separate from model latency.
+Past context adds compute but no algorithmic latency. On six Torch CPU threads, including log-mel extraction and the deliberately uncached overlap, measured median replay RTF is **0.0087** (about 115× real time). Routing policy smoothing/dwell is separate from model latency.
 
 ## Submitted sanity results
 
@@ -108,17 +110,17 @@ These values are from the included `results/` artifacts, not aspirational number
 | Checkpoint/corpus/target/config/training identity validated | yes; schema 1 |
 | Requested / successful / post-update-checked steps | 1,600 / 1,600 / 1,600 |
 | Effective epochs | 157.7465 |
-| First 10-step mean KD loss | 6.8704 |
-| Last 10-step mean KD loss | 1.4403 |
+| First 10-step mean KD loss | 6.8697 |
+| Last 10-step mean KD loss | 1.9158 |
 | Finite loss/gradient histories and post-update model/optimizer state | yes |
 | Teacher held-out known-label frame accuracy | 1.0000 |
-| Student held-out frame agreement with teacher | 0.1851 |
-| Student held-out known-label frame accuracy | 0.1851 |
+| Student held-out frame agreement with teacher | 0.1894 |
+| Student held-out known-label frame accuracy | 0.1894 |
 | Student held-out clip accuracy | 0.1905 (4/21) |
 | Hindi→English switch outcome | missed; lag `null` |
 | Student parameters | 42,567 |
 | Provisional end-tail outputs withheld | 4 frames |
-| Six-thread CPU replay RTF | 0.0084 |
+| Six-thread CPU replay RTF | 0.0087 |
 
 Agreement is not called accuracy: `eval_metrics.json` reports both student↔teacher agreement and student/teacher accuracy against the known synthesis language. The frozen teacher is correct on all 21 held-out monolingual clips, while the student generalises poorly to their unseen voices. On the held-out Hindi→English switch, the illustrative policy never establishes even its initial Hindi commit, so no English commit exists and lag is `null`; a miss is not assigned a flattering latency. The policy averages each 160 ms chunk, applies an EMA with new weight 0.30, and requires posterior ≥0.60, a 0.10 margin, and three consecutive chunks. This operating point is not calibrated on the tiny dataset; `DESIGN.md` describes how to set it properly.
 
@@ -127,6 +129,7 @@ Agreement is not called accuracy: `eval_metrics.json` reports both student↔tea
 - `tests/test_alignment.py` proves `teacher[i] ↔ student[i+D]`, validates the valid-tail mask, rejects an all-invalid `length=D+L` batch, and proves `D+L+1` backpropagates.
 - `tests/test_causality.py` changes every feature after `t+L` and requires outputs through `t` to be bit-identical; it also checks stable chunk/full equivalence and growing-prefix emission without duplicates.
 - `tests/test_data_split.py` checks the manifest speaker audit, including speakers inherited by switch clips, and proves overlap is rejected.
+- `tests/test_corpus_publication.py` checks recipe invalidation, byte-addressed cache reuse, checksum validation, and failure before the final atomic manifest swap.
 - `tests/test_target_cache.py` rejects reordered class columns, changed waveform/manifest/config content, and modified target files while accepting a fully content-bound cache.
 - `tests/test_training_contract.py` rejects zero/non-finite run settings and an empty full-batch loader, injects model/optimizer corruption after an update, and proves success flags require completed checked work.
 - `tests/test_run_identity.py` rejects changed audio, timing, target identity, model state, and unrelated training metrics while accepting one fully bound run.
@@ -136,10 +139,10 @@ Agreement is not called accuracy: `eval_metrics.json` reports both student↔tea
 
 ## Implemented versus intentionally out of scope
 
-Implemented: reproducible multi-voice audio acquisition with retry-safe, voice-qualified caching; enforced voice-disjoint train/evaluation manifests; pinned and artifact-hashed frozen teacher inference; content-bound target caches with generator-source, ordered-class, and probability validation; a checkpoint-bound run identity over model/data/targets/config/source/training evidence; soft temporal targets; special handling of switch clips; streaming-safe features; bounded-lookahead causal model with stable stateful emissions; delayed KL with an explicit no-valid-frame guard; real backward/optimizer steps with finite model and optimizer state checked after every update; separate agreement and known-label metrics; stable chunk-equivalence and causality tests; RTF; hysteretic switch measurement; and the requested plot/JSON outputs.
+Implemented: reproducible multi-voice audio acquisition with retry-safe, recipe- and byte-addressed caching plus staged atomic manifest publication; enforced voice-disjoint train/evaluation manifests; pinned and artifact-hashed frozen teacher inference; content-bound target caches with generator-source, ordered-class, and probability validation; a checkpoint-bound run identity over model/data/targets/config/source/training evidence; soft temporal targets; special handling of switch clips; streaming-safe features; bounded-lookahead causal model with stable stateful emissions; delayed KL with an explicit no-valid-frame guard; real backward/optimizer steps with finite model and optimizer state checked after every update; separate agreement and known-label metrics; stable chunk-equivalence and causality tests; RTF; hysteretic switch measurement; and the requested plot/JSON outputs.
 
 Intentionally not implemented: a real telephony/VAD frontend, an ASR server/router, probability calibration on representative calls, an unknown-language head, checkpoint export/quantization, or convergence training. With more compute/data I would train on speaker-disjoint FLEURS/Common Voice plus anonymized 8 kHz call audio, add codec/noise/reverb augmentation and an `other` class, tune thresholds on a cost-weighted dev set, and report confidence intervals, false switches/hour, miss rate, and lag percentiles.
 
 ## Final summary and open issues
 
-The CPU path works and the optimization plumbing is sound: it completes all 1,600 requested real-audio updates, passes 1,600 post-update model/optimizer checks, validates the complete evaluation run identity, reduces the 10-step mean KD loss from 6.8704 to 1.4403, and preserves causal/chunk-equivalent behavior. The speaker-disjoint evaluation also overturns the earlier apparent success: despite a perfect held-out teacher, the student achieves only 18.51% frame accuracy and misses the Hindi→English switch. Before latency tuning, the interpolated switch targets need a causally valid availability contract; independently, a seen-voice/provider ablation is needed to attribute the poor unseen-voice transfer. These synthetic results are sanity/failure evidence only; the policy is uncalibrated, and seven-way renormalization cannot reject an unsupported language.
+The CPU path works and the optimization plumbing is sound: it completes all 1,600 requested real-audio updates, passes 1,600 post-update model/optimizer checks, validates the complete evaluation run identity, reduces the 10-step mean KD loss from 6.8697 to 1.9158, and preserves causal/chunk-equivalent behavior. The speaker-disjoint evaluation also overturns the earlier apparent success: despite a perfect held-out teacher, the student achieves only 18.94% frame accuracy and misses the Hindi→English switch. Before latency tuning, the interpolated switch targets need a causally valid availability contract and none of the tested shorter teacher windows qualifies as a replacement; independently, a seen-voice/provider ablation is needed to attribute the poor unseen-voice transfer. These synthetic results are sanity/failure evidence only; the policy is uncalibrated, and seven-way renormalization cannot reject an unsupported language.
