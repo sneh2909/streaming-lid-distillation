@@ -24,6 +24,55 @@ def resolve_audio_path(item: dict, manifest_path: str | Path) -> Path:
     return Path(manifest_path).parent / item["audio_path"]
 
 
+def record_speaker_ids(item: dict) -> set[str]:
+    """Return the synthesis speaker IDs represented by one manifest record."""
+    if "speaker_ids" in item:
+        return set(item["speaker_ids"])
+    speaker_id = item.get("speaker_id")
+    return {speaker_id} if speaker_id else set()
+
+
+def speaker_split_audit(records: list[dict]) -> dict:
+    """Summarise and enforce the train/evaluation speaker boundary.
+
+    Switch evaluation clips inherit their component speakers, so they belong on
+    the evaluation side of the audit even though their split is named `switch`.
+    """
+    train_speakers: set[str] = set()
+    heldout_speakers: set[str] = set()
+    switch_speakers: set[str] = set()
+    for item in records:
+        speakers = record_speaker_ids(item)
+        if not speakers:
+            raise ValueError(f"manifest item {item.get('id', '<unknown>')} has no speaker ID")
+        if item["split"] == "train":
+            train_speakers.update(speakers)
+        elif item["split"] == "heldout":
+            heldout_speakers.update(speakers)
+        elif item["split"] == "switch":
+            switch_speakers.update(speakers)
+    evaluation_speakers = heldout_speakers | switch_speakers
+    overlap = train_speakers & evaluation_speakers
+    return {
+        "train_speaker_ids": sorted(train_speakers),
+        "heldout_speaker_ids": sorted(heldout_speakers),
+        "switch_eval_speaker_ids": sorted(switch_speakers),
+        "train_evaluation_speaker_overlap": sorted(overlap),
+        "speaker_disjoint": not overlap,
+    }
+
+
+def require_speaker_disjoint(records: list[dict]) -> dict:
+    """Raise on train/evaluation speaker leakage and return the split audit."""
+    audit = speaker_split_audit(records)
+    if not audit["speaker_disjoint"]:
+        raise ValueError(
+            "train/evaluation speaker leakage: "
+            + ", ".join(audit["train_evaluation_speaker_overlap"])
+        )
+    return audit
+
+
 class DistillationDataset(Dataset):
     """Tiny-data dataset: preload deterministic features and teacher posteriors."""
 

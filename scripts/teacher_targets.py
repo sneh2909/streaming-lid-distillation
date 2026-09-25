@@ -24,7 +24,7 @@ from streaming_lid.config import (
     TEACHER_TEMPERATURE,
     WIN_LENGTH,
 )
-from streaming_lid.data import read_manifest, resolve_audio_path
+from streaming_lid.data import read_manifest, require_speaker_disjoint, resolve_audio_path
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,7 +42,7 @@ def parse_args() -> argparse.Namespace:
         default=Path(".cache/models/lang-id-voxlingua107-ecapa"),
     )
     parser.add_argument("--batch-size", type=int, default=24)
-    parser.add_argument("--threads", type=int, default=8)
+    parser.add_argument("--threads", type=int, default=6)
     return parser.parse_args()
 
 
@@ -117,6 +117,7 @@ def main() -> None:
     teacher.hparams.label_encoder.ignore_len()
     selected_indices = label_indices(teacher)
     records = read_manifest(args.manifest)
+    speaker_audit = require_speaker_disjoint(records)
     summary_records = []
 
     for clip_number, item in enumerate(records, start=1):
@@ -221,6 +222,7 @@ def main() -> None:
         "temperature": TEACHER_TEMPERATURE,
         "window_past_ms": TEACHER_PAST_MS,
         "window_future_ms": TEACHER_FUTURE_MS,
+        "speaker_split": speaker_audit,
     }
     (args.results_dir / "teacher_metrics.json").write_text(
         json.dumps(teacher_metrics, indent=2) + "\n"

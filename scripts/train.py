@@ -21,7 +21,12 @@ from streaming_lid.config import (
     TEACHER_NAME,
     TEACHER_TEMPERATURE,
 )
-from streaming_lid.data import DistillationDataset, collate_distillation_batch
+from streaming_lid.data import (
+    DistillationDataset,
+    collate_distillation_batch,
+    read_manifest,
+    require_speaker_disjoint,
+)
 from streaming_lid.loss import delayed_distillation_loss
 from streaming_lid.model import CausalLIDStudent
 
@@ -38,7 +43,7 @@ def parse_args() -> argparse.Namespace:
         "--checkpoint", type=Path, default=Path("checkpoints/student.pt")
     )
     parser.add_argument("--results-dir", type=Path, default=Path("results"))
-    parser.add_argument("--steps", type=int, default=800)
+    parser.add_argument("--steps", type=int, default=400)
     parser.add_argument("--batch-size", type=int, default=7)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--threads", type=int, default=4)
@@ -56,6 +61,8 @@ def main() -> None:
     args = parse_args()
     torch.set_num_threads(args.threads)
     seed_everything(args.seed)
+    records = read_manifest(args.manifest)
+    speaker_audit = require_speaker_disjoint(records)
     dataset = DistillationDataset(args.manifest, args.targets_dir, splits=("train",))
     generator = torch.Generator().manual_seed(args.seed)
     loader = DataLoader(
@@ -74,6 +81,7 @@ def main() -> None:
     gradient_norms: list[float] = []
     nan_free = True
     step = 0
+    examples_seen = 0
 
     print(
         f"training {model.parameter_count:,}-parameter student on {len(dataset)} real-audio clips "
@@ -112,6 +120,7 @@ def main() -> None:
             )
             optimizer.step()
             step += 1
+            examples_seen += len(batch["ids"])
             losses.append(float(loss.detach()))
             gradient_norms.append(float(gradient_norm))
             if step == 1 or step % 10 == 0 or step == args.steps:
@@ -140,10 +149,24 @@ def main() -> None:
     window = min(10, len(losses))
     first_mean = float(np.mean(losses[:window]))
     last_mean = float(np.mean(losses[-window:]))
+    monolingual_train = [
+        item for item in dataset.items if item["language"] in LANGUAGE_CODES
+    ]
+    clips_per_language = {
+        language: sum(item["language"] == language for item in monolingual_train)
+        for language in LANGUAGE_CODES
+    }
     metrics = {
         "optimizer_steps": args.steps,
         "batch_size": args.batch_size,
         "n_train_clips": len(dataset),
+        "n_train_monolingual_clips": len(monolingual_train),
+        "n_train_switch_clips": len(dataset) - len(monolingual_train),
+        "train_clips_per_language": clips_per_language,
+        "examples_seen": examples_seen,
+        "effective_epochs": examples_seen / len(dataset),
+        "n_train_speakers": len(speaker_audit["train_speaker_ids"]),
+        "speaker_split": speaker_audit,
         "student_params": model.parameter_count,
         "losses": losses,
         "gradient_norms": gradient_norms,

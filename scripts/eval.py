@@ -29,7 +29,11 @@ from streaming_lid.config import (
     TEACHER_NAME,
     WIN_LENGTH,
 )
-from streaming_lid.data import read_manifest, resolve_audio_path
+from streaming_lid.data import (
+    read_manifest,
+    require_speaker_disjoint,
+    resolve_audio_path,
+)
 from streaming_lid.model import CausalLIDStudent
 
 
@@ -50,17 +54,17 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def aligned_agreement(
+def aligned_classes(
     student_logits: torch.Tensor, teacher_probs: torch.Tensor, length: int
-) -> tuple[int, int]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     valid_targets = length - LABEL_DELAY_FRAMES - MODEL_LOOKAHEAD_FRAMES
     if valid_targets <= 0:
-        return 0, 0
+        return torch.empty(0, dtype=torch.long), torch.empty(0, dtype=torch.long)
     student_class = student_logits[
         LABEL_DELAY_FRAMES : LABEL_DELAY_FRAMES + valid_targets
     ].argmax(-1)
     teacher_class = teacher_probs[:valid_targets].argmax(-1)
-    return int((student_class == teacher_class).sum()), valid_targets
+    return student_class, teacher_class
 
 
 def chunk_availability_times(num_frames: int) -> np.ndarray:
@@ -178,14 +182,31 @@ def main() -> None:
     model.eval()
     frontend = LogMelFrontend().eval()
     records = read_manifest(args.manifest)
+    speaker_audit = require_speaker_disjoint(records)
     heldout = [record for record in records if record["split"] == "heldout"]
     train_records = [record for record in records if record["split"] == "train"]
     switch_records = [record for record in records if record["split"] == "switch"]
 
     per_clip = []
-    correct = 0
+    agreement_correct = 0
+    student_label_correct = 0
+    teacher_label_correct = 0
     total = 0
+    student_clip_correct = 0
+    teacher_clip_correct = 0
     heldout_waveforms = []
+    language_counts = {
+        language: {
+            "n_clips": 0,
+            "frames": 0,
+            "agreement_correct": 0,
+            "student_label_correct": 0,
+            "teacher_label_correct": 0,
+            "student_clip_correct": 0,
+            "teacher_clip_correct": 0,
+        }
+        for language in LANGUAGE_CODES
+    }
     with torch.inference_mode():
         for item in heldout:
             waveform = load_audio(resolve_audio_path(item, args.manifest))
@@ -198,19 +219,100 @@ def main() -> None:
             )
             with np.load(args.targets_dir / f"{item['id']}.npz") as target_file:
                 teacher_probs = torch.from_numpy(target_file["teacher_probs"].copy())
-            clip_correct, clip_total = aligned_agreement(
+            student_class, teacher_class = aligned_classes(
                 streamed_logits, teacher_probs, len(features[0])
             )
-            correct += clip_correct
+            clip_total = len(student_class)
+            if clip_total == 0:
+                raise ValueError(f"held-out clip {item['id']} has no aligned frames")
+            expected_index = LANGUAGE_CODES.index(item["language"])
+            clip_agreement_correct = int((student_class == teacher_class).sum())
+            clip_student_label_correct = int((student_class == expected_index).sum())
+            clip_teacher_label_correct = int((teacher_class == expected_index).sum())
+            student_prediction_index = int(
+                torch.bincount(student_class, minlength=len(LANGUAGE_CODES)).argmax()
+            )
+            teacher_prediction_index = int(
+                torch.bincount(teacher_class, minlength=len(LANGUAGE_CODES)).argmax()
+            )
+            student_clip_is_correct = student_prediction_index == expected_index
+            teacher_clip_is_correct = teacher_prediction_index == expected_index
+            agreement_correct += clip_agreement_correct
+            student_label_correct += clip_student_label_correct
+            teacher_label_correct += clip_teacher_label_correct
             total += clip_total
+            student_clip_correct += int(student_clip_is_correct)
+            teacher_clip_correct += int(teacher_clip_is_correct)
+            language_count = language_counts[item["language"]]
+            language_count["n_clips"] += 1
+            language_count["frames"] += clip_total
+            language_count["agreement_correct"] += clip_agreement_correct
+            language_count["student_label_correct"] += clip_student_label_correct
+            language_count["teacher_label_correct"] += clip_teacher_label_correct
+            language_count["student_clip_correct"] += int(student_clip_is_correct)
+            language_count["teacher_clip_correct"] += int(teacher_clip_is_correct)
             per_clip.append(
                 {
                     "id": item["id"],
-                    "agreement": clip_correct / clip_total,
+                    "language": item["language"],
+                    "speaker_id": item["speaker_id"],
+                    "teacher_agreement": clip_agreement_correct / clip_total,
+                    "student_label_accuracy": (
+                        clip_student_label_correct / clip_total
+                    ),
+                    "teacher_label_accuracy": (
+                        clip_teacher_label_correct / clip_total
+                    ),
+                    "student_clip_prediction": LANGUAGE_CODES[
+                        student_prediction_index
+                    ],
+                    "teacher_clip_prediction": LANGUAGE_CODES[
+                        teacher_prediction_index
+                    ],
                     "frames": clip_total,
                 }
             )
-    heldout_agreement = correct / total
+    heldout_teacher_agreement = agreement_correct / total
+    heldout_student_label_accuracy = student_label_correct / total
+    heldout_teacher_label_accuracy = teacher_label_correct / total
+    heldout_teacher_agreement_macro = float(
+        np.mean([item["teacher_agreement"] for item in per_clip])
+    )
+    heldout_student_label_accuracy_macro = float(
+        np.mean([item["student_label_accuracy"] for item in per_clip])
+    )
+    heldout_teacher_label_accuracy_macro = float(
+        np.mean([item["teacher_label_accuracy"] for item in per_clip])
+    )
+    heldout_per_language = {}
+    for language, counts in language_counts.items():
+        if counts["n_clips"] == 0 or counts["frames"] == 0:
+            continue
+        heldout_per_language[language] = {
+            "n_clips": counts["n_clips"],
+            "speaker_ids": sorted(
+                {
+                    item["speaker_id"]
+                    for item in heldout
+                    if item["language"] == language
+                }
+            ),
+            "teacher_agreement": (
+                counts["agreement_correct"] / counts["frames"]
+            ),
+            "student_label_accuracy": (
+                counts["student_label_correct"] / counts["frames"]
+            ),
+            "teacher_label_accuracy": (
+                counts["teacher_label_correct"] / counts["frames"]
+            ),
+            "student_clip_accuracy": (
+                counts["student_clip_correct"] / counts["n_clips"]
+            ),
+            "teacher_clip_accuracy": (
+                counts["teacher_clip_correct"] / counts["n_clips"]
+            ),
+        }
 
     switch_item = next(
         item for item in switch_records if item["id"] == "switch_hi_en_eval"
@@ -296,14 +398,25 @@ def main() -> None:
     )
     train_metrics = json.loads((args.results_dir / "train_metrics.json").read_text())
     finite_eval = (
-        math.isfinite(heldout_agreement)
+        math.isfinite(heldout_teacher_agreement)
+        and math.isfinite(heldout_student_label_accuracy)
+        and math.isfinite(heldout_teacher_label_accuracy)
         and math.isfinite(cpu_rtf)
         and np.isfinite(switch_probabilities).all()
         and np.isfinite(teacher_switch).all()
     )
     eval_metrics = {
-        "heldout_agreement": heldout_agreement,
+        "heldout_teacher_agreement_micro": heldout_teacher_agreement,
+        "heldout_teacher_agreement_macro": heldout_teacher_agreement_macro,
+        "heldout_student_label_accuracy_micro": heldout_student_label_accuracy,
+        "heldout_student_label_accuracy_macro": heldout_student_label_accuracy_macro,
+        "heldout_teacher_label_accuracy_micro": heldout_teacher_label_accuracy,
+        "heldout_teacher_label_accuracy_macro": heldout_teacher_label_accuracy_macro,
+        "heldout_student_clip_accuracy": student_clip_correct / len(heldout),
+        "heldout_teacher_clip_accuracy": teacher_clip_correct / len(heldout),
+        "heldout_per_language": heldout_per_language,
         "heldout_per_clip": per_clip,
+        "speaker_split": speaker_audit,
         "switch_detected_seconds": detected_seconds,
         "true_switch_seconds": true_switch_seconds,
         "switch_lag_ms": switch_lag_ms,
@@ -321,23 +434,41 @@ def main() -> None:
         "teacher_name": TEACHER_NAME,
         "languages": list(LANGUAGE_CODES),
         "n_train_clips": len(train_records),
+        "n_train_monolingual_clips": train_metrics["n_train_monolingual_clips"],
+        "n_train_switch_clips": train_metrics["n_train_switch_clips"],
         "n_heldout_clips": len(heldout),
         "n_switch_eval_clips": len(switch_records),
+        "n_train_speakers": len(speaker_audit["train_speaker_ids"]),
+        "n_heldout_speakers": len(speaker_audit["heldout_speaker_ids"]),
+        "speaker_disjoint": speaker_audit["speaker_disjoint"],
         "student_params": model.parameter_count,
         "algorithmic_latency_ms": ALGORITHMIC_LATENCY_MS,
         "cpu_rtf": cpu_rtf,
         "losses": train_metrics["losses"],
         "optimizer_steps": train_metrics["optimizer_steps"],
+        "examples_seen": train_metrics["examples_seen"],
+        "effective_epochs": train_metrics["effective_epochs"],
         "first_10_mean_loss": train_metrics["first_10_mean_loss"],
         "last_10_mean_loss": train_metrics["last_10_mean_loss"],
         "loss_decreased": train_metrics["loss_decreased"],
-        "heldout_agreement": heldout_agreement,
+        "heldout_teacher_agreement_micro": heldout_teacher_agreement,
+        "heldout_teacher_agreement_macro": heldout_teacher_agreement_macro,
+        "heldout_student_label_accuracy_micro": heldout_student_label_accuracy,
+        "heldout_student_label_accuracy_macro": heldout_student_label_accuracy_macro,
+        "heldout_teacher_label_accuracy_micro": heldout_teacher_label_accuracy,
+        "heldout_teacher_label_accuracy_macro": heldout_teacher_label_accuracy_macro,
+        "heldout_student_clip_accuracy": student_clip_correct / len(heldout),
+        "heldout_teacher_clip_accuracy": teacher_clip_correct / len(heldout),
+        "heldout_per_language": heldout_per_language,
         "switch_lag_ms": switch_lag_ms,
         "nan_free": bool(train_metrics["nan_free"] and finite_eval),
     }
     (args.results_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(
-        f"heldout agreement={heldout_agreement:.3f}; CPU RTF={cpu_rtf:.4f}; "
+        f"heldout teacher agreement={heldout_teacher_agreement:.3f}; "
+        f"student label accuracy={heldout_student_label_accuracy:.3f}; "
+        f"teacher label accuracy={heldout_teacher_label_accuracy:.3f}; "
+        f"CPU RTF={cpu_rtf:.4f}; "
         f"switch lag={switch_lag_ms if switch_lag_ms is not None else 'not detected'} ms; "
         f"nan_free={summary['nan_free']}",
         flush=True,

@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "CPU-sized offline-to-streaming language-ID distillation demo"
 requires-python = ">=3.10,<3.11"
 dependencies = [
+  "edge-tts>=7.2,<8",
   "gTTS>=2.5,<2.6",
   "huggingface-hub==0.24.7",
   "matplotlib>=3.9,<4",
