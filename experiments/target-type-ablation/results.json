@@ -1,0 +1,231 @@
+{
+  "arms": {},
+  "schema_version": 2,
+  "analysis_version": "target-type-ablation-v2",
+  "experiment": "target-type-ablation",
+  "question": "How do full-utterance, centred two-second, and growing-prefix teacher targets affect the same delayed causal TCN?",
+  "updated_utc": "2026-09-25T19:14:37.239576+00:00",
+  "manifest": "data/generated/manifest.jsonl",
+  "all_input_sha256": "ed1c02ea8036372143a7373fca971d1f3b6f64ce9514f7ec75bfee44d1fc9f59",
+  "evaluation_input_sha256": "7b78eb2981dacc8a01b1e1fad6b98da1fbceebdb0aba4a2597751f36ebe94a79",
+  "teacher_bakeoff_compatible_input_sha256": "52bca81e32db34edb0a9ad4529b01bd6ddd36aad6f587733a01ace669538d6fc",
+  "run_identity_sha256": "0fb20819f98618580b5523355ec568a44ab6a4cafbcd786752a5686853eb0366",
+  "run_identity": {
+    "experiment": "target-type-ablation",
+    "schema_version": 2,
+    "analysis_version": "target-type-ablation-v2",
+    "all_input_sha256": "ed1c02ea8036372143a7373fca971d1f3b6f64ce9514f7ec75bfee44d1fc9f59",
+    "driver_sha256": "92f90861a3b7052f493c49f79e7c2add5a4bdd13b31c781f6dae15a48485ac1d",
+    "pipeline_source_sha256": "ef47e14dd28ef1c6055bc35f0ada6e93fee1171f711a168afe2e76b48494d95a",
+    "settings": {
+      "steps": 1600,
+      "batch_size": 7,
+      "teacher_batch_size": 24,
+      "learning_rate": 0.001,
+      "seed": 7,
+      "threads": 6,
+      "label_delay_frames": 21,
+      "model_lookahead_frames": 4,
+      "evidence_lookahead_ms": 250.0,
+      "early_ramp_frames": 100
+    },
+    "dependencies": {
+      "python": "3.10.12",
+      "numpy": "2.2.6",
+      "torch": "2.6.0+cpu",
+      "torchaudio": "2.6.0+cpu",
+      "speechbrain": "1.0.3",
+      "huggingface_hub": "0.24.7"
+    },
+    "teacher_identity": {
+      "model_id": "speechbrain/lang-id-voxlingua107-ecapa",
+      "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+      "artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
+      "files": {
+        "classifier.ckpt": {
+          "sha256": "a50d9024ff58d317031c9787d4c6c614d454a87a8ef32f9d36338cd3ff57adbc",
+          "bytes": 762555
+        },
+        "embedding_model.ckpt": {
+          "sha256": "ab750d5c06d713477045fa798fab5d33e959dbc0dfe4de510a9a47844c79a19a",
+          "bytes": 84474355
+        },
+        "hyperparams.yaml": {
+          "sha256": "88fec9791a8416a152fb10834327e18d38e5bf7a351e9b714e08cdc4af05de6f",
+          "bytes": 1519
+        },
+        "label_encoder.txt": {
+          "sha256": "9f566d83c4f19168be4a0bf86c0c7dac7d3264a95105bcbf33a7c32b83ccc17f",
+          "bytes": 2204
+        }
+      }
+    }
+  },
+  "driver_sha256": "92f90861a3b7052f493c49f79e7c2add5a4bdd13b31c781f6dae15a48485ac1d",
+  "pipeline_source_sha256": "ef47e14dd28ef1c6055bc35f0ada6e93fee1171f711a168afe2e76b48494d95a",
+  "pipeline_source_files": [
+    "scripts/teacher_targets.py",
+    "scripts/train.py",
+    "scripts/eval.py",
+    "src/streaming_lid/audio.py",
+    "src/streaming_lid/config.py",
+    "src/streaming_lid/data.py",
+    "src/streaming_lid/loss.py",
+    "src/streaming_lid/model.py"
+  ],
+  "dependencies": {
+    "python": "3.10.12",
+    "numpy": "2.2.6",
+    "torch": "2.6.0+cpu",
+    "torchaudio": "2.6.0+cpu",
+    "speechbrain": "1.0.3",
+    "huggingface_hub": "0.24.7"
+  },
+  "teacher_identity": {
+    "model_id": "speechbrain/lang-id-voxlingua107-ecapa",
+    "revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
+    "artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
+    "files": {
+      "classifier.ckpt": {
+        "sha256": "a50d9024ff58d317031c9787d4c6c614d454a87a8ef32f9d36338cd3ff57adbc",
+        "bytes": 762555
+      },
+      "embedding_model.ckpt": {
+        "sha256": "ab750d5c06d713477045fa798fab5d33e959dbc0dfe4de510a9a47844c79a19a",
+        "bytes": 84474355
+      },
+      "hyperparams.yaml": {
+        "sha256": "88fec9791a8416a152fb10834327e18d38e5bf7a351e9b714e08cdc4af05de6f",
+        "bytes": 1519
+      },
+      "label_encoder.txt": {
+        "sha256": "9f566d83c4f19168be4a0bf86c0c7dac7d3264a95105bcbf33a7c32b83ccc17f",
+        "bytes": 2204
+      }
+    }
+  },
+  "language_codes": [
+    "en",
+    "hi",
+    "mr",
+    "bn",
+    "ta",
+    "te",
+    "gu"
+  ],
+  "heldout_ids": [
+    "en_heldout_10",
+    "en_heldout_11",
+    "en_heldout_12",
+    "hi_heldout_10",
+    "hi_heldout_11",
+    "hi_heldout_12",
+    "mr_heldout_10",
+    "mr_heldout_11",
+    "mr_heldout_12",
+    "bn_heldout_10",
+    "bn_heldout_11",
+    "bn_heldout_12",
+    "ta_heldout_10",
+    "ta_heldout_11",
+    "ta_heldout_12",
+    "te_heldout_10",
+    "te_heldout_11",
+    "te_heldout_12",
+    "gu_heldout_10",
+    "gu_heldout_11",
+    "gu_heldout_12"
+  ],
+  "switch_ids": [
+    "switch_hi_en_eval",
+    "switch_en_hi_eval"
+  ],
+  "speaker_split": {
+    "train_speaker_ids": [
+      "bn-IN-BashkarNeural",
+      "en-IN-PrabhatNeural",
+      "gtts:bn:default",
+      "gtts:en:default",
+      "gtts:gu:default",
+      "gtts:hi:default",
+      "gtts:mr:default",
+      "gtts:ta:default",
+      "gtts:te:default",
+      "gu-IN-NiranjanNeural",
+      "hi-IN-MadhurNeural",
+      "mr-IN-ManoharNeural",
+      "ta-IN-ValluvarNeural",
+      "te-IN-MohanNeural"
+    ],
+    "heldout_speaker_ids": [
+      "bn-IN-TanishaaNeural",
+      "en-IN-NeerjaNeural",
+      "gu-IN-DhwaniNeural",
+      "hi-IN-SwaraNeural",
+      "mr-IN-AarohiNeural",
+      "ta-IN-PallaviNeural",
+      "te-IN-ShrutiNeural"
+    ],
+    "switch_eval_speaker_ids": [
+      "en-IN-NeerjaNeural",
+      "hi-IN-SwaraNeural"
+    ],
+    "train_evaluation_speaker_overlap": [],
+    "speaker_disjoint": true
+  },
+  "settings": {
+    "steps": 1600,
+    "batch_size": 7,
+    "teacher_batch_size": 24,
+    "learning_rate": 0.001,
+    "seed": 7,
+    "threads": 6,
+    "label_delay_frames": 21,
+    "model_lookahead_frames": 4,
+    "evidence_lookahead_ms": 250.0,
+    "early_ramp_frames": 100
+  },
+  "target_definitions": {
+    "full_utterance": {
+      "teacher": "speechbrain/lang-id-voxlingua107-ecapa",
+      "teacher_temperature": 2.0,
+      "anchor_hop_frames": 25,
+      "anchor_hop_ms": 250.0,
+      "interpolation": "linear posterior interpolation on the 10 ms feature grid",
+      "window": "whole clip; one posterior repeated over all frames",
+      "future_context_ms": "unbounded until clip end",
+      "context_valid_at_tested_latency": false
+    },
+    "centred_2s": {
+      "teacher": "speechbrain/lang-id-voxlingua107-ecapa",
+      "teacher_temperature": 2.0,
+      "anchor_hop_frames": 25,
+      "anchor_hop_ms": 250.0,
+      "interpolation": "linear posterior interpolation on the 10 ms feature grid",
+      "window": "[target frame end - 1000 ms, target frame end + 1000 ms]",
+      "past_context_ms": 1000,
+      "future_context_ms": 1000,
+      "context_valid_at_tested_latency": false,
+      "future_context_excess_ms": 750.0
+    },
+    "prefix_delta250": {
+      "teacher": "speechbrain/lang-id-voxlingua107-ecapa",
+      "teacher_temperature": 2.0,
+      "anchor_hop_frames": 25,
+      "anchor_hop_ms": 250.0,
+      "interpolation": "linear posterior interpolation on the 10 ms feature grid",
+      "window": "[clip start, target frame end + 250 ms]",
+      "past_context_ms": "growing from clip start",
+      "future_context_ms": 250.0,
+      "context_valid_at_tested_latency": true
+    }
+  },
+  "policy": {
+    "threshold": 0.6,
+    "margin": 0.1,
+    "margin_classes": "source versus target (matches main hi/en policy)",
+    "dwell_chunks": 3,
+    "ema_new_weight": 0.3
+  },
+  "boundary_collar_ms": 250
+}

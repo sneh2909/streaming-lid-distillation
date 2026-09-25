@@ -1,10 +1,12 @@
-"""Manifest and cached-teacher-target loading."""
+"""Manifest and cached-teacher-target loading with provenance checks."""
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -12,6 +14,27 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 
 from .audio import LogMelFrontend, load_audio
+from .config import (
+    HOP_LENGTH,
+    LANGUAGE_CODES,
+    N_FFT,
+    N_MELS,
+    SAMPLE_RATE,
+    TEACHER_FUTURE_MS,
+    TEACHER_HOP_FRAMES,
+    TEACHER_NAME,
+    TEACHER_PAST_MS,
+    TEACHER_TEMPERATURE,
+    WIN_LENGTH,
+)
+
+
+TARGET_CACHE_SCHEMA_VERSION = 1
+TARGET_PROBABILITY_KEYS = (
+    "teacher_probs",
+    "teacher_soft_targets",
+    "anchor_probs",
+)
 
 
 def read_manifest(path: str | Path) -> list[dict]:
@@ -22,6 +45,300 @@ def read_manifest(path: str | Path) -> list[dict]:
 
 def resolve_audio_path(item: dict, manifest_path: str | Path) -> Path:
     return Path(manifest_path).parent / item["audio_path"]
+
+
+def file_sha256(path: str | Path) -> str:
+    """Hash a file without loading the full payload into memory."""
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def canonical_json_sha256(value: Any) -> str:
+    """Hash JSON-compatible data independently of dictionary insertion order."""
+    payload = json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def target_cache_configuration() -> dict[str, Any]:
+    """Return every code/config choice that determines cached target semantics."""
+    return {
+        "schema_version": TARGET_CACHE_SCHEMA_VERSION,
+        "teacher": TEACHER_NAME,
+        "language_codes": list(LANGUAGE_CODES),
+        "temperature": TEACHER_TEMPERATURE,
+        "probability_space": "teacher_log_posterior_restricted_and_renormalized",
+        "interpolation": "linear_probability",
+        "monolingual_target_kind": "converged_utterance",
+        "switch_target_kind": "local_windows",
+        "sample_rate": SAMPLE_RATE,
+        "n_fft": N_FFT,
+        "win_length": WIN_LENGTH,
+        "hop_length": HOP_LENGTH,
+        "n_mels": N_MELS,
+        "window_past_ms": TEACHER_PAST_MS,
+        "window_future_ms": TEACHER_FUTURE_MS,
+        "target_hop_frames": TEACHER_HOP_FRAMES,
+    }
+
+
+def target_configuration_sha256() -> str:
+    return canonical_json_sha256(target_cache_configuration())
+
+
+def manifest_records_sha256(records: list[dict]) -> str:
+    return canonical_json_sha256(records)
+
+
+def manifest_record_sha256(item: dict) -> str:
+    return canonical_json_sha256(item)
+
+
+def target_kind_for_item(item: dict) -> str:
+    return "local_windows" if item["language"] == "mixed" else "converged_utterance"
+
+
+def _npz_scalar(target_file: np.lib.npyio.NpzFile, key: str, path: Path) -> Any:
+    if key not in target_file:
+        raise ValueError(f"target cache {path} is missing metadata field {key!r}")
+    value = np.asarray(target_file[key])
+    if value.size != 1:
+        raise ValueError(f"target cache {path} field {key!r} must be scalar")
+    return value.reshape(()).item()
+
+
+def _validate_probability_array(
+    value: np.ndarray,
+    *,
+    name: str,
+    path: Path,
+    expected_classes: int,
+) -> None:
+    if value.ndim != 2 or value.shape[1] != expected_classes:
+        raise ValueError(
+            f"target cache {path} {name} must have shape [frames, "
+            f"{expected_classes}], got {value.shape}"
+        )
+    if not np.issubdtype(value.dtype, np.number) or not np.isfinite(value).all():
+        raise ValueError(f"target cache {path} {name} contains non-finite values")
+    if np.any(value < -1e-7):
+        raise ValueError(f"target cache {path} {name} contains negative probabilities")
+    if len(value) and not np.allclose(value.sum(axis=-1), 1.0, rtol=1e-5, atol=1e-6):
+        raise ValueError(f"target cache {path} {name} rows are not normalized")
+
+
+def load_teacher_target_array(
+    target_path: str | Path,
+    array_name: str,
+    *,
+    expected_frames: int | None = None,
+    expected_languages: tuple[str, ...] = LANGUAGE_CODES,
+) -> np.ndarray:
+    """Load one target array after validating class order and probabilities.
+
+    This basic validator is also usable by isolated experiments with their own
+    provenance scheme. The main train/eval pipeline wraps it in
+    :class:`TeacherTargetCache`, which additionally binds the file to the
+    manifest, waveform bytes, target configuration, and metadata index.
+    """
+    path = Path(target_path)
+    with np.load(path, allow_pickle=False) as target_file:
+        if "language_codes" not in target_file:
+            raise ValueError(f"target cache {path} is missing language_codes")
+        actual_languages = tuple(str(code) for code in target_file["language_codes"].tolist())
+        if actual_languages != expected_languages:
+            raise ValueError(
+                f"target cache {path} language order {actual_languages} differs "
+                f"from configured order {expected_languages}"
+            )
+        if array_name not in target_file:
+            raise ValueError(f"target cache {path} is missing array {array_name!r}")
+        for key in TARGET_PROBABILITY_KEYS:
+            if key not in target_file:
+                raise ValueError(f"target cache {path} is missing array {key!r}")
+            _validate_probability_array(
+                np.asarray(target_file[key]),
+                name=key,
+                path=path,
+                expected_classes=len(expected_languages),
+            )
+        teacher_probs = np.asarray(target_file["teacher_probs"])
+        soft_targets = np.asarray(target_file["teacher_soft_targets"])
+        if teacher_probs.shape != soft_targets.shape:
+            raise ValueError(
+                f"target cache {path} hard/soft frame shapes differ: "
+                f"{teacher_probs.shape} versus {soft_targets.shape}"
+            )
+        if expected_frames is not None and teacher_probs.shape[0] != expected_frames:
+            raise ValueError(
+                f"target cache {path} has {teacher_probs.shape[0]} frames, "
+                f"expected {expected_frames}"
+            )
+        return np.asarray(target_file[array_name]).copy()
+
+
+class TeacherTargetCache:
+    """Strict main-pipeline view of a content-bound teacher target directory."""
+
+    def __init__(self, manifest_path: str | Path, targets_dir: str | Path) -> None:
+        self.manifest_path = Path(manifest_path)
+        self.targets_dir = Path(targets_dir)
+        self.records = read_manifest(self.manifest_path)
+        self.records_by_id = {item["id"]: item for item in self.records}
+        if len(self.records_by_id) != len(self.records):
+            raise ValueError("manifest contains duplicate clip IDs")
+
+        metadata_path = self.targets_dir / "metadata.json"
+        if not metadata_path.exists():
+            raise FileNotFoundError(f"missing teacher target metadata: {metadata_path}")
+        try:
+            self.metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as error:
+            raise ValueError(f"cannot read teacher target metadata {metadata_path}: {error}") from error
+
+        expected_configuration = target_cache_configuration()
+        expected_configuration_hash = target_configuration_sha256()
+        if self.metadata.get("schema_version") != TARGET_CACHE_SCHEMA_VERSION:
+            raise ValueError(
+                "target cache schema differs from current configuration: "
+                f"found {self.metadata.get('schema_version')!r}, "
+                f"expected {TARGET_CACHE_SCHEMA_VERSION}"
+            )
+        if self.metadata.get("target_configuration") != expected_configuration:
+            raise ValueError("target cache configuration differs from current configuration")
+        if self.metadata.get("target_configuration_sha256") != expected_configuration_hash:
+            raise ValueError("target cache configuration SHA-256 is missing or inconsistent")
+
+        expected_manifest_hash = manifest_records_sha256(self.records)
+        if self.metadata.get("manifest_records_sha256") != expected_manifest_hash:
+            raise ValueError("target cache was generated from a different manifest")
+
+        entries = self.metadata.get("clips")
+        if not isinstance(entries, list):
+            raise ValueError("target cache metadata clips must be a list")
+        self.entries_by_id: dict[str, dict] = {}
+        for entry in entries:
+            if not isinstance(entry, dict) or not isinstance(entry.get("id"), str):
+                raise ValueError("target cache metadata contains an invalid clip entry")
+            clip_id = entry["id"]
+            if clip_id in self.entries_by_id:
+                raise ValueError(f"target cache metadata repeats clip ID {clip_id!r}")
+            self.entries_by_id[clip_id] = entry
+        if set(self.entries_by_id) != set(self.records_by_id):
+            missing = sorted(set(self.records_by_id) - set(self.entries_by_id))
+            extra = sorted(set(self.entries_by_id) - set(self.records_by_id))
+            raise ValueError(
+                f"target cache clip index differs from manifest; missing={missing}, extra={extra}"
+            )
+
+        expected_target_files_hash = canonical_json_sha256(
+            {
+                clip_id: self.entries_by_id[clip_id].get("target_file_sha256")
+                for clip_id in sorted(self.entries_by_id)
+            }
+        )
+        if self.metadata.get("target_files_sha256") != expected_target_files_hash:
+            raise ValueError("target cache file-set SHA-256 is missing or inconsistent")
+
+        self.identity = {
+            "schema_version": TARGET_CACHE_SCHEMA_VERSION,
+            "target_configuration_sha256": expected_configuration_hash,
+            "manifest_records_sha256": expected_manifest_hash,
+            "target_files_sha256": expected_target_files_hash,
+        }
+        self._validated_ids: set[str] = set()
+
+    def load(
+        self,
+        item: dict,
+        array_name: str,
+        *,
+        expected_frames: int | None = None,
+    ) -> np.ndarray:
+        """Validate one indexed cache file and return a defensive array copy."""
+        clip_id = item["id"]
+        if clip_id not in self.records_by_id:
+            raise ValueError(f"clip {clip_id!r} is not present in the cache manifest")
+        current_record_hash = manifest_record_sha256(item)
+        if current_record_hash != manifest_record_sha256(self.records_by_id[clip_id]):
+            raise ValueError(f"clip {clip_id!r} differs from its manifest record")
+
+        entry = self.entries_by_id[clip_id]
+        if entry.get("manifest_record_sha256") != current_record_hash:
+            raise ValueError(f"target cache manifest provenance mismatch for {clip_id}")
+        expected_kind = target_kind_for_item(item)
+        if entry.get("target_kind") != expected_kind:
+            raise ValueError(f"target cache target kind mismatch for {clip_id}")
+
+        audio_path = resolve_audio_path(item, self.manifest_path)
+        current_audio_hash = file_sha256(audio_path)
+        if entry.get("audio_sha256") != current_audio_hash:
+            raise ValueError(f"target cache audio SHA-256 mismatch for {clip_id}")
+
+        target_path = self.targets_dir / f"{clip_id}.npz"
+        if not target_path.exists():
+            raise FileNotFoundError(f"missing teacher target: {target_path}")
+        if entry.get("target_file_sha256") != file_sha256(target_path):
+            raise ValueError(f"target cache file SHA-256 mismatch for {clip_id}")
+
+        with np.load(target_path, allow_pickle=False) as target_file:
+            if int(_npz_scalar(target_file, "cache_schema_version", target_path)) != TARGET_CACHE_SCHEMA_VERSION:
+                raise ValueError(f"target cache schema mismatch inside {target_path}")
+            string_expectations = {
+                "clip_id": clip_id,
+                "target_kind": expected_kind,
+                "audio_sha256": current_audio_hash,
+                "manifest_record_sha256": current_record_hash,
+                "target_configuration_sha256": self.identity[
+                    "target_configuration_sha256"
+                ],
+                "teacher_name": TEACHER_NAME,
+            }
+            for key, expected in string_expectations.items():
+                actual = str(_npz_scalar(target_file, key, target_path))
+                if actual != expected:
+                    raise ValueError(
+                        f"target cache {target_path} field {key!r} is {actual!r}, "
+                        f"expected {expected!r}"
+                    )
+            if int(_npz_scalar(target_file, "num_frames", target_path)) != entry.get("frames"):
+                raise ValueError(f"target cache frame metadata mismatch for {clip_id}")
+
+        value = load_teacher_target_array(
+            target_path,
+            array_name,
+            expected_frames=expected_frames,
+        )
+        if expected_frames is not None and entry.get("frames") != expected_frames:
+            raise ValueError(f"target cache index frame count mismatch for {clip_id}")
+        self._validated_ids.add(clip_id)
+        return value
+
+    def validate_all(self) -> dict[str, Any]:
+        """Validate every cache entry and return a serializable audit."""
+        for item in self.records:
+            self.load(
+                item,
+                "teacher_soft_targets",
+                expected_frames=int(self.entries_by_id[item["id"]]["frames"]),
+            )
+        return self.audit()
+
+    def audit(self) -> dict[str, Any]:
+        return {
+            **self.identity,
+            "provenance_validated": True,
+            "validated_clips": len(self._validated_ids),
+            "indexed_clips": len(self.entries_by_id),
+        }
 
 
 def record_speaker_ids(item: dict) -> set[str]:
@@ -81,6 +398,8 @@ class DistillationDataset(Dataset):
         manifest_path: str | Path,
         targets_dir: str | Path,
         splits: Iterable[str],
+        *,
+        target_cache: TeacherTargetCache | None = None,
     ) -> None:
         self.manifest_path = Path(manifest_path)
         wanted = set(splits)
@@ -98,10 +417,19 @@ class DistillationDataset(Dataset):
                 target_path = Path(targets_dir) / f"{item['id']}.npz"
                 if not target_path.exists():
                     raise FileNotFoundError(f"missing teacher target: {target_path}")
-                with np.load(target_path) as target_file:
-                    target = torch.from_numpy(
-                        target_file["teacher_soft_targets"].copy()
-                    ).float()
+                if target_cache is None:
+                    target_array = load_teacher_target_array(
+                        target_path,
+                        "teacher_soft_targets",
+                        expected_frames=len(features),
+                    )
+                else:
+                    target_array = target_cache.load(
+                        item,
+                        "teacher_soft_targets",
+                        expected_frames=len(features),
+                    )
+                target = torch.from_numpy(target_array).float()
                 if len(features) != len(target):
                     raise ValueError(
                         f"frame mismatch for {item['id']}: features={len(features)}, targets={len(target)}"

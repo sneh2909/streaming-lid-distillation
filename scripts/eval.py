@@ -30,6 +30,7 @@ from streaming_lid.config import (
     WIN_LENGTH,
 )
 from streaming_lid.data import (
+    TeacherTargetCache,
     read_manifest,
     require_speaker_disjoint,
     resolve_audio_path,
@@ -183,6 +184,11 @@ def main() -> None:
     frontend = LogMelFrontend().eval()
     records = read_manifest(args.manifest)
     speaker_audit = require_speaker_disjoint(records)
+    target_cache = TeacherTargetCache(args.manifest, args.targets_dir)
+    if checkpoint.get("target_cache") != target_cache.identity:
+        raise ValueError(
+            "checkpoint target-cache identity differs from evaluation targets"
+        )
     heldout = [record for record in records if record["split"] == "heldout"]
     train_records = [record for record in records if record["split"] == "train"]
     switch_records = [record for record in records if record["split"] == "switch"]
@@ -221,8 +227,13 @@ def main() -> None:
                 rtol=1e-5,
                 atol=1e-5,
             )
-            with np.load(args.targets_dir / f"{item['id']}.npz") as target_file:
-                teacher_probs = torch.from_numpy(target_file["teacher_probs"].copy())
+            teacher_probs = torch.from_numpy(
+                target_cache.load(
+                    item,
+                    "teacher_probs",
+                    expected_frames=len(features[0]),
+                )
+            )
             student_class, teacher_class = aligned_classes(
                 streamed_logits, teacher_probs, len(features[0])
             )
@@ -326,8 +337,11 @@ def main() -> None:
         switch_features = frontend(switch_waveform)
         switch_logits = model.streaming_forward(switch_features).squeeze(0)
         switch_probabilities = torch.softmax(switch_logits, dim=-1).numpy()
-    with np.load(args.targets_dir / f"{switch_item['id']}.npz") as target_file:
-        teacher_switch = target_file["teacher_probs"].copy()
+    teacher_switch = target_cache.load(
+        switch_item,
+        "teacher_probs",
+        expected_frames=len(switch_features[0]),
+    )
     availability = chunk_availability_times(len(switch_probabilities))
     # Frames before D have no corresponding teacher target and are never trained.
     student_chunks, student_chunk_times = chunk_posteriors(
@@ -421,6 +435,7 @@ def main() -> None:
         "heldout_per_language": heldout_per_language,
         "heldout_per_clip": per_clip,
         "speaker_split": speaker_audit,
+        "target_cache": target_cache.audit(),
         "switch_detected_seconds": detected_seconds,
         "true_switch_seconds": true_switch_seconds,
         "switch_lag_ms": switch_lag_ms,
@@ -447,6 +462,17 @@ def main() -> None:
         "n_train_speakers": len(speaker_audit["train_speaker_ids"]),
         "n_heldout_speakers": len(speaker_audit["heldout_speaker_ids"]),
         "speaker_disjoint": speaker_audit["speaker_disjoint"],
+        "target_cache_provenance_validated": target_cache.audit()[
+            "provenance_validated"
+        ],
+        "target_cache_schema_version": target_cache.identity["schema_version"],
+        "target_configuration_sha256": target_cache.identity[
+            "target_configuration_sha256"
+        ],
+        "manifest_records_sha256": target_cache.identity[
+            "manifest_records_sha256"
+        ],
+        "target_files_sha256": target_cache.identity["target_files_sha256"],
         "student_params": model.parameter_count,
         "algorithmic_latency_ms": ALGORITHMIC_LATENCY_MS,
         "provisional_tail_withheld": True,

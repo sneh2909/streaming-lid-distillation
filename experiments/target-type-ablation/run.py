@@ -26,8 +26,10 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
 import math
+import platform
 import random
 import sys
 import time
@@ -39,7 +41,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 
@@ -92,6 +93,15 @@ from streaming_lid.model import CausalLIDStudent  # noqa: E402
 
 
 EXPERIMENT_NAME = "target-type-ablation"
+SCHEMA_VERSION = 2
+ANALYSIS_VERSION = "target-type-ablation-v2"
+TEACHER_REVISION = "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9"
+TEACHER_ARTIFACT_FILES = (
+    "classifier.ckpt",
+    "embedding_model.ckpt",
+    "hyperparams.yaml",
+    "label_encoder.txt",
+)
 VARIANTS = ("full_utterance", "centred_2s", "prefix_delta250")
 CENTRED_PAST_MS = 1_000
 CENTRED_FUTURE_MS = 1_000
@@ -139,6 +149,7 @@ def parse_args() -> argparse.Namespace:
         "--model-dir",
         type=Path,
         default=Path(".cache/models/lang-id-voxlingua107-ecapa"),
+        help="Base directory for the revision-and-artifact-qualified teacher cache.",
     )
     parser.add_argument("--steps", type=int, default=1_600)
     parser.add_argument("--batch-size", type=int, default=7)
@@ -150,6 +161,11 @@ def parse_args() -> argparse.Namespace:
         "--fresh",
         action="store_true",
         help="Regenerate target files and replace any partial arm results.",
+    )
+    parser.add_argument(
+        "--restart-results",
+        action="store_true",
+        help="Replace arm results for the current source snapshot but reuse validated targets.",
     )
     return parser.parse_args()
 
@@ -169,6 +185,19 @@ def hash_file(digest: "hashlib._Hash", path: Path) -> None:
             digest.update(block)
 
 
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    hash_file(digest, path)
+    return digest.hexdigest()
+
+
+def canonical_json_sha256(payload: dict) -> str:
+    encoded = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), allow_nan=False
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def input_fingerprint(items: list[dict], manifest: Path) -> str:
     """Hash exact manifest records and source WAV bytes used by an experiment."""
     digest = hashlib.sha256()
@@ -184,6 +213,52 @@ def pipeline_source_fingerprint() -> str:
         digest.update(relative_path.encode("utf-8"))
         hash_file(digest, REPO_ROOT / relative_path)
     return digest.hexdigest()
+
+
+def driver_fingerprint() -> str:
+    return file_sha256(Path(__file__).resolve())
+
+
+def dependency_versions() -> dict[str, str]:
+    return {
+        "python": platform.python_version(),
+        "numpy": np.__version__,
+        "torch": torch.__version__,
+        "torchaudio": importlib.metadata.version("torchaudio"),
+        "speechbrain": importlib.metadata.version("speechbrain"),
+        "huggingface_hub": importlib.metadata.version("huggingface-hub"),
+    }
+
+
+def resolve_teacher_artifact() -> tuple[Path, dict]:
+    """Resolve and hash a pinned Hub snapshot before loading the teacher."""
+    from huggingface_hub import snapshot_download
+
+    snapshot = Path(
+        snapshot_download(
+            repo_id=TEACHER_NAME,
+            revision=TEACHER_REVISION,
+            allow_patterns=list(TEACHER_ARTIFACT_FILES),
+        )
+    ).resolve()
+    file_records = {}
+    combined = hashlib.sha256()
+    for filename in TEACHER_ARTIFACT_FILES:
+        path = snapshot / filename
+        if not path.is_file():
+            raise FileNotFoundError(f"pinned teacher artifact is missing {path}")
+        sha256 = file_sha256(path)
+        size = path.stat().st_size
+        file_records[filename] = {"sha256": sha256, "bytes": size}
+        combined.update(filename.encode("utf-8"))
+        combined.update(bytes.fromhex(sha256))
+    identity = {
+        "model_id": TEACHER_NAME,
+        "revision": TEACHER_REVISION,
+        "artifact_sha256": combined.hexdigest(),
+        "files": file_records,
+    }
+    return snapshot, identity
 
 
 def state_dict_fingerprint(model: torch.nn.Module) -> str:
@@ -342,7 +417,13 @@ def target_definition(variant: str) -> dict:
     raise ValueError(variant)
 
 
-def validate_cached_target(path: Path, num_frames: int) -> None:
+def validate_cached_target(
+    path: Path,
+    num_frames: int,
+    variant: str,
+    run_identity_sha256: str,
+    teacher_artifact_sha256: str,
+) -> None:
     with np.load(path) as target_file:
         raw = target_file["teacher_probs"]
         soft = target_file["teacher_soft_targets"]
@@ -355,6 +436,20 @@ def validate_cached_target(path: Path, num_frames: int) -> None:
             raise ValueError(f"language order mismatch in {path}: {codes}")
         if not np.isfinite(raw).all() or not np.isfinite(soft).all():
             raise ValueError(f"non-finite cached target in {path}")
+        scalar_identity = {
+            "target_variant": variant,
+            "analysis_version": ANALYSIS_VERSION,
+            "run_identity_sha256": run_identity_sha256,
+            "teacher_revision": TEACHER_REVISION,
+            "teacher_artifact_sha256": teacher_artifact_sha256,
+        }
+        for key, expected in scalar_identity.items():
+            actual = str(target_file[key].item())
+            if actual != expected:
+                raise ValueError(
+                    f"cached target identity mismatch in {path}: "
+                    f"{key}={actual!r}, expected {expected!r}"
+                )
 
 
 def generate_variant_targets(
@@ -366,13 +461,23 @@ def generate_variant_targets(
     target_dir: Path,
     batch_size: int,
     input_sha256: str,
+    run_identity_sha256: str,
+    driver_sha256: str,
+    pipeline_source_sha256: str,
+    teacher_identity: dict,
     fresh: bool,
 ) -> dict:
     metadata_path = target_dir / "metadata.json"
     expected_metadata_identity = {
         "experiment": EXPERIMENT_NAME,
+        "schema_version": SCHEMA_VERSION,
+        "analysis_version": ANALYSIS_VERSION,
         "variant": variant,
         "input_sha256": input_sha256,
+        "run_identity_sha256": run_identity_sha256,
+        "driver_sha256": driver_sha256,
+        "pipeline_source_sha256": pipeline_source_sha256,
+        "teacher_identity": teacher_identity,
         "language_codes": list(LANGUAGE_CODES),
         "definition": target_definition(variant),
     }
@@ -387,7 +492,11 @@ def generate_variant_targets(
         for item in records:
             waveform = load_audio(resolve_audio_path(item, manifest))
             validate_cached_target(
-                target_dir / f"{item['id']}.npz", feature_frame_count(len(waveform))
+                target_dir / f"{item['id']}.npz",
+                feature_frame_count(len(waveform)),
+                variant,
+                run_identity_sha256,
+                teacher_identity["artifact_sha256"],
             )
         print(f"{variant}: validated cached targets", flush=True)
         return metadata["summary"]
@@ -425,8 +534,20 @@ def generate_variant_targets(
             in_set_mass=arrays.in_set_mass,
             language_codes=np.asarray(LANGUAGE_CODES),
             target_variant=np.asarray(variant),
+            analysis_version=np.asarray(ANALYSIS_VERSION),
+            run_identity_sha256=np.asarray(run_identity_sha256),
+            teacher_revision=np.asarray(TEACHER_REVISION),
+            teacher_artifact_sha256=np.asarray(
+                teacher_identity["artifact_sha256"]
+            ),
         )
-        validate_cached_target(output_path, num_frames)
+        validate_cached_target(
+            output_path,
+            num_frames,
+            variant,
+            run_identity_sha256,
+            teacher_identity["artifact_sha256"],
+        )
         clip_summaries.append(
             {
                 "id": item["id"],
@@ -470,6 +591,7 @@ def train_variant(
     batch_size: int,
     learning_rate: float,
     seed: int,
+    run_identity_sha256: str,
 ) -> tuple[CausalLIDStudent, dict]:
     seed_everything(seed)
     dataset = DistillationDataset(manifest, target_dir, splits=("train",))
@@ -552,6 +674,8 @@ def train_variant(
             "model_state": model.state_dict(),
             "languages": list(LANGUAGE_CODES),
             "target_variant": variant,
+            "analysis_version": ANALYSIS_VERSION,
+            "run_identity_sha256": run_identity_sha256,
             "steps": steps,
             "seed": seed,
             "model_kwargs": {
@@ -564,6 +688,8 @@ def train_variant(
     window = min(10, len(losses))
     metrics = {
         "optimizer_steps": steps,
+        "analysis_version": ANALYSIS_VERSION,
+        "run_identity_sha256": run_identity_sha256,
         "batch_size": batch_size,
         "learning_rate": learning_rate,
         "n_train_clips": len(dataset),
@@ -634,12 +760,10 @@ def threshold_policy_transition(
     switch_commit = None
     for chunk_index, posterior in enumerate(smoothed):
         if not armed:
-            other_max = float(
-                np.max(np.delete(posterior, source_index))
-            )
             if (
                 posterior[source_index] >= POLICY_THRESHOLD
-                and posterior[source_index] - other_max >= POLICY_MARGIN
+                and posterior[source_index] - posterior[target_index]
+                >= POLICY_MARGIN
             ):
                 active_chunks += 1
             else:
@@ -649,10 +773,9 @@ def threshold_policy_transition(
                 initial_commit = float(times[chunk_index])
             continue
 
-        other_max = float(np.max(np.delete(posterior, target_index)))
         if (
             posterior[target_index] >= POLICY_THRESHOLD
-            and posterior[target_index] - other_max >= POLICY_MARGIN
+            and posterior[target_index] - posterior[source_index] >= POLICY_MARGIN
         ):
             challenger_chunks += 1
         else:
@@ -748,8 +871,12 @@ def evaluate_heldout(
             features = frontend(waveform)
             full_logits = model(features).squeeze(0)
             streamed_logits = model.streaming_forward(features).squeeze(0)
+            stable_frames = len(full_logits) - model.lookahead_frames
             torch.testing.assert_close(
-                full_logits, streamed_logits, rtol=1e-5, atol=1e-5
+                full_logits[:stable_frames],
+                streamed_logits,
+                rtol=1e-5,
+                atol=1e-5,
             )
             valid_targets = (
                 len(features[0]) - LABEL_DELAY_FRAMES - MODEL_LOOKAHEAD_FRAMES
@@ -879,16 +1006,27 @@ def evaluate_switch_clip(
         PERSISTENCE_CHUNKS,
     )
     semantic_teacher_start = teacher_transition["transition_start_seconds"]
+    semantic_teacher_confirmed = teacher_transition["transition_confirmed_seconds"]
     availability_offset_ms = target_available_offset_ms(variant)
     if variant == "full_utterance":
-        teacher_available_start = (
+        first_teacher_posterior_available = (
             None if semantic_teacher_start is None else len(waveform) / SAMPLE_RATE
         )
+        confirmed_teacher_transition_available = (
+            None
+            if semantic_teacher_confirmed is None
+            else len(waveform) / SAMPLE_RATE
+        )
     else:
-        teacher_available_start = (
+        first_teacher_posterior_available = (
             None
             if semantic_teacher_start is None
             else semantic_teacher_start + availability_offset_ms / 1_000
+        )
+        confirmed_teacher_transition_available = (
+            None
+            if semantic_teacher_confirmed is None
+            else semantic_teacher_confirmed + availability_offset_ms / 1_000
         )
 
     return {
@@ -932,12 +1070,23 @@ def evaluate_switch_clip(
             "semantic_transition_start_lag_ms": safe_lag_ms(
                 semantic_teacher_start, boundary_seconds
             ),
+            "semantic_transition_confirmed_lag_ms": safe_lag_ms(
+                semantic_teacher_confirmed, boundary_seconds
+            ),
             "future_context_or_full_clip_availability_ms": (
                 "full clip" if availability_offset_ms is None else availability_offset_ms
             ),
-            "available_transition_start_seconds": teacher_available_start,
-            "availability_adjusted_lag_ms": safe_lag_ms(
-                teacher_available_start, boundary_seconds
+            "first_target_posterior_available_seconds": (
+                first_teacher_posterior_available
+            ),
+            "first_target_posterior_availability_lag_ms": safe_lag_ms(
+                first_teacher_posterior_available, boundary_seconds
+            ),
+            "confirmed_transition_available_seconds": (
+                confirmed_teacher_transition_available
+            ),
+            "confirmed_transition_availability_lag_ms": safe_lag_ms(
+                confirmed_teacher_transition_available, boundary_seconds
             ),
             "anchor_flips": flip_metrics(
                 anchor_probs.argmax(axis=-1), anchor_times
@@ -957,10 +1106,14 @@ def aggregate_switch_metrics(per_clip: list[dict]) -> dict:
         for record in per_clip
         if record["raw_persistent_transition"]["transition_start_lag_ms"] is not None
     ]
-    teacher_lags = [
-        record["teacher_target_transition"]["availability_adjusted_lag_ms"]
+    teacher_confirmed_lags = [
+        record["teacher_target_transition"][
+            "confirmed_transition_availability_lag_ms"
+        ]
         for record in per_clip
-        if record["teacher_target_transition"]["availability_adjusted_lag_ms"]
+        if record["teacher_target_transition"][
+            "confirmed_transition_availability_lag_ms"
+        ]
         is not None
     ]
     return {
@@ -1008,10 +1161,14 @@ def aggregate_switch_metrics(per_clip: list[dict]) -> dict:
                 ]
             )
         ),
-        "teacher_available_transition_detected": len(teacher_lags),
-        "teacher_available_transition_missed": len(per_clip) - len(teacher_lags),
-        "teacher_availability_adjusted_lag_ms_mean_detected_only": (
-            None if not teacher_lags else float(np.mean(teacher_lags))
+        "teacher_confirmed_transition_detected": len(teacher_confirmed_lags),
+        "teacher_confirmed_transition_missed": (
+            len(per_clip) - len(teacher_confirmed_lags)
+        ),
+        "teacher_confirmed_transition_availability_lag_ms_mean_detected_only": (
+            None
+            if not teacher_confirmed_lags
+            else float(np.mean(teacher_confirmed_lags))
         ),
         "per_clip": per_clip,
     }
@@ -1126,7 +1283,6 @@ def main() -> None:
     workspace = args.workspace.resolve()
     records = read_manifest(manifest)
     speaker_audit = require_speaker_disjoint(records)
-    train_records = [item for item in records if item["split"] == "train"]
     heldout = [item for item in records if item["split"] == "heldout"]
     switch_records = [item for item in records if item["split"] == "switch"]
     heldout_counts = Counter(item["language"] for item in heldout)
@@ -1146,6 +1302,9 @@ def main() -> None:
         manifest,
     )
     source_sha256 = pipeline_source_fingerprint()
+    driver_sha256 = driver_fingerprint()
+    dependencies = dependency_versions()
+    teacher_snapshot, teacher_identity = resolve_teacher_artifact()
     settings = {
         "steps": args.steps,
         "batch_size": args.batch_size,
@@ -1158,24 +1317,33 @@ def main() -> None:
         "evidence_lookahead_ms": EVIDENCE_LOOKAHEAD_MS,
         "early_ramp_frames": EARLY_RAMP_FRAMES,
     }
+    run_identity_payload = {
+        "experiment": EXPERIMENT_NAME,
+        "schema_version": SCHEMA_VERSION,
+        "analysis_version": ANALYSIS_VERSION,
+        "all_input_sha256": all_input_sha256,
+        "driver_sha256": driver_sha256,
+        "pipeline_source_sha256": source_sha256,
+        "settings": settings,
+        "dependencies": dependencies,
+        "teacher_identity": teacher_identity,
+    }
+    run_identity_sha256 = canonical_json_sha256(run_identity_payload)
     output_path = Path(__file__).with_name("results.json")
-    if output_path.exists() and not args.fresh:
+    reset_results = args.fresh or args.restart_results
+    if output_path.exists() and not reset_results:
         output = json.loads(output_path.read_text(encoding="utf-8"))
-        identity = {
-            "all_input_sha256": all_input_sha256,
-            "pipeline_source_sha256": source_sha256,
-            "settings": settings,
-        }
-        for key, value in identity.items():
-            if output.get(key) != value:
-                raise ValueError(
-                    f"existing results have different {key}; rerun with --fresh"
-                )
+        if output.get("run_identity_sha256") != run_identity_sha256:
+            raise ValueError(
+                "existing results have a different driver/pipeline/input/model/"
+                "dependency identity; rerun with --fresh"
+            )
     else:
         output = {"arms": {}}
     output.update(
         {
-            "schema_version": 1,
+            "schema_version": SCHEMA_VERSION,
+            "analysis_version": ANALYSIS_VERSION,
             "experiment": EXPERIMENT_NAME,
             "question": (
                 "How do full-utterance, centred two-second, and growing-prefix "
@@ -1186,8 +1354,13 @@ def main() -> None:
             "all_input_sha256": all_input_sha256,
             "evaluation_input_sha256": evaluation_input_sha256,
             "teacher_bakeoff_compatible_input_sha256": bakeoff_compatible_sha256,
+            "run_identity_sha256": run_identity_sha256,
+            "run_identity": run_identity_payload,
+            "driver_sha256": driver_sha256,
             "pipeline_source_sha256": source_sha256,
             "pipeline_source_files": list(PIPELINE_SOURCES),
+            "dependencies": dependencies,
+            "teacher_identity": teacher_identity,
             "language_codes": list(LANGUAGE_CODES),
             "heldout_ids": [item["id"] for item in heldout],
             "switch_ids": [item["id"] for item in switch_records],
@@ -1199,11 +1372,12 @@ def main() -> None:
             "policy": {
                 "threshold": POLICY_THRESHOLD,
                 "margin": POLICY_MARGIN,
+                "margin_classes": "source versus target (matches main hi/en policy)",
                 "dwell_chunks": POLICY_DWELL_CHUNKS,
                 "ema_new_weight": POLICY_EMA_NEW_WEIGHT,
             },
             "boundary_collar_ms": BOUNDARY_COLLAR_MS,
-            "arms": {} if args.fresh else output.get("arms", {}),
+            "arms": {} if reset_results else output.get("arms", {}),
         }
     )
     atomic_write_json(output_path, output)
@@ -1211,9 +1385,13 @@ def main() -> None:
     print(f"loading frozen teacher {TEACHER_NAME}", flush=True)
     from speechbrain.inference.classifiers import EncoderClassifier
 
+    pinned_savedir = (
+        args.model_dir.resolve()
+        / f"{TEACHER_REVISION}-{teacher_identity['artifact_sha256'][:12]}"
+    )
     teacher = EncoderClassifier.from_hparams(
-        source=TEACHER_NAME,
-        savedir=str(args.model_dir.resolve()),
+        source=str(teacher_snapshot),
+        savedir=str(pinned_savedir),
         run_opts={"device": "cpu"},
     )
     teacher.eval()
@@ -1232,6 +1410,10 @@ def main() -> None:
             target_dir,
             args.teacher_batch_size,
             all_input_sha256,
+            run_identity_sha256,
+            driver_sha256,
+            source_sha256,
+            teacher_identity,
             args.fresh,
         )
     del teacher
@@ -1248,6 +1430,13 @@ def main() -> None:
 
     for arm_number, variant in enumerate(VARIANTS, start=1):
         if variant in output["arms"] and not args.fresh:
+            if (
+                output["arms"][variant].get("run_identity_sha256")
+                != run_identity_sha256
+            ):
+                raise ValueError(
+                    f"completed arm {variant} has a different run identity"
+                )
             print(f"[{arm_number}/3] retaining completed arm {variant}", flush=True)
             continue
         print(f"[{arm_number}/3] training {variant}", flush=True)
@@ -1261,6 +1450,7 @@ def main() -> None:
             batch_size=args.batch_size,
             learning_rate=args.learning_rate,
             seed=args.seed,
+            run_identity_sha256=run_identity_sha256,
         )
         evaluation = evaluate_variant(
             model,
@@ -1272,6 +1462,9 @@ def main() -> None:
             REPO_ROOT / "data/generated/targets",
         )
         output["arms"][variant] = {
+            "analysis_version": ANALYSIS_VERSION,
+            "run_identity_sha256": run_identity_sha256,
+            "teacher_identity": teacher_identity,
             "target_generation": generation_summaries[variant],
             "training": training,
             "evaluation": evaluation,
@@ -1310,6 +1503,12 @@ def main() -> None:
             "pipeline_source_unchanged_during_run": (
                 pipeline_source_fingerprint() == source_sha256
             ),
+            "driver_unchanged_during_run": (
+                driver_fingerprint() == driver_sha256
+            ),
+            "teacher_artifact_unchanged_during_run": (
+                resolve_teacher_artifact()[1] == teacher_identity
+            ),
             "inputs_unchanged_during_run": (
                 input_fingerprint(records, manifest) == all_input_sha256
             ),
@@ -1322,6 +1521,8 @@ def main() -> None:
             "identical_batch_order_across_arms",
             "all_training_finite",
             "pipeline_source_unchanged_during_run",
+            "driver_unchanged_during_run",
+            "teacher_artifact_unchanged_during_run",
             "inputs_unchanged_during_run",
         )
     ):

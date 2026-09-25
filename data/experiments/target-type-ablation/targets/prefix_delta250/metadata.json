@@ -1,0 +1,787 @@
+{
+  "experiment": "target-type-ablation",
+  "variant": "prefix_delta250",
+  "input_sha256": "ed1c02ea8036372143a7373fca971d1f3b6f64ce9514f7ec75bfee44d1fc9f59",
+  "language_codes": [
+    "en",
+    "hi",
+    "mr",
+    "bn",
+    "ta",
+    "te",
+    "gu"
+  ],
+  "definition": {
+    "teacher": "speechbrain/lang-id-voxlingua107-ecapa",
+    "teacher_temperature": 2.0,
+    "anchor_hop_frames": 25,
+    "anchor_hop_ms": 250.0,
+    "interpolation": "linear posterior interpolation on the 10 ms feature grid",
+    "window": "[clip start, target frame end + 250 ms]",
+    "past_context_ms": "growing from clip start",
+    "future_context_ms": 250.0,
+    "context_valid_at_tested_latency": true
+  },
+  "generated_utc": "2026-09-25T19:03:00.826738+00:00",
+  "summary": {
+    "clips": 94,
+    "anchors": 1786,
+    "frames": 41195,
+    "known_label_frame_accuracy_micro_all_splits": 0.8135938827527612,
+    "generation_wall_seconds": 208.26620718400045,
+    "per_clip": [
+      {
+        "id": "en_train_00",
+        "split": "train",
+        "frames": 443,
+        "anchors": 19,
+        "known_label_frame_accuracy": 0.5169300225733634,
+        "mean_selected_language_mass": 0.29453763365745544
+      },
+      {
+        "id": "en_train_01",
+        "split": "train",
+        "frames": 391,
+        "anchors": 17,
+        "known_label_frame_accuracy": 0.6419437340153452,
+        "mean_selected_language_mass": 0.5298753380775452
+      },
+      {
+        "id": "en_train_02",
+        "split": "train",
+        "frames": 450,
+        "anchors": 19,
+        "known_label_frame_accuracy": 0.7133333333333334,
+        "mean_selected_language_mass": 0.061478231102228165
+      },
+      {
+        "id": "en_train_03",
+        "split": "train",
+        "frames": 383,
+        "anchors": 17,
+        "known_label_frame_accuracy": 0.5117493472584856,
+        "mean_selected_language_mass": 0.2530205547809601
+      },
+      {
+        "id": "en_train_04",
+        "split": "train",
+        "frames": 454,
+        "anchors": 20,
+        "known_label_frame_accuracy": 0.5198237885462555,
+        "mean_selected_language_mass": 0.12839514017105103
+      },
+      {
+        "id": "en_train_05",
+        "split": "train",
+        "frames": 469,
+        "anchors": 20,
+        "known_label_frame_accuracy": 0.44776119402985076,
+        "mean_selected_language_mass": 0.4537140727043152
+      },
+      {
+        "id": "en_train_06",
+        "split": "train",
+        "frames": 398,
+        "anchors": 17,
+        "known_label_frame_accuracy": 0.04773869346733668,
+        "mean_selected_language_mass": 0.5494459867477417
+      },
+      {
+        "id": "en_train_07",
+        "split": "train",
+        "frames": 393,
+        "anchors": 17,
+        "known_label_frame_accuracy": 0.26208651399491095,
+        "mean_selected_language_mass": 0.41407209634780884
+      },
+      {
+        "id": "en_train_08",
+        "split": "train",
+        "frames": 369,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.05420054200542006,
+        "mean_selected_language_mass": 0.5879347324371338
+      },
+      {
+        "id": "en_train_09",
+        "split": "train",
+        "frames": 302,
+        "anchors": 14,
+        "known_label_frame_accuracy": 0.08609271523178808,
+        "mean_selected_language_mass": 0.45204830169677734
+      },
+      {
+        "id": "en_heldout_10",
+        "split": "heldout",
+        "frames": 308,
+        "anchors": 14,
+        "known_label_frame_accuracy": 0.8116883116883117,
+        "mean_selected_language_mass": 0.3221358358860016
+      },
+      {
+        "id": "en_heldout_11",
+        "split": "heldout",
+        "frames": 430,
+        "anchors": 19,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.4662352204322815
+      },
+      {
+        "id": "en_heldout_12",
+        "split": "heldout",
+        "frames": 347,
+        "anchors": 15,
+        "known_label_frame_accuracy": 0.7579250720461095,
+        "mean_selected_language_mass": 0.47106388211250305
+      },
+      {
+        "id": "hi_train_00",
+        "split": "train",
+        "frames": 581,
+        "anchors": 25,
+        "known_label_frame_accuracy": 0.810671256454389,
+        "mean_selected_language_mass": 0.834770917892456
+      },
+      {
+        "id": "hi_train_01",
+        "split": "train",
+        "frames": 445,
+        "anchors": 19,
+        "known_label_frame_accuracy": 0.9775280898876404,
+        "mean_selected_language_mass": 0.7481277585029602
+      },
+      {
+        "id": "hi_train_02",
+        "split": "train",
+        "frames": 537,
+        "anchors": 23,
+        "known_label_frame_accuracy": 0.9199255121042831,
+        "mean_selected_language_mass": 0.8081411123275757
+      },
+      {
+        "id": "hi_train_03",
+        "split": "train",
+        "frames": 372,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.9435483870967742,
+        "mean_selected_language_mass": 0.8488830924034119
+      },
+      {
+        "id": "hi_train_04",
+        "split": "train",
+        "frames": 523,
+        "anchors": 22,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.9221765398979187
+      },
+      {
+        "id": "hi_train_05",
+        "split": "train",
+        "frames": 491,
+        "anchors": 21,
+        "known_label_frame_accuracy": 0.9674134419551935,
+        "mean_selected_language_mass": 0.9453083872795105
+      },
+      {
+        "id": "hi_train_06",
+        "split": "train",
+        "frames": 439,
+        "anchors": 19,
+        "known_label_frame_accuracy": 0.9339407744874715,
+        "mean_selected_language_mass": 0.942345380783081
+      },
+      {
+        "id": "hi_train_07",
+        "split": "train",
+        "frames": 428,
+        "anchors": 19,
+        "known_label_frame_accuracy": 0.8084112149532711,
+        "mean_selected_language_mass": 0.7222645282745361
+      },
+      {
+        "id": "hi_train_08",
+        "split": "train",
+        "frames": 442,
+        "anchors": 19,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.902712881565094
+      },
+      {
+        "id": "hi_train_09",
+        "split": "train",
+        "frames": 356,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.9606741573033708,
+        "mean_selected_language_mass": 0.561699390411377
+      },
+      {
+        "id": "hi_heldout_10",
+        "split": "heldout",
+        "frames": 382,
+        "anchors": 17,
+        "known_label_frame_accuracy": 0.7408376963350786,
+        "mean_selected_language_mass": 0.6705644726753235
+      },
+      {
+        "id": "hi_heldout_11",
+        "split": "heldout",
+        "frames": 488,
+        "anchors": 21,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.8330439329147339
+      },
+      {
+        "id": "hi_heldout_12",
+        "split": "heldout",
+        "frames": 410,
+        "anchors": 18,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.936054527759552
+      },
+      {
+        "id": "mr_train_00",
+        "split": "train",
+        "frames": 610,
+        "anchors": 26,
+        "known_label_frame_accuracy": 0.8950819672131147,
+        "mean_selected_language_mass": 0.8847299814224243
+      },
+      {
+        "id": "mr_train_01",
+        "split": "train",
+        "frames": 470,
+        "anchors": 20,
+        "known_label_frame_accuracy": 0.9234042553191489,
+        "mean_selected_language_mass": 0.8782026171684265
+      },
+      {
+        "id": "mr_train_02",
+        "split": "train",
+        "frames": 521,
+        "anchors": 22,
+        "known_label_frame_accuracy": 0.9251439539347409,
+        "mean_selected_language_mass": 0.8460049033164978
+      },
+      {
+        "id": "mr_train_03",
+        "split": "train",
+        "frames": 381,
+        "anchors": 17,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.9204844832420349
+      },
+      {
+        "id": "mr_train_04",
+        "split": "train",
+        "frames": 489,
+        "anchors": 21,
+        "known_label_frame_accuracy": 0.8118609406952966,
+        "mean_selected_language_mass": 0.6238206624984741
+      },
+      {
+        "id": "mr_train_05",
+        "split": "train",
+        "frames": 483,
+        "anchors": 21,
+        "known_label_frame_accuracy": 0.6749482401656315,
+        "mean_selected_language_mass": 0.8735256195068359
+      },
+      {
+        "id": "mr_train_06",
+        "split": "train",
+        "frames": 416,
+        "anchors": 18,
+        "known_label_frame_accuracy": 0.4735576923076923,
+        "mean_selected_language_mass": 0.7865217328071594
+      },
+      {
+        "id": "mr_train_07",
+        "split": "train",
+        "frames": 368,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.8315217391304348,
+        "mean_selected_language_mass": 0.8772028684616089
+      },
+      {
+        "id": "mr_train_08",
+        "split": "train",
+        "frames": 358,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.9217877094972067,
+        "mean_selected_language_mass": 0.9078963398933411
+      },
+      {
+        "id": "mr_train_09",
+        "split": "train",
+        "frames": 330,
+        "anchors": 15,
+        "known_label_frame_accuracy": 0.8181818181818182,
+        "mean_selected_language_mass": 0.6969689726829529
+      },
+      {
+        "id": "mr_heldout_10",
+        "split": "heldout",
+        "frames": 319,
+        "anchors": 14,
+        "known_label_frame_accuracy": 0.6394984326018809,
+        "mean_selected_language_mass": 0.7196074724197388
+      },
+      {
+        "id": "mr_heldout_11",
+        "split": "heldout",
+        "frames": 424,
+        "anchors": 18,
+        "known_label_frame_accuracy": 0.8726415094339622,
+        "mean_selected_language_mass": 0.9788262844085693
+      },
+      {
+        "id": "mr_heldout_12",
+        "split": "heldout",
+        "frames": 356,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.35674157303370785,
+        "mean_selected_language_mass": 0.9302272200584412
+      },
+      {
+        "id": "bn_train_00",
+        "split": "train",
+        "frames": 581,
+        "anchors": 25,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.8294447064399719
+      },
+      {
+        "id": "bn_train_01",
+        "split": "train",
+        "frames": 522,
+        "anchors": 22,
+        "known_label_frame_accuracy": 0.9846743295019157,
+        "mean_selected_language_mass": 0.8883426189422607
+      },
+      {
+        "id": "bn_train_02",
+        "split": "train",
+        "frames": 501,
+        "anchors": 21,
+        "known_label_frame_accuracy": 0.8682634730538922,
+        "mean_selected_language_mass": 0.8234263062477112
+      },
+      {
+        "id": "bn_train_03",
+        "split": "train",
+        "frames": 430,
+        "anchors": 19,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.9451475739479065
+      },
+      {
+        "id": "bn_train_04",
+        "split": "train",
+        "frames": 429,
+        "anchors": 19,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.7882593870162964
+      },
+      {
+        "id": "bn_train_05",
+        "split": "train",
+        "frames": 393,
+        "anchors": 17,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.9986677765846252
+      },
+      {
+        "id": "bn_train_06",
+        "split": "train",
+        "frames": 394,
+        "anchors": 17,
+        "known_label_frame_accuracy": 0.9187817258883249,
+        "mean_selected_language_mass": 0.9280737042427063
+      },
+      {
+        "id": "bn_train_07",
+        "split": "train",
+        "frames": 295,
+        "anchors": 13,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.9632376432418823
+      },
+      {
+        "id": "bn_train_08",
+        "split": "train",
+        "frames": 328,
+        "anchors": 15,
+        "known_label_frame_accuracy": 0.8201219512195121,
+        "mean_selected_language_mass": 0.8385491967201233
+      },
+      {
+        "id": "bn_train_09",
+        "split": "train",
+        "frames": 333,
+        "anchors": 15,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.8315544128417969
+      },
+      {
+        "id": "bn_heldout_10",
+        "split": "heldout",
+        "frames": 316,
+        "anchors": 14,
+        "known_label_frame_accuracy": 0.8955696202531646,
+        "mean_selected_language_mass": 0.6721348762512207
+      },
+      {
+        "id": "bn_heldout_11",
+        "split": "heldout",
+        "frames": 355,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.9605633802816902,
+        "mean_selected_language_mass": 0.9787254333496094
+      },
+      {
+        "id": "bn_heldout_12",
+        "split": "heldout",
+        "frames": 367,
+        "anchors": 16,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.9377455711364746
+      },
+      {
+        "id": "ta_train_00",
+        "split": "train",
+        "frames": 504,
+        "anchors": 22,
+        "known_label_frame_accuracy": 0.9861111111111112,
+        "mean_selected_language_mass": 0.9665901064872742
+      },
+      {
+        "id": "ta_train_01",
+        "split": "train",
+        "frames": 472,
+        "anchors": 20,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.9511317014694214
+      },
+      {
+        "id": "ta_train_02",
+        "split": "train",
+        "frames": 489,
+        "anchors": 21,
+        "known_label_frame_accuracy": 0.9734151329243353,
+        "mean_selected_language_mass": 0.9509660005569458
+      },
+      {
+        "id": "ta_train_03",
+        "split": "train",
+        "frames": 458,
+        "anchors": 20,
+        "known_label_frame_accuracy": 0.8864628820960698,
+        "mean_selected_language_mass": 0.8743665814399719
+      },
+      {
+        "id": "ta_train_04",
+        "split": "train",
+        "frames": 528,
+        "anchors": 23,
+        "known_label_frame_accuracy": 0.9507575757575758,
+        "mean_selected_language_mass": 0.8746501803398132
+      },
+      {
+        "id": "ta_train_05",
+        "split": "train",
+        "frames": 358,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.8854748603351955,
+        "mean_selected_language_mass": 0.914192795753479
+      },
+      {
+        "id": "ta_train_06",
+        "split": "train",
+        "frames": 404,
+        "anchors": 18,
+        "known_label_frame_accuracy": 0.9183168316831684,
+        "mean_selected_language_mass": 0.8482123613357544
+      },
+      {
+        "id": "ta_train_07",
+        "split": "train",
+        "frames": 346,
+        "anchors": 15,
+        "known_label_frame_accuracy": 0.9566473988439307,
+        "mean_selected_language_mass": 0.893126368522644
+      },
+      {
+        "id": "ta_train_08",
+        "split": "train",
+        "frames": 429,
+        "anchors": 19,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.9962344765663147
+      },
+      {
+        "id": "ta_train_09",
+        "split": "train",
+        "frames": 307,
+        "anchors": 14,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.8453295826911926
+      },
+      {
+        "id": "ta_heldout_10",
+        "split": "heldout",
+        "frames": 367,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.9591280653950953,
+        "mean_selected_language_mass": 0.9710360765457153
+      },
+      {
+        "id": "ta_heldout_11",
+        "split": "heldout",
+        "frames": 393,
+        "anchors": 17,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.7879318594932556
+      },
+      {
+        "id": "ta_heldout_12",
+        "split": "heldout",
+        "frames": 343,
+        "anchors": 15,
+        "known_label_frame_accuracy": 0.9766763848396501,
+        "mean_selected_language_mass": 0.92917400598526
+      },
+      {
+        "id": "te_train_00",
+        "split": "train",
+        "frames": 633,
+        "anchors": 27,
+        "known_label_frame_accuracy": 0.46129541864139023,
+        "mean_selected_language_mass": 0.9061171412467957
+      },
+      {
+        "id": "te_train_01",
+        "split": "train",
+        "frames": 519,
+        "anchors": 22,
+        "known_label_frame_accuracy": 0.8863198458574181,
+        "mean_selected_language_mass": 0.8314880728721619
+      },
+      {
+        "id": "te_train_02",
+        "split": "train",
+        "frames": 581,
+        "anchors": 25,
+        "known_label_frame_accuracy": 0.9621342512908778,
+        "mean_selected_language_mass": 0.946613073348999
+      },
+      {
+        "id": "te_train_03",
+        "split": "train",
+        "frames": 497,
+        "anchors": 21,
+        "known_label_frame_accuracy": 0.937625754527163,
+        "mean_selected_language_mass": 0.9007226228713989
+      },
+      {
+        "id": "te_train_04",
+        "split": "train",
+        "frames": 502,
+        "anchors": 22,
+        "known_label_frame_accuracy": 0.8784860557768924,
+        "mean_selected_language_mass": 0.8487352728843689
+      },
+      {
+        "id": "te_train_05",
+        "split": "train",
+        "frames": 448,
+        "anchors": 19,
+        "known_label_frame_accuracy": 0.8013392857142857,
+        "mean_selected_language_mass": 0.8988635540008545
+      },
+      {
+        "id": "te_train_06",
+        "split": "train",
+        "frames": 372,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.8306451612903226,
+        "mean_selected_language_mass": 0.8118342161178589
+      },
+      {
+        "id": "te_train_07",
+        "split": "train",
+        "frames": 299,
+        "anchors": 13,
+        "known_label_frame_accuracy": 0.8729096989966555,
+        "mean_selected_language_mass": 0.9862725734710693
+      },
+      {
+        "id": "te_train_08",
+        "split": "train",
+        "frames": 448,
+        "anchors": 19,
+        "known_label_frame_accuracy": 0.8571428571428571,
+        "mean_selected_language_mass": 0.9559785723686218
+      },
+      {
+        "id": "te_train_09",
+        "split": "train",
+        "frames": 355,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.5549295774647888,
+        "mean_selected_language_mass": 0.6724262237548828
+      },
+      {
+        "id": "te_heldout_10",
+        "split": "heldout",
+        "frames": 380,
+        "anchors": 17,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.9009116888046265
+      },
+      {
+        "id": "te_heldout_11",
+        "split": "heldout",
+        "frames": 336,
+        "anchors": 15,
+        "known_label_frame_accuracy": 0.8095238095238095,
+        "mean_selected_language_mass": 0.8144190907478333
+      },
+      {
+        "id": "te_heldout_12",
+        "split": "heldout",
+        "frames": 314,
+        "anchors": 14,
+        "known_label_frame_accuracy": 0.9808917197452229,
+        "mean_selected_language_mass": 0.8511208891868591
+      },
+      {
+        "id": "gu_train_00",
+        "split": "train",
+        "frames": 580,
+        "anchors": 25,
+        "known_label_frame_accuracy": 0.7551724137931034,
+        "mean_selected_language_mass": 0.6055744886398315
+      },
+      {
+        "id": "gu_train_01",
+        "split": "train",
+        "frames": 532,
+        "anchors": 23,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.9105064272880554
+      },
+      {
+        "id": "gu_train_02",
+        "split": "train",
+        "frames": 497,
+        "anchors": 21,
+        "known_label_frame_accuracy": 0.9859154929577465,
+        "mean_selected_language_mass": 0.9098442792892456
+      },
+      {
+        "id": "gu_train_03",
+        "split": "train",
+        "frames": 482,
+        "anchors": 21,
+        "known_label_frame_accuracy": 0.9294605809128631,
+        "mean_selected_language_mass": 0.8766710162162781
+      },
+      {
+        "id": "gu_train_04",
+        "split": "train",
+        "frames": 492,
+        "anchors": 21,
+        "known_label_frame_accuracy": 0.8292682926829268,
+        "mean_selected_language_mass": 0.777787446975708
+      },
+      {
+        "id": "gu_train_05",
+        "split": "train",
+        "frames": 530,
+        "anchors": 23,
+        "known_label_frame_accuracy": 0.930188679245283,
+        "mean_selected_language_mass": 0.8766865134239197
+      },
+      {
+        "id": "gu_train_06",
+        "split": "train",
+        "frames": 465,
+        "anchors": 20,
+        "known_label_frame_accuracy": 0.8408602150537634,
+        "mean_selected_language_mass": 0.8049532771110535
+      },
+      {
+        "id": "gu_train_07",
+        "split": "train",
+        "frames": 364,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.8406593406593407,
+        "mean_selected_language_mass": 0.8978536128997803
+      },
+      {
+        "id": "gu_train_08",
+        "split": "train",
+        "frames": 375,
+        "anchors": 16,
+        "known_label_frame_accuracy": 0.192,
+        "mean_selected_language_mass": 0.912935197353363
+      },
+      {
+        "id": "gu_train_09",
+        "split": "train",
+        "frames": 382,
+        "anchors": 17,
+        "known_label_frame_accuracy": 1.0,
+        "mean_selected_language_mass": 0.889258861541748
+      },
+      {
+        "id": "gu_heldout_10",
+        "split": "heldout",
+        "frames": 388,
+        "anchors": 17,
+        "known_label_frame_accuracy": 0.8350515463917526,
+        "mean_selected_language_mass": 0.8060733079910278
+      },
+      {
+        "id": "gu_heldout_11",
+        "split": "heldout",
+        "frames": 427,
+        "anchors": 19,
+        "known_label_frame_accuracy": 0.7377049180327869,
+        "mean_selected_language_mass": 0.8186656832695007
+      },
+      {
+        "id": "gu_heldout_12",
+        "split": "heldout",
+        "frames": 405,
+        "anchors": 18,
+        "known_label_frame_accuracy": 0.9703703703703703,
+        "mean_selected_language_mass": 0.9802210330963135
+      },
+      {
+        "id": "switch_hi_en_train",
+        "split": "train",
+        "frames": 798,
+        "anchors": 33,
+        "known_label_frame_accuracy": 0.3609022556390977,
+        "mean_selected_language_mass": 0.8618477582931519
+      },
+      {
+        "id": "switch_hi_en_eval",
+        "split": "switch",
+        "frames": 798,
+        "anchors": 33,
+        "known_label_frame_accuracy": 0.37468671679197996,
+        "mean_selected_language_mass": 0.8292126655578613
+      },
+      {
+        "id": "switch_en_hi_eval",
+        "split": "switch",
+        "frames": 798,
+        "anchors": 33,
+        "known_label_frame_accuracy": 0.7957393483709273,
+        "mean_selected_language_mass": 0.6066418290138245
+      }
+    ]
+  }
+}

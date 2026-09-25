@@ -23,6 +23,7 @@ from streaming_lid.config import (
 )
 from streaming_lid.data import (
     DistillationDataset,
+    TeacherTargetCache,
     collate_distillation_batch,
     read_manifest,
     require_speaker_disjoint,
@@ -63,7 +64,13 @@ def main() -> None:
     seed_everything(args.seed)
     records = read_manifest(args.manifest)
     speaker_audit = require_speaker_disjoint(records)
-    dataset = DistillationDataset(args.manifest, args.targets_dir, splits=("train",))
+    target_cache = TeacherTargetCache(args.manifest, args.targets_dir)
+    dataset = DistillationDataset(
+        args.manifest,
+        args.targets_dir,
+        splits=("train",),
+        target_cache=target_cache,
+    )
     generator = torch.Generator().manual_seed(args.seed)
     loader = DataLoader(
         dataset,
@@ -138,6 +145,7 @@ def main() -> None:
         "model_state": model.state_dict(),
         "languages": list(LANGUAGE_CODES),
         "teacher": TEACHER_NAME,
+        "target_cache": target_cache.identity,
         "steps": args.steps,
         "seed": args.seed,
         "model_kwargs": {
@@ -168,6 +176,7 @@ def main() -> None:
         "effective_epochs": examples_seen / len(dataset),
         "n_train_speakers": len(speaker_audit["train_speaker_ids"]),
         "speaker_split": speaker_audit,
+        "target_cache": target_cache.audit(),
         "student_params": model.parameter_count,
         "losses": losses,
         "gradient_norms": gradient_norms,

@@ -74,6 +74,8 @@ w[i] = min((i + 1) / 100, 1).
 
 The `T²` term preserves gradient scale under softening. For switch clips, `q[b,i]` is the local window posterior above. For monolingual clips it is the converged utterance posterior; the ramp acknowledges that the teacher's confidence is not reproducible at the very start. This is knowledge distillation only—human/TTS language labels are used to build and audit the split, not in the optimization loss.
 
+A target contributes only when `i+D+L < sequence_length`. If that condition is false for every item in a batch, the loss raises a clear error instead of returning zero and allowing a fake zero-gradient optimizer step. At the default `D=21`, `L=4` boundary, length 25 is rejected and length 26 supplies exactly the first valid target frame; the regression test checks that this frame backpropagates a nonzero gradient.
+
 ## Student and latency budget
 
 The student projects 40 log-mels plus four explicit right-context frames into 64 channels, then applies six causal depthwise-separable residual blocks with dilations `(1, 2, 4, 8, 16, 32)` and a 7-class head. Its finite receptive field is 127 frames (about 1.27 s of past), so it cannot retain an old language forever as an unconstrained recurrent state can. It has **42,567 parameters**. The live `streaming_step` retains only finite left history and the four pending lookahead frames. It emits each logit once, after all four future feature frames really exist; it never publishes the zero-padded end tail as stable. Chunked replay recomputes the small left overlap for clarity, while a production kernel would cache convolution state. Tests compare every emitted logit with the stable prefix of whole-sequence inference and exercise a growing prefix plus continuation.
@@ -111,7 +113,7 @@ Agreement is not called accuracy: `eval_metrics.json` reports both student↔tea
 
 ## Tests and repository map
 
-- `tests/test_alignment.py` proves `teacher[i] ↔ student[i+D]`, validates the valid-tail mask, and fails for naïve undelayed alignment.
+- `tests/test_alignment.py` proves `teacher[i] ↔ student[i+D]`, validates the valid-tail mask, rejects an all-invalid `length=D+L` batch, and proves `D+L+1` backpropagates.
 - `tests/test_causality.py` changes every feature after `t+L` and requires outputs through `t` to be bit-identical; it also checks stable chunk/full equivalence and growing-prefix emission without duplicates.
 - `tests/test_data_split.py` checks the manifest speaker audit, including speakers inherited by switch clips, and proves overlap is rejected.
 - `scripts/prepare_data.py`, `teacher_targets.py`, `train.py`, and `eval.py` are the single entry points for each stage.
@@ -120,7 +122,7 @@ Agreement is not called accuracy: `eval_metrics.json` reports both student↔tea
 
 ## Implemented versus intentionally out of scope
 
-Implemented: reproducible multi-voice audio acquisition with retry-safe, voice-qualified caching; enforced voice-disjoint train/evaluation manifests; frozen real teacher inference; soft temporal targets; special handling of switch clips; streaming-safe features; bounded-lookahead causal model with stable stateful emissions; delayed KL; real backward/optimizer steps; separate agreement and known-label metrics; stable chunk-equivalence and causality tests; RTF; hysteretic switch measurement; and the requested plot/JSON outputs.
+Implemented: reproducible multi-voice audio acquisition with retry-safe, voice-qualified caching; enforced voice-disjoint train/evaluation manifests; frozen real teacher inference; soft temporal targets; special handling of switch clips; streaming-safe features; bounded-lookahead causal model with stable stateful emissions; delayed KL with an explicit no-valid-frame guard; real backward/optimizer steps; separate agreement and known-label metrics; stable chunk-equivalence and causality tests; RTF; hysteretic switch measurement; and the requested plot/JSON outputs.
 
 Intentionally not implemented: a real telephony/VAD frontend, an ASR server/router, probability calibration on representative calls, an unknown-language head, checkpoint export/quantization, or convergence training. With more compute/data I would train on speaker-disjoint FLEURS/Common Voice plus anonymized 8 kHz call audio, add codec/noise/reverb augmentation and an `other` class, tune thresholds on a cost-weighted dev set, and report confidence intervals, false switches/hour, miss rate, and lag percentiles.
 

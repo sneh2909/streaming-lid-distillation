@@ -24,7 +24,20 @@ from streaming_lid.config import (
     TEACHER_TEMPERATURE,
     WIN_LENGTH,
 )
-from streaming_lid.data import read_manifest, require_speaker_disjoint, resolve_audio_path
+from streaming_lid.data import (
+    TARGET_CACHE_SCHEMA_VERSION,
+    TeacherTargetCache,
+    canonical_json_sha256,
+    file_sha256,
+    manifest_record_sha256,
+    manifest_records_sha256,
+    read_manifest,
+    require_speaker_disjoint,
+    resolve_audio_path,
+    target_cache_configuration,
+    target_configuration_sha256,
+    target_kind_for_item,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -118,13 +131,16 @@ def main() -> None:
     selected_indices = label_indices(teacher)
     records = read_manifest(args.manifest)
     speaker_audit = require_speaker_disjoint(records)
+    target_configuration = target_cache_configuration()
+    target_configuration_hash = target_configuration_sha256()
+    manifest_hash = manifest_records_sha256(records)
     summary_records = []
 
     for clip_number, item in enumerate(records, start=1):
         waveform = load_audio(resolve_audio_path(item, args.manifest))
         num_frames = feature_frame_count(len(waveform))
-        if item["language"] == "mixed":
-            target_kind = "local_windows"
+        target_kind = target_kind_for_item(item)
+        if target_kind == "local_windows":
             anchor_frames = np.arange(0, num_frames, TEACHER_HOP_FRAMES, dtype=np.int64)
             if anchor_frames[-1] != num_frames - 1:
                 anchor_frames = np.append(anchor_frames, num_frames - 1)
@@ -156,6 +172,9 @@ def main() -> None:
         soft = interpolate_posteriors(anchor_frames, soft_anchors, num_frames)
         in_set_mass = torch.cat(in_set_masses).numpy()
         output_path = args.output_dir / f"{item['id']}.npz"
+        audio_path = resolve_audio_path(item, args.manifest)
+        audio_hash = file_sha256(audio_path)
+        record_hash = manifest_record_sha256(item)
         np.savez_compressed(
             output_path,
             teacher_probs=raw,
@@ -164,6 +183,14 @@ def main() -> None:
             anchor_probs=raw_anchors.astype(np.float32),
             in_set_mass=in_set_mass.astype(np.float32),
             language_codes=np.asarray(LANGUAGE_CODES),
+            cache_schema_version=np.asarray(TARGET_CACHE_SCHEMA_VERSION),
+            clip_id=np.asarray(item["id"]),
+            target_kind=np.asarray(target_kind),
+            num_frames=np.asarray(num_frames),
+            audio_sha256=np.asarray(audio_hash),
+            manifest_record_sha256=np.asarray(record_hash),
+            target_configuration_sha256=np.asarray(target_configuration_hash),
+            teacher_name=np.asarray(TEACHER_NAME),
         )
 
         predicted = raw_anchors.argmax(axis=-1)
@@ -184,6 +211,9 @@ def main() -> None:
                 "target_kind": target_kind,
                 "anchor_label_accuracy": anchor_accuracy,
                 "mean_selected_language_mass": float(np.mean(in_set_mass)),
+                "audio_sha256": audio_hash,
+                "manifest_record_sha256": record_hash,
+                "target_file_sha256": file_sha256(output_path),
             }
         )
         print(
@@ -193,17 +223,28 @@ def main() -> None:
         )
 
     metadata = {
+        "schema_version": TARGET_CACHE_SCHEMA_VERSION,
         "teacher": TEACHER_NAME,
         "languages": list(LANGUAGE_CODES),
         "temperature": TEACHER_TEMPERATURE,
         "window_past_ms": TEACHER_PAST_MS,
         "window_future_ms": TEACHER_FUTURE_MS,
         "target_hop_frames": TEACHER_HOP_FRAMES,
+        "target_configuration": target_configuration,
+        "target_configuration_sha256": target_configuration_hash,
+        "manifest_records_sha256": manifest_hash,
+        "target_files_sha256": canonical_json_sha256(
+            {
+                record["id"]: record["target_file_sha256"]
+                for record in sorted(summary_records, key=lambda value: value["id"])
+            }
+        ),
         "clips": summary_records,
     }
     (args.output_dir / "metadata.json").write_text(
         json.dumps(metadata, indent=2) + "\n"
     )
+    cache_audit = TeacherTargetCache(args.manifest, args.output_dir).validate_all()
     mean_accuracy = np.mean(
         [record["anchor_label_accuracy"] for record in summary_records]
     )
@@ -223,6 +264,7 @@ def main() -> None:
         "window_past_ms": TEACHER_PAST_MS,
         "window_future_ms": TEACHER_FUTURE_MS,
         "speaker_split": speaker_audit,
+        "target_cache": cache_audit,
     }
     (args.results_dir / "teacher_metrics.json").write_text(
         json.dumps(teacher_metrics, indent=2) + "\n"

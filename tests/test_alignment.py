@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from streaming_lid.loss import delayed_distillation_loss
@@ -67,3 +68,46 @@ def test_unavailable_tail_targets_do_not_affect_loss() -> None:
     original_loss, _ = delayed_distillation_loss(logits, teacher, **kwargs)
     changed_loss, _ = delayed_distillation_loss(logits, changed_tail, **kwargs)
     torch.testing.assert_close(original_loss, changed_loss)
+
+
+def test_all_invalid_batch_is_rejected_at_delay_plus_lookahead_boundary() -> None:
+    delay = 21
+    lookahead = 4
+    boundary_frames = delay + lookahead
+    logits = torch.zeros(1, boundary_frames, 2, requires_grad=True)
+    teacher = torch.tensor([0.8, 0.2]).expand(1, boundary_frames, 2).clone()
+
+    with pytest.raises(ValueError, match="no valid aligned frames"):
+        delayed_distillation_loss(
+            logits,
+            teacher,
+            torch.tensor([boundary_frames]),
+            delay_frames=delay,
+            lookahead_frames=lookahead,
+            temperature=2.0,
+            early_ramp_frames=100,
+        )
+
+
+def test_first_valid_frame_after_boundary_contributes_a_gradient() -> None:
+    delay = 21
+    lookahead = 4
+    total_frames = delay + lookahead + 1
+    logits = torch.zeros(1, total_frames, 2, requires_grad=True)
+    teacher = torch.tensor([0.8, 0.2]).expand(1, total_frames, 2).clone()
+
+    loss, stats = delayed_distillation_loss(
+        logits,
+        teacher,
+        torch.tensor([total_frames]),
+        delay_frames=delay,
+        lookahead_frames=lookahead,
+        temperature=2.0,
+        early_ramp_frames=100,
+    )
+    loss.backward()
+
+    assert stats["valid_frames"] == 1.0
+    assert stats["weight_sum"] == pytest.approx(0.01)
+    assert logits.grad is not None
+    assert torch.count_nonzero(logits.grad).item() > 0
