@@ -28,7 +28,7 @@ flowchart LR
 
 ## Commit and calibration policy
 
-Every 160 ms chunk produces a seven-way posterior. Apply temperature/vector calibration learned on speaker-disjoint, codec-matched calls, average the frames in the chunk, then update an EMA. An initial commit requires all three conditions: top posterior at least 0.60, top-minus-runner-up margin at least 0.10, and the same winner for three chunks (480 ms). Before that, the state is `UNKNOWN`; audio remains buffered and a multilingual recognizer may run in shadow.
+Every 160 ms chunk produces a seven-way posterior from stable frame outputs. The streaming model retains its final four feature positions until their real right context arrives and emits each position once; zero-padded end-of-stream tail logits never enter the router. Apply temperature/vector calibration learned on speaker-disjoint, codec-matched calls, average the stable frames in the chunk, then update an EMA. An initial commit requires all three conditions: top posterior at least 0.60, top-minus-runner-up margin at least 0.10, and the same winner for three chunks (480 ms). Before that, the state is `UNKNOWN`; audio remains buffered and a multilingual recognizer may run in shadow.
 
 The submitted thresholds are illustrative, not fitted on one synthetic switch. On a real development set I would grid-search threshold, margin, EMA constant, and dwell against expected business cost rather than accuracy alone:
 
@@ -62,7 +62,7 @@ For a hand-labelled boundary at `t_boundary`, switch lag is
 lag = t(first committed new-language decision) - t_boundary.
 ```
 
-Use the audio-ingress clock, including chunk scheduling—not model frame indices. Report median/p90/p95 lag, miss rate within (say) 3 s, premature-switch rate, false switches per speech hour, and time spent on the wrong ASR. Negative raw crossings are premature detections, not “excellent lag.” The submitted concatenation commits English at 5.655 s for a 4.000 s boundary: 1,655 ms. One synthetic boundary is only a wiring check.
+Use the audio-ingress clock, including chunk scheduling—not model frame indices. Report median/p90/p95 lag, miss rate within (say) 3 s, premature-switch rate, false switches per speech hour, and time spent on the wrong ASR. Negative raw crossings are premature detections, not “excellent lag.” In the submitted speaker-disjoint run, the student never satisfies the initial Hindi dwell and never commits English after the 4.000 s boundary; `switch_lag_ms` is therefore `null` and the case is a miss. It is not encoded as zero or an arbitrarily large lag. One synthetic boundary is only a wiring check.
 
 ## Low confidence, priors, and fallback
 

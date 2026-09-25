@@ -214,8 +214,12 @@ def main() -> None:
             features = frontend(waveform)
             full_logits = model(features).squeeze(0)
             streamed_logits = model.streaming_forward(features).squeeze(0)
+            stable_frames = len(full_logits) - model.lookahead_frames
             torch.testing.assert_close(
-                full_logits, streamed_logits, rtol=1e-5, atol=1e-5
+                full_logits[:stable_frames],
+                streamed_logits,
+                rtol=1e-5,
+                atol=1e-5,
             )
             with np.load(args.targets_dir / f"{item['id']}.npz") as target_file:
                 teacher_probs = torch.from_numpy(target_file["teacher_probs"].copy())
@@ -425,6 +429,8 @@ def main() -> None:
         "cpu_rtf_runs": benchmark_rtfs,
         "cpu_threads": args.threads,
         "chunk_equivalence_checked": True,
+        "provisional_tail_withheld": True,
+        "withheld_tail_frames": model.lookahead_frames,
         "nan_free": bool(finite_eval),
     }
     (args.results_dir / "eval_metrics.json").write_text(
@@ -443,6 +449,8 @@ def main() -> None:
         "speaker_disjoint": speaker_audit["speaker_disjoint"],
         "student_params": model.parameter_count,
         "algorithmic_latency_ms": ALGORITHMIC_LATENCY_MS,
+        "provisional_tail_withheld": True,
+        "withheld_tail_frames": model.lookahead_frames,
         "cpu_rtf": cpu_rtf,
         "losses": train_metrics["losses"],
         "optimizer_steps": train_metrics["optimizer_steps"],

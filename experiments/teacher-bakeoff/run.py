@@ -66,13 +66,29 @@ MMS_TO_REPO_CODE = {
     "tel": "te",
     "guj": "gu",
 }
+REPO_TO_MMS_CODE = {repo: mms for mms, repo in MMS_TO_REPO_CODE.items()}
 
 
 @dataclass(frozen=True)
 class Prediction:
-    code: str
-    hi_probability: float
-    en_probability: float
+    native_code: str
+    restricted_code: str
+    selected_probabilities: tuple[float, ...]
+
+
+def make_prediction(
+    native_code: str, selected_probabilities: list[float]
+) -> Prediction:
+    if len(selected_probabilities) != len(LANGUAGE_CODES):
+        raise ValueError("selected posterior does not match deployment languages")
+    restricted_index = max(
+        range(len(selected_probabilities)), key=selected_probabilities.__getitem__
+    )
+    return Prediction(
+        native_code=native_code,
+        restricted_code=LANGUAGE_CODES[restricted_index],
+        selected_probabilities=tuple(float(value) for value in selected_probabilities),
+    )
 
 
 class Predictor(Protocol):
@@ -128,10 +144,12 @@ class ECAPAPredictor:
             predicted_index = int(row.argmax())
             code = self.index_to_label[predicted_index].split(":", 1)[0]
             results.append(
-                Prediction(
-                    code=code,
-                    hi_probability=float(probability_row[self.code_to_index["hi"]]),
-                    en_probability=float(probability_row[self.code_to_index["en"]]),
+                make_prediction(
+                    code,
+                    [
+                        float(probability_row[self.code_to_index[language]])
+                        for language in LANGUAGE_CODES
+                    ],
                 )
             )
         return results
@@ -187,14 +205,16 @@ class WhisperPredictor:
             winning_position = int(row.argmax())
             winning_id = self.language_ids[winning_position]
             results.append(
-                Prediction(
-                    code=self.id_to_code[winning_id],
-                    hi_probability=float(
-                        row[self.language_position[self.code_to_id["hi"]]]
-                    ),
-                    en_probability=float(
-                        row[self.language_position[self.code_to_id["en"]]]
-                    ),
+                make_prediction(
+                    self.id_to_code[winning_id],
+                    [
+                        float(
+                            row[
+                                self.language_position[self.code_to_id[language]]
+                            ]
+                        )
+                        for language in LANGUAGE_CODES
+                    ],
                 )
             )
         return results
@@ -264,14 +284,16 @@ class MMSPredictor:
             predicted_mms_code = self.index_to_mms_code[int(logit_row.argmax())]
             code = MMS_TO_REPO_CODE.get(predicted_mms_code, predicted_mms_code)
             results.append(
-                Prediction(
-                    code=code,
-                    hi_probability=float(
-                        probability_row[self.mms_code_to_index["hin"]]
-                    ),
-                    en_probability=float(
-                        probability_row[self.mms_code_to_index["eng"]]
-                    ),
+                make_prediction(
+                    code,
+                    [
+                        float(
+                            probability_row[
+                                self.mms_code_to_index[REPO_TO_MMS_CODE[language]]
+                            ]
+                        )
+                        for language in LANGUAGE_CODES
+                    ],
                 )
             )
         return results
@@ -378,7 +400,7 @@ def input_fingerprint(items: list[dict], manifest: Path) -> str:
     return digest.hexdigest()
 
 
-def summarize_accuracy(predictions: list[dict]) -> dict:
+def summarize_accuracy(predictions: list[dict], prediction_field: str) -> dict:
     by_condition: dict[str, dict[str, dict]] = {}
     for bandwidth in ("clean_16khz", "roundtrip_8khz"):
         by_condition[bandwidth] = {}
@@ -389,7 +411,10 @@ def summarize_accuracy(predictions: list[dict]) -> dict:
                 if record["bandwidth"] == bandwidth
                 and record["window_seconds"] == seconds
             ]
-            correct = sum(r["predicted"] == r["expected"] for r in selected)
+            correct = sum(
+                record[prediction_field] == record["expected"]
+                for record in selected
+            )
             by_condition[bandwidth][str(seconds)] = {
                 "correct": correct,
                 "total": len(selected),
@@ -398,7 +423,9 @@ def summarize_accuracy(predictions: list[dict]) -> dict:
     return by_condition
 
 
-def switch_summary(predictions: list[dict], true_switch_seconds: float) -> dict:
+def switch_summary(
+    predictions: list[dict], true_switch_seconds: float, prediction_field: str
+) -> dict:
     source_code = "hi"
     target_code = "en"
     run_length = 3
@@ -406,7 +433,10 @@ def switch_summary(predictions: list[dict], true_switch_seconds: float) -> dict:
     transition_start = None
     transition_confirmed = None
     for index in range(len(predictions) - run_length + 1):
-        run = [record["predicted"] for record in predictions[index : index + run_length]]
+        run = [
+            record[prediction_field]
+            for record in predictions[index : index + run_length]
+        ]
         if run == [source_code] * run_length:
             armed = True
         if armed and run == [target_code] * run_length:
@@ -422,7 +452,7 @@ def switch_summary(predictions: list[dict], true_switch_seconds: float) -> dict:
         for record in predictions
     ]
     correct = sum(
-        record["predicted"] == expected
+        record[prediction_field] == expected
         for record, expected in zip(predictions, expected_codes, strict=True)
     )
     availability_offset_seconds = TEACHER_FUTURE_MS / 1_000
@@ -508,11 +538,18 @@ def evaluate_model(
             {
                 "id": case["id"],
                 "expected": case["expected"],
-                "predicted": result.code,
+                "native_predicted": result.native_code,
+                "restricted_predicted": result.restricted_code,
                 "window_seconds": case["window_seconds"],
                 "bandwidth": case["bandwidth"],
-                "hi_probability": result.hi_probability,
-                "en_probability": result.en_probability,
+                "selected_probabilities": dict(
+                    zip(
+                        LANGUAGE_CODES,
+                        result.selected_probabilities,
+                        strict=True,
+                    )
+                ),
+                "selected_language_mass": sum(result.selected_probabilities),
             }
         )
     eval_wall_seconds = time.perf_counter() - wall_start
@@ -527,9 +564,16 @@ def evaluate_model(
             {
                 "anchor_frame": case["anchor_frame"],
                 "anchor_seconds": case["anchor_seconds"],
-                "predicted": result.code,
-                "hi_probability": result.hi_probability,
-                "en_probability": result.en_probability,
+                "native_predicted": result.native_code,
+                "restricted_predicted": result.restricted_code,
+                "selected_probabilities": dict(
+                    zip(
+                        LANGUAGE_CODES,
+                        result.selected_probabilities,
+                        strict=True,
+                    )
+                ),
+                "selected_language_mass": sum(result.selected_probabilities),
             }
         )
     switch_wall_seconds = time.perf_counter() - switch_wall_start
@@ -545,8 +589,26 @@ def evaluate_model(
         "revision": predictor.revision,
         "parameter_count": predictor.parameter_count,
         "load_validation": predictor.load_validation,
-        "accuracy": summarize_accuracy(predictions),
-        "switch": switch_summary(switch_predictions, true_switch_seconds),
+        "accuracy": {
+            "restricted_7way": summarize_accuracy(
+                predictions, "restricted_predicted"
+            ),
+            "native_full_label_space": summarize_accuracy(
+                predictions, "native_predicted"
+            ),
+        },
+        "switch": {
+            "restricted_7way": switch_summary(
+                switch_predictions,
+                true_switch_seconds,
+                "restricted_predicted",
+            ),
+            "native_full_label_space": switch_summary(
+                switch_predictions,
+                true_switch_seconds,
+                "native_predicted",
+            ),
+        },
         "timing": {
             "load_wall_seconds": load_wall_seconds,
             "batch_size": predictor.batch_size,
@@ -656,13 +718,15 @@ def main() -> None:
             raise ValueError(f"non-finite timing for {name}")
         output_path.write_text(json.dumps(output, indent=2, allow_nan=False) + "\n")
         model_result = output["models"][name]
-        clean = model_result["accuracy"]["clean_16khz"]
+        clean = model_result["accuracy"]["restricted_7way"]["clean_16khz"]
+        restricted_switch = model_result["switch"]["restricted_7way"]
         print(
-            f"{name}: clean accuracy 1/2/4 s="
+            f"{name}: restricted clean accuracy 1/2/4 s="
             f"{clean['1']['accuracy']:.3f}/"
             f"{clean['2']['accuracy']:.3f}/"
             f"{clean['4']['accuracy']:.3f}; "
-            f"switch lag={model_result['switch']['first_persistent_target_lag_ms']} ms; "
+            "switch lag="
+            f"{restricted_switch['first_persistent_target_lag_ms']} ms; "
             f"RTF={model_result['timing']['wall_rtf']:.3f}",
             flush=True,
         )

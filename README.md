@@ -6,7 +6,7 @@ The selected languages are English (`en`), Hindi (`hi`), Marathi (`mr`), Bengali
 
 ## Reproduce from a clean checkout
 
-Python 3.10 and network access are required for the first run. `gTTS` downloads the audio and SpeechBrain downloads its checkpoint; no ffmpeg or GPU is used.
+Python 3.10 and network access are required for the first run. `gTTS` and `edge-tts` fetch the synthetic audio, and SpeechBrain downloads its checkpoint; no ffmpeg or GPU is used.
 
 ```bash
 export UV_CACHE_DIR="$PWD/.cache/uv"
@@ -21,25 +21,27 @@ uv run python scripts/eval.py
 uv run pytest -q
 ```
 
-The defaults reproduce the submitted run: 800 optimizer steps, batch size 7, learning rate `1e-3`, and CPU only. On this 20-core/13 GB host the full cached run is comfortably under 30 minutes; network speed dominates a first run. `prepare_data.py --force` refreshes TTS audio. Audio, teacher targets, caches, checkpoints, and `.venv` are ignored by Git.
+The defaults reproduce the submitted run: 1,600 optimizer steps, batch size 7, learning rate `1e-3`, and CPU only. Incomplete final batches are dropped, so every update has the same batch size. On this 20-core/13 GB host the full cached run is comfortably under 30 minutes; network speed dominates a first run. `prepare_data.py --force` refreshes TTS audio. Audio filenames include the voice ID, so a changed split cannot reuse a stale recording. Audio, teacher targets, caches, checkpoints, and `.venv` are ignored by Git.
 
 Important outputs are:
 
 - `results/summary.json`: required machine-readable summary, including every optimizer-step loss.
 - `results/train_metrics.json`: loss and gradient history plus the real-audio/no-NaN assertions.
-- `results/eval_metrics.json`: per-clip agreement, policy settings, RTF, and switch lag.
+- `results/eval_metrics.json`: per-clip teacher agreement, known-label accuracy, speaker audit, stable-emission audit, policy settings, RTF, and switch outcome.
 - `results/switch_plot.png`: offline teacher posteriors and emitted student chunk-EMA posteriors.
 - `results/teacher_metrics.json`: target-generation audit.
 
 ## Data and split
 
-`scripts/prepare_data.py` synthesizes PCM WAVs at 16 kHz through gTTS and decodes MP3 responses in-process with `miniaudio`. The manifest contains 20 monolingual training clips (five each for English/Hindi and two each for the other five languages), seven held-out monolingual clips, one 4 s Hindi + 4 s English training concatenation, and two held-out 8 s switch clips in opposite directions. Thus `n_train_clips=21`; the training switch uses train utterances, while evaluation switches use held-out utterances.
+`scripts/prepare_data.py` synthesizes PCM WAVs at 16 kHz through gTTS and Microsoft Edge TTS, then decodes MP3 responses in-process with `miniaudio`. The manifest contains 70 balanced monolingual training clips (10 per language), 21 held-out monolingual clips (3 per language), one 4 s Hindi + 4 s English training concatenation, and two held-out 8 s switch clips in opposite directions. Thus `n_train_clips=71`. The training switch uses training voices; both evaluation switches use held-out voices.
 
-TTS is permitted by the brief and makes the download deterministic in structure, but it is a severe domain limitation: there is effectively one synthetic voice per locale, no telephony codec, no room noise, and only one evaluated Hindi→English boundary. Results are plumbing checks, not production estimates.
+For each language, training uses five utterances from the locale's gTTS voice and five from a named male Edge voice. Held-out text is spoken by a named female Edge voice that occurs nowhere in training. The manifest records these voice IDs, and every pipeline stage rejects any overlap between training and evaluation IDs. There are 14 training and 7 held-out synthetic voice IDs with zero overlap. The 1,600 updates consume 11,200 examples, or 157.7465 effective passes over the 71-clip training split, versus about 267 passes in the previous 21-clip run.
+
+This is voice-disjoint only at the provider's synthetic voice-ID level; it is not a human speaker study. Each language still has just one held-out voice, and there is no telephony codec, room noise, or natural within-speaker variation. The poor held-out result below proves failed transfer to these unseen voices. It is consistent with a voice/provider shortcut, but without seen-voice and provider-controlled slices it does not isolate the cause. It is reported as a failure, not a population estimate.
 
 ## Teacher choice and targets
 
-The frozen teacher is [`speechbrain/lang-id-voxlingua107-ecapa`](https://huggingface.co/speechbrain/lang-id-voxlingua107-ecapa). It is purpose-built for LID, directly exposes normalized scores for all seven chosen languages, uses full-window attentive statistics, and is cheap enough to run repeatedly on CPU. Whisper was the main alternative: it is robust and familiar, but language ID requires its encoder/decoder path and commonly pads to a 30 s input, making hundreds of temporal windows needlessly expensive. MMS-LID has broader coverage, but coverage is not the bottleneck in this seven-language demo and its stack is heavier.
+The frozen teacher is [`speechbrain/lang-id-voxlingua107-ecapa`](https://huggingface.co/speechbrain/lang-id-voxlingua107-ecapa). It is purpose-built for LID, directly exposes normalized scores for all seven chosen languages, uses full-window attentive statistics, and is cheap enough to run repeatedly on CPU. The isolated [`teacher-bakeoff`](experiments/teacher-bakeoff/REPORT.md) retained it: across the same 21 held-out clips at 1/2/4 s, restricted seven-way accuracy was 58/63 for ECAPA, 54/63 for MMS-LID-126, and 42/63 for Whisper-small; ECAPA was also 8.4× and 15.9× cheaper by wall time. This clean synthetic comparison is not a production teacher benchmark, but neither challenger earned a switch.
 
 The teacher's 107-way log posterior is restricted to the seven supported deployment languages, renormalized, and softened at temperature `T=2`. Production would retain out-of-set mass as an unknown-language signal; discarding it here keeps the student head and objective focused.
 
@@ -74,7 +76,7 @@ The `T²` term preserves gradient scale under softening. For switch clips, `q[b,
 
 ## Student and latency budget
 
-The student projects 40 log-mels plus four explicit right-context frames into 64 channels, then applies six causal depthwise-separable residual blocks with dilations `(1, 2, 4, 8, 16, 32)` and a 7-class head. Its finite receptive field is 127 frames (about 1.27 s of past), so it cannot retain an old language forever as an unconstrained recurrent state can. It has **42,567 parameters**. Chunked inference recomputes the small left overlap for clarity; a production kernel would cache convolution state. Whole-sequence and chunked logits are tested for equality.
+The student projects 40 log-mels plus four explicit right-context frames into 64 channels, then applies six causal depthwise-separable residual blocks with dilations `(1, 2, 4, 8, 16, 32)` and a 7-class head. Its finite receptive field is 127 frames (about 1.27 s of past), so it cannot retain an old language forever as an unconstrained recurrent state can. It has **42,567 parameters**. The live `streaming_step` retains only finite left history and the four pending lookahead frames. It emits each logit once, after all four future feature frames really exist; it never publishes the zero-padded end tail as stable. Chunked replay recomputes the small left overlap for clarity, while a production kernel would cache convolution state. Tests compare every emitted logit with the stable prefix of whole-sequence inference and exercise a growing prefix plus continuation.
 
 The conservative worst-case algorithmic model latency is **435 ms**:
 
@@ -82,7 +84,7 @@ The conservative worst-case algorithmic model latency is **435 ms**:
 25 ms analysis frame + (210 ms label delay + 40 ms lookahead) + 160 ms chunk = 435 ms.
 ```
 
-Past context adds compute but no algorithmic latency. On one CPU thread, including log-mel extraction and the deliberately uncached overlap, measured RTF is **0.0064** (about 156× real time). Routing policy smoothing/dwell is separate from model latency.
+Past context adds compute but no algorithmic latency. On one CPU thread, including log-mel extraction and the deliberately uncached overlap, measured median RTF is **0.0057** (about 174× real time). Routing policy smoothing/dwell is separate from model latency.
 
 ## Submitted sanity results
 
@@ -90,31 +92,38 @@ These values are from the included `results/` artifacts, not aspirational number
 
 | Check | Result |
 |---|---:|
-| Optimizer steps on real audio | 800 |
-| First 10-step mean KD loss | 6.5777 |
-| Last 10-step mean KD loss | 0.8701 |
+| Monolingual train / held-out clips | 70 / 21 |
+| Train / held-out synthetic voice IDs | 14 / 7 (no overlap) |
+| Optimizer steps; effective epochs | 1,600; 157.7465 |
+| First 10-step mean KD loss | 6.8704 |
+| Last 10-step mean KD loss | 1.4403 |
 | Finite losses and gradients | yes |
-| Held-out frame agreement with teacher | 0.8602 |
-| Hindi→English detection lag | 1,655 ms |
+| Teacher held-out known-label frame accuracy | 1.0000 |
+| Student held-out frame agreement with teacher | 0.1851 |
+| Student held-out known-label frame accuracy | 0.1851 |
+| Student held-out clip accuracy | 0.1905 (4/21) |
+| Hindi→English switch outcome | missed; lag `null` |
 | Student parameters | 42,567 |
-| Single-thread CPU RTF | 0.0064 |
+| Provisional end-tail outputs withheld | 4 frames |
+| Single-thread CPU RTF | 0.0057 |
 
-The lag uses the true 4.0 s join and the first committed English decision at 5.655 s. The illustrative policy averages each 160 ms chunk, applies an EMA with new weight 0.30, and requires posterior ≥0.60, a 0.10 margin, and three consecutive chunks. That operating point has not been calibrated on this tiny dataset; `DESIGN.md` describes how to set it properly.
+Agreement is not called accuracy: `eval_metrics.json` reports both student↔teacher agreement and student/teacher accuracy against the known synthesis language. The frozen teacher is correct on all 21 held-out monolingual clips, while the student generalises poorly to their unseen voices. On the held-out Hindi→English switch, the illustrative policy never establishes even its initial Hindi commit, so no English commit exists and lag is `null`; a miss is not assigned a flattering latency. The policy averages each 160 ms chunk, applies an EMA with new weight 0.30, and requires posterior ≥0.60, a 0.10 margin, and three consecutive chunks. This operating point is not calibrated on the tiny dataset; `DESIGN.md` describes how to set it properly.
 
 ## Tests and repository map
 
 - `tests/test_alignment.py` proves `teacher[i] ↔ student[i+D]`, validates the valid-tail mask, and fails for naïve undelayed alignment.
-- `tests/test_causality.py` changes every feature after `t+L` and requires outputs through `t` to be bit-identical; it also checks chunk/full equivalence.
+- `tests/test_causality.py` changes every feature after `t+L` and requires outputs through `t` to be bit-identical; it also checks stable chunk/full equivalence and growing-prefix emission without duplicates.
+- `tests/test_data_split.py` checks the manifest speaker audit, including speakers inherited by switch clips, and proves overlap is rejected.
 - `scripts/prepare_data.py`, `teacher_targets.py`, `train.py`, and `eval.py` are the single entry points for each stage.
 - `src/streaming_lid/` holds configuration, frontend, model, loss, and dataset code.
 - `DESIGN.md` is the Part 2 live-ASR design.
 
 ## Implemented versus intentionally out of scope
 
-Implemented: reproducible audio acquisition; ffmpeg-free decode; frozen real teacher inference; soft temporal targets; special handling of switch clips; streaming-safe features; bounded-lookahead causal model; delayed KL; real backward/optimizer steps; held-out agreement; exact chunk-equivalence and causality tests; RTF; hysteretic switch measurement; and the requested plot/JSON outputs.
+Implemented: reproducible multi-voice audio acquisition with retry-safe, voice-qualified caching; enforced voice-disjoint train/evaluation manifests; frozen real teacher inference; soft temporal targets; special handling of switch clips; streaming-safe features; bounded-lookahead causal model with stable stateful emissions; delayed KL; real backward/optimizer steps; separate agreement and known-label metrics; stable chunk-equivalence and causality tests; RTF; hysteretic switch measurement; and the requested plot/JSON outputs.
 
 Intentionally not implemented: a real telephony/VAD frontend, an ASR server/router, probability calibration on representative calls, an unknown-language head, checkpoint export/quantization, or convergence training. With more compute/data I would train on speaker-disjoint FLEURS/Common Voice plus anonymized 8 kHz call audio, add codec/noise/reverb augmentation and an `other` class, tune thresholds on a cost-weighted dev set, and report confidence intervals, false switches/hour, miss rate, and lag percentiles.
 
 ## Final summary and open issues
 
-The complete CPU path works: it downloads audio, obtains frozen offline teacher targets, executes 800 real optimizer steps without NaNs, preserves causal/bounded-lookahead behavior, reaches 86.0% held-out teacher agreement, and detects the held-out Hindi→English switch. The current 1.655 s switch lag and synthetic single-voice data are the main open issues; the metrics are sanity checks only, the policy is uncalibrated, and seven-way renormalization cannot reject an unsupported language. Git commits could not be created in this execution sandbox because this worktree's writable directory points its Git metadata to a read-only parent worktree; no commit or push was made.
+The CPU path works and the optimization plumbing is sound: it executes 1,600 real updates without NaNs, reduces the 10-step mean KD loss from 6.8704 to 1.4403, and preserves causal/chunk-equivalent behavior. The speaker-disjoint evaluation also overturns the earlier apparent success: despite a perfect held-out teacher, the student achieves only 18.51% frame accuracy and misses the Hindi→English switch. The principal open issue is unseen-voice generalisation, before latency tuning; a seen-voice/provider ablation is still needed to attribute the cause. These synthetic results are sanity/failure evidence only; the policy is uncalibrated, and seven-way renormalization cannot reject an unsupported language.

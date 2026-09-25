@@ -43,7 +43,7 @@ def parse_args() -> argparse.Namespace:
         "--checkpoint", type=Path, default=Path("checkpoints/student.pt")
     )
     parser.add_argument("--results-dir", type=Path, default=Path("results"))
-    parser.add_argument("--steps", type=int, default=400)
+    parser.add_argument("--steps", type=int, default=1600)
     parser.add_argument("--batch-size", type=int, default=7)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--threads", type=int, default=4)
