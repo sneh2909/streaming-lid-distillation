@@ -1,3 +1,3 @@
 $ UV_CACHE_DIR=./.cache/uv HF_HOME=./.cache/hf TORCH_HOME=./.cache/torch OMP_NUM_THREADS=6 MKL_NUM_THREADS=6 .venv/bin/python -c 'import sys, torch, pytest; torch.set_num_threads(6); sys.exit(pytest.main(["-q"]))'
 ...............................                                          [100%]
-31 passed in 35.78s
+31 passed in 53.88s

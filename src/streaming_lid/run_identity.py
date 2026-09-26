@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from collections.abc import Mapping
@@ -43,8 +44,8 @@ from .data import (
 )
 
 
-RUN_IDENTITY_SCHEMA_VERSION = 1
-CHECKPOINT_SCHEMA_VERSION = 1
+RUN_IDENTITY_SCHEMA_VERSION = 2
+CHECKPOINT_SCHEMA_VERSION = 2
 PIPELINE_SOURCE_FILES = (
     "scripts/train.py",
     "scripts/eval.py",
@@ -185,6 +186,55 @@ def training_configuration(
     }
 
 
+def capture_run_dependency_snapshot(
+    *,
+    records: list[dict],
+    manifest_path: str | Path,
+    target_cache_identity: Mapping[str, Any],
+    target_metadata_path: str | Path,
+    training: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Capture every live dependency before audio/target tensors are preloaded."""
+    return {
+        "pipeline": pipeline_configuration(),
+        "corpus": corpus_identity(records, manifest_path),
+        "target_cache": target_cache_run_identity(
+            target_cache_identity, target_metadata_path
+        ),
+        "training": copy.deepcopy(dict(training)),
+    }
+
+
+def assert_run_dependency_snapshot_unchanged(
+    launch_snapshot: Mapping[str, Any],
+    *,
+    records: list[dict],
+    manifest_path: str | Path,
+    target_cache_identity: Mapping[str, Any],
+    target_metadata_path: str | Path,
+    training: Mapping[str, Any],
+    stage: str,
+) -> None:
+    """Fail publication if any source, data, target, or setting changed in-run."""
+    current = capture_run_dependency_snapshot(
+        records=records,
+        manifest_path=manifest_path,
+        target_cache_identity=target_cache_identity,
+        target_metadata_path=target_metadata_path,
+        training=training,
+    )
+    changed = [
+        name
+        for name in ("pipeline", "corpus", "target_cache", "training")
+        if launch_snapshot.get(name) != current[name]
+    ]
+    if changed:
+        raise RuntimeError(
+            "run dependencies changed after the launch snapshot "
+            f"before {stage}: {', '.join(changed)}"
+        )
+
+
 def model_state_sha256(state_dict: Mapping[str, torch.Tensor]) -> str:
     """Hash tensor names, shapes, dtypes, and bytes without serialization noise."""
     digest = hashlib.sha256()
@@ -202,22 +252,18 @@ def model_state_sha256(state_dict: Mapping[str, torch.Tensor]) -> str:
 
 def build_run_identity(
     *,
-    records: list[dict],
-    manifest_path: str | Path,
-    target_cache_identity: Mapping[str, Any],
-    target_metadata_path: str | Path,
-    training: Mapping[str, Any],
+    dependency_snapshot: Mapping[str, Any],
     model_state: Mapping[str, torch.Tensor],
 ) -> dict[str, Any]:
-    """Build the immutable identity stored in checkpoint and stage artifacts."""
+    """Bind the final model to the immutable dependency snapshot from launch."""
+    required = {"pipeline", "corpus", "target_cache", "training"}
+    if set(dependency_snapshot) != required:
+        raise ValueError(
+            "dependency snapshot fields differ from the run-identity contract"
+        )
     return {
         "schema_version": RUN_IDENTITY_SCHEMA_VERSION,
-        "pipeline": pipeline_configuration(),
-        "corpus": corpus_identity(records, manifest_path),
-        "target_cache": target_cache_run_identity(
-            target_cache_identity, target_metadata_path
-        ),
-        "training": dict(training),
+        **copy.deepcopy(dict(dependency_snapshot)),
         "model_state_sha256": model_state_sha256(model_state),
     }
 
@@ -245,6 +291,15 @@ def validate_evaluation_run_contract(
         raise ValueError("checkpoint is missing its run identity")
     if run_identity.get("schema_version") != RUN_IDENTITY_SCHEMA_VERSION:
         raise ValueError("run identity schema version is missing or unsupported")
+
+    expected_launch_snapshot = {
+        key: run_identity.get(key)
+        for key in ("pipeline", "corpus", "target_cache", "training")
+    }
+    if checkpoint.get("launch_dependency_snapshot") != expected_launch_snapshot:
+        raise ValueError(
+            "checkpoint launch dependency snapshot contradicts its run identity"
+        )
 
     expected_run_id = run_id_for_identity(run_identity)
     if checkpoint.get("run_id") != expected_run_id:

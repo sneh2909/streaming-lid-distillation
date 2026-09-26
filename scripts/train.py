@@ -35,7 +35,9 @@ from streaming_lid.loss import delayed_distillation_loss
 from streaming_lid.model import CausalLIDStudent
 from streaming_lid.run_identity import (
     CHECKPOINT_SCHEMA_VERSION,
+    assert_run_dependency_snapshot_unchanged,
     build_run_identity,
+    capture_run_dependency_snapshot,
     configured_model_kwargs,
     run_id_for_identity,
     training_configuration,
@@ -214,11 +216,37 @@ def main() -> None:
     records = read_manifest(args.manifest)
     speaker_audit = require_speaker_disjoint(records)
     target_cache = TeacherTargetCache(args.manifest, args.targets_dir)
+    training_settings = training_configuration(
+        steps=args.steps,
+        batch_size=args.batch_size,
+        learning_rate=args.learning_rate,
+        threads=args.threads,
+        seed=args.seed,
+    )
+    launch_dependency_snapshot = capture_run_dependency_snapshot(
+        records=records,
+        manifest_path=args.manifest,
+        target_cache_identity=target_cache.identity,
+        target_metadata_path=target_cache.targets_dir / "metadata.json",
+        training=training_settings,
+    )
+    # The run identity names the complete target release, so validate every
+    # target/audio file at launch even though optimization consumes only train.
+    target_cache.validate_all()
     dataset = DistillationDataset(
         args.manifest,
         args.targets_dir,
         splits=("train",),
         target_cache=target_cache,
+    )
+    assert_run_dependency_snapshot_unchanged(
+        launch_dependency_snapshot,
+        records=records,
+        manifest_path=args.manifest,
+        target_cache_identity=target_cache.identity,
+        target_metadata_path=target_cache.targets_dir / "metadata.json",
+        training=training_settings,
+        stage="optimization",
     )
     validate_full_batch_training_set(len(dataset), args.batch_size)
     generator = torch.Generator().manual_seed(args.seed)
@@ -367,19 +395,25 @@ def main() -> None:
         "real_audio_optimizer_step": training_contract[
             "real_audio_optimizer_step"
         ],
+        "launch_dependency_snapshot_captured_before_preload": True,
+        "dependency_snapshot_validation_checks": 2,
+        "dependency_snapshot_unchanged_at_publication": True,
     }
-    run_identity = build_run_identity(
+    # Reopen every indexed target and rehash all live source/data metadata at
+    # the publication boundary. The final identity is built from the immutable
+    # launch snapshot, never from whatever happens to be on disk now.
+    target_cache.validate_all()
+    assert_run_dependency_snapshot_unchanged(
+        launch_dependency_snapshot,
         records=records,
         manifest_path=args.manifest,
         target_cache_identity=target_cache.identity,
         target_metadata_path=target_cache.targets_dir / "metadata.json",
-        training=training_configuration(
-            steps=args.steps,
-            batch_size=args.batch_size,
-            learning_rate=args.learning_rate,
-            threads=args.threads,
-            seed=args.seed,
-        ),
+        training=training_settings,
+        stage="checkpoint publication",
+    )
+    run_identity = build_run_identity(
+        dependency_snapshot=launch_dependency_snapshot,
         model_state=model.state_dict(),
     )
     run_id = run_id_for_identity(run_identity)
@@ -387,6 +421,7 @@ def main() -> None:
         "checkpoint_schema_version": CHECKPOINT_SCHEMA_VERSION,
         "run_id": run_id,
         "run_identity": run_identity,
+        "launch_dependency_snapshot": launch_dependency_snapshot,
         "model_state": model.state_dict(),
         "languages": list(LANGUAGE_CODES),
         "teacher": TEACHER_NAME,

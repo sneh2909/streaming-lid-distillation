@@ -273,7 +273,7 @@ No reviewed Hub card explicitly documented a released **LID** checkpoint trained
 - Direct LID studies use utterance labels and generally include hard-label loss; their gains do not predict this label-free KD setting.
 - ASR delay buffers solve token-spike alignment, which is not identical to a slowly varying language posterior.
 - The proposed finite rolling-prefix windows, delay grid, bounded confidence weights, and relation loss have no local result yet.
-- The current teacher's raw switch-boundary lag has not been separated from student and policy lag in the published repository results.
+- **Status correction (2026-09-26):** isolated teacher-only audits now separate the current target trajectory from the student. On two mirrored synthetic switches, the 250 ms previous-hold trajectory has 1,400 ms median 500 ms-stable semantic onset and 2,150 ms median confirmation availability from the nominal join; a dense 10 ms reference gives 1,260/2,010 ms. The main evaluator still does not publish a matched teacher -> student raw -> policy -> route decomposition, and the submitted student has a precondition failure/miss. See [`teacher_student_policy_lag_decomposition.md`](teacher_student_policy_lag_decomposition.md) for boundary-origin, future-context, and scope corrections.
 - The two Interspeech 2026 papers are in online proceedings, but their conference presentation is still forthcoming at this cutoff.
 - The 2026 alignment-path work is an arXiv v1 preprint and has not been peer reviewed.
 
