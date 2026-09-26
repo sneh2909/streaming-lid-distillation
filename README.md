@@ -14,16 +14,24 @@ Everything here was run on one laptop (RTX 4050 6 GB for teachers and training; 
   - The student at frame t is trained to match the teacher run on **only the last W = 3 s of audio the student has already heard** (a *causal window*).
   - That target is a function of the student's own input, so a perfect student can match it exactly. Nothing is asked of the student that needs the future.
   - It is the same as the "centred window + emit delay Δ = W/2" recipe, written down honestly (section 3).
+- **Why it matters, measured:**
+  - We trained the same student on 5 target types.
+  - Future-informed targets (full clip, centred, hybrid) look **better** in the first second, but they identify the language **from pure silence** 62–73% of the time (chance 14%). They learned FLEURS recording conditions, because a target that depends on the future rewards any clue that predicts the future.
+  - Every information-matched target (causal, prefix) is at chance on silence.
+  - Full and prefix targets also miss 77–87% of language switches (section 3).
 - **Student:** a 3.1M-parameter causal Conformer with 80 ms frames and chunked attention. Trained with random chunk sizes (80/160/320/640 ms), so one model serves 4 latencies.
+  - **Real incremental streaming:** `StreamingSession.push(audio)` with a KV cache, tested equal to the batch forward.
   - Runs at ≤ 0.006× real time on one CPU thread.
   - Held-out: .89 accuracy at 2 s, .94 at clip end, .86 on simulated telephony, ECE .02, 88% frame agreement with the teacher.
 - **Evidence:**
-  - one real optimizer step, then N steps, all finite
-  - held-out KD loss falls
+  - one real optimizer step, then 5,000 steps, all finite
+  - held-out KD loss falls (0.75 → 0.28)
   - student-teacher agreement on held-out clips
-  - a four-way comparison of target types on the same student
+  - a 5-way target comparison plus a silence-shortcut probe
   - switch lag split into teacher, student and commit-policy lag
-  - causality unit tests
+  - a window-size (W) and turn-reset study
+  - 12 unit tests (causality, streaming equivalence, commit policy)
+- **Shipped model:** `checkpoints/final/student.pt` (12 MB, in the repo). Try `python scripts/stream_demo.py some.wav`.
 
 ## 1. Data (`scripts/prepare_data.py`)
 
@@ -141,7 +149,41 @@ The same students under the commit policy, compared at **equal wrong-commit rate
    - These are the costs the theory predicts wherever the future is *not* predictable from the past.
 4. **Hybrid is dominated by centred** at every threshold, so we drop it.
 
-The final choice between causal and centred for the production student is made on the ensemble teacher below (§5).
+### The decisive test: can the student name the language from silence?
+
+`scripts/silence_test.py` feeds each student **only the leading silence** of held-out clips (118 clips with ≥ 0.45 s of silence before speech). There is no language in it, so chance is 1/7 = .14.
+
+| student (target type) | accuracy on silence |
+|---|---|
+| **final: ensemble teacher, causal** | **.09** |
+| Indic-T causal | .14 |
+| Indic-T prefix | .10 |
+| Indic-T full clip | .62 |
+| Indic-T hybrid (full-clip targets on 1-language clips) | .68 |
+| Indic-T centred | .73 |
+| ensemble teacher, centred | .64 |
+
+**Every future-informed target learned to recognise the language from recording conditions** (FLEURS records each language in its own sessions). **Every information-matched target stayed at chance.**
+
+This is the leftover term of §3 in action:
+- The optimal student is E[q_t | heard audio]. When q_t depends on audio not yet heard, the student lowers its loss by exploiting *anything* in the heard audio that correlates with the future label, including artefacts.
+- When q_t is the teacher's answer on the heard audio, the teacher is itself uncertain on silence, so there's nothing to exploit.
+- Much of the future-informed students' "better first second" is this shortcut, which would not transfer to real calls, where the phone line doesn't reveal the language.
+
+### Final choice, on the ensemble teacher
+
+Same student and teacher, 320 ms chunks, held-out:
+
+| | causal (**shipped**) | centred |
+|---|---|---|
+| acc at 0.5 / 1 / 2 s | .20 / .57 / .89 | .79 / .88 / .92 |
+| acc at clip end / telephony end | **.94 / .86** | .90 / .79 |
+| ECE at end | **.022** | .046 |
+| first correct commit at ~7% wrong | 1.78 s (θ .8) | 1.06 s (θ .9) |
+| hi↔en committed switch lag / premature switches | 2.42 s / **8%** | 1.52 s / 15% |
+| accuracy on silence (chance .14) | **.09** | .64 |
+
+**We ship causal.** Centred's speed is partly a shortcut. The honest ways to get speed back (shorter W, per-turn reset) are measured in DESIGN §4.
 
 ## 4. Student and latency budget (`slid/student.py`)
 
@@ -151,8 +193,16 @@ The final choice between causal and centred for the production student is made o
 - 3 causal stride-2 convolutions give 80 ms frames.
 - 6 Conformer blocks: d = 144, 4 heads, FFN 576, causal depthwise conv with kernel 15, LayerNorm instead of BatchNorm.
 - Linear head over the 7 languages. 3.06M parameters.
-- **Production variant (v2):** attention history bounded to the last 128 frames (10.24 s) plus the current chunk, and a learned **relative position bias** per head instead of absolute sinusoids. So nothing depends on "frame number 5,000" and a 2-hour call is fine.
-  - The target-type comparison in §3 used v1 (unlimited history, absolute positions); every student there shares that architecture.
+- **Shipped (v1):** unlimited attention history and absolute sinusoidal positions. In streaming the KV cache grows by ≈7 kB per 80 ms frame (all layers), i.e. ~50 MB for a 10-minute call, which is fine for phone calls.
+- **Constant-memory variant (v2, in the code, not shipped):** history bounded to 64 or 128 frames (5.1 / 10.2 s) plus a learned **relative position bias** instead of absolute positions. Memory is constant forever, but on the same recipe it lost accuracy:
+
+  | | end acc | telephony end |
+  |---|---|---|
+  | v1 | .94 | .86 |
+  | v2, 5.1 s | .87 | .80 |
+  | v2, 10.2 s | .84 | .74 |
+
+  Longer v2 history did *not* help, which points at the missing absolute position rather than the history bound. Our hypothesis: absolute position lets the model know how long it has been listening, and the causal targets are systematically less certain in the first 3 s. A "time since stream start" feature is the fix we'd try next.
 
 **Causality:**
 - Convolutions are left-padded.
@@ -162,12 +212,17 @@ The final choice between causal and centred for the production student is made o
 
 **Real incremental inference** (`slid/streaming.py`): `StreamingSession(model, chunk).push(samples) → posteriors`. It keeps only:
 - raw audio for the front end's 14-mel-frame receptive field (< 0.3 s)
-- per layer, a **key/value cache** of the last 128 frames
+- per layer, a **key/value cache** (all past frames for v1; the last 64/128 for v2)
 - per layer, the last 14 inputs of the causal depthwise conv
 
-Memory and compute per chunk are **constant**, so there's no maximum call length. `tests/test_streaming.py`:
-- **Equivalence:** audio pushed in random 100–5,000-sample pieces gives the same posteriors as the whole-clip forward (to 1e-4), for every chunk size.
-- **Constant memory:** 2 minutes of audio run with a constant-size cache and audio buffer.
+**Memory per call:**
+- **v2:** memory and compute per chunk are constant, so there's no maximum call length.
+- **v1 (shipped):** memory grows linearly, about 50 MB for 10 minutes.
+
+`tests/test_streaming.py`:
+- **Equivalence**, for **both** v1 and v2: audio pushed in random 100–5,000-sample pieces gives the same posteriors as the whole-clip forward (to 1e-4), for every chunk size.
+- **Constant memory (v2):** 2 minutes of audio run with a constant-size cache and audio buffer.
+- **Demo:** `scripts/stream_demo.py` feeds a wav in 20 ms packets and prints routing decisions as they happen.
 
 **Latency** (why this architecture):
 - **Algorithmic latency** = 25 ms window + one chunk of buffering: 80 / 160 / 320 / 640 ms at chunk 1 / 2 / 4 / 8. The default operating point is 320 ms.
@@ -177,7 +232,7 @@ Memory and compute per chunk are **constant**, so there's no maximum call length
 
 ## 5. Sanity checks and results
 
-The final model is the **ensemble teacher + causal targets + telephony augmentation**, 5,000 steps (`checkpoints/ensemble_causal/`, `eval.json`, `train_log.json`).
+The final model is the **ensemble teacher + causal targets + telephony augmentation**, v1 architecture, 5,000 steps (`checkpoints/final/`; copies of `eval.json` and `train_log.json` are in `results/final/`).
 
 **The plumbing works:**
 - **Step 1:** loss 1.99, grad-norm 8.8, finite.
@@ -189,6 +244,10 @@ The final model is the **ensemble teacher + causal targets + telephony augmentat
   |---|---|---|---|---|---|
   | held-out KD | 0.750 | 0.480 | 0.313 | 0.283 | **0.279** |
   | held-out argmax agreement with teacher | .69 | .81 | .87 | .88 | **.88** |
+
+![held-out KD](results/figures/heldout_kd.png)
+
+Each curve is measured against *its own* targets, so the plateau height is the part of that target the student cannot learn. The order matches §3: the whole-clip target (needs the most future) plateaus highest, then centred, then the information-matched ones. The ensemble target is the most learnable of all.
 
 - **Unit tests:**
   - causality: `tests/test_student.py` checks that perturbing audio after a chunk ends leaves earlier outputs unchanged, for every chunk size
@@ -233,12 +292,23 @@ uv venv --python 3.10 .venv
 uv pip install --python .venv/bin/python torch torchaudio --index-url https://download.pytorch.org/whl/cu126
 uv pip install --python .venv/bin/python -e . speechbrain transformers sentencepiece safetensors pyarrow tqdm
 # accept the licences for bodhan-ai/indic-transcribe-core and ai4bharat/Svarah on Hugging Face, then `hf auth login`
-python scripts/prepare_data.py                               # FLEURS + Svarah, manifests, switch + mix clips
-python scripts/teacher_bakeoff.py --teacher indic-transcribe   # repeat per teacher
-python scripts/build_targets.py --teacher indic-transcribe --kinds causal prefix centered full
-python scripts/train.py --teacher indic-transcribe --kind causal
-python scripts/eval_student.py --ckpt checkpoints/indic-transcribe_causal/student.pt --teacher indic-transcribe
-pytest -q
+# quick look at the shipped model (no data or teacher needed):
+python scripts/stream_demo.py your.wav                      # 16 kHz mono wav; prints routing decisions
+pytest -q                                                   # 12 tests
+
+# full pipeline
+python scripts/prepare_data.py                              # FLEURS + Svarah, manifests, switch + mix clips
+for t in ecapa ambernet xlsr-voxlingua whisper-turbo indic-transcribe; do
+  python scripts/teacher_bakeoff.py --teacher $t; done      # Whisper: `modal run scripts/modal_whisper.py::main` instead
+python scripts/teacher_bakeoff.py --teacher indic-transcribe --manifest train --max-per-lang 25 --no-switch
+python scripts/ensemble.py tune && python scripts/ensemble.py score           # w on the train pool
+python scripts/build_targets.py --teacher indic-transcribe --kinds causal     # + prefix centered full for the ablation
+modal run scripts/modal_whisper.py::main --targets-only                       # Whisper causal targets on L4s
+python scripts/ensemble.py targets --kind causal
+python scripts/train.py --teacher ensemble --kind causal --left-frames -1 --rel-pos 0 --out checkpoints/final
+python scripts/eval_student.py --ckpt checkpoints/final/student.pt --teacher ensemble
+python scripts/commit_sweep.py && python scripts/turn_reset.py && python scripts/silence_test.py
+python scripts/figures.py
 ```
 
 ## 7. Implemented vs. not

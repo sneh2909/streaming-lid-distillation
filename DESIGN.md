@@ -1,6 +1,6 @@
 # Part 2: Streaming LID in front of ASR
 
-Numbers marked ⟨TBD⟩ come from `results/` and are filled in after the final runs.
+All numbers come from `results/` and are produced by the scripts named next to them. The switches are synthetic concatenations of held-out clips.
 
 ## 1. Where it sits
 
@@ -48,7 +48,7 @@ The procedure, on a labelled dev set of real calls:
 
 The student is trained on information-matched targets, so its early posteriors are honestly uncertain. That makes a probability threshold meaningful. A student distilled from full-utterance targets is overconfident early, and no threshold would be safe.
 
-**Measured** (final student, 320 ms chunks, 480 held-out clips, `scripts/commit_sweep.py` → `results/commit_sweep.json`; dwell 3 frames, θ_switch = θ_commit + 0.1):
+**Measured** (final student, 320 ms chunks, 480 held-out clips, `scripts/commit_sweep.py` → `results/final/commit_sweep_final.json`; dwell 3 frames, θ_switch = θ_commit + 0.1):
 
 | θ_commit | median first *correct* commit | wrong first commit | hi↔en committed switch lag | switches missed | flips/min |
 |---|---|---|---|---|---|
@@ -92,7 +92,7 @@ The student is trained on information-matched targets, so its early posteriors a
 - **Forgetting old evidence:**
   - The EMA forgets old frames.
   - The student is distilled from a **causal 3 s window** teacher. Its target at time t reflects only the last 3 s, so it is trained to let go of the previous language.
-  - A pure "everything so far" teacher cannot switch until the new language outweighs the whole history. Our comparison shows this ⟨TBD: prefix vs causal switch lag⟩.
+  - A pure "everything so far" teacher cannot switch until the new language outweighs the whole history. Our comparison shows this: a prefix-target student misses 69/90 committed switches, against 41/90 for causal (README §3).
 - **Measuring switch-detection lag:**
   - **Clips:** concatenated clips with a known switch time t_s (`data/manifests/switch.jsonl`, 9 language pairs including Hindi↔Indian-English).
   - **Lag:** time from t_s until the *committed* label becomes the new language **and stays there**, so a flicker doesn't count.
@@ -114,7 +114,26 @@ The student is trained on information-matched targets, so its early posteriors a
 | committed | 2.83 s |
 
 - **Flip-flops:** 17.3/min raw vs **1.9/min committed**.
-- **Most of the lag is the 3 s teacher window,** not the student and not the policy. The next lever is a shorter window W (faster switching, noisier targets) or a two-timescale student, not a looser commit rule.
+- **Most of the lag is the 3 s teacher window,** not the student and not the policy. We tested both levers.
+
+**Lever 1: shorter teacher window W** (same ensemble teacher, streaming-v2 student, 320 ms chunks):
+
+| W | teacher lag | student raw lag | committed lag | missed switches | premature switches | acc end (1-language) | telephony end |
+|---|---|---|---|---|---|---|---|
+| 3 s | 2.34 s | 2.07 s | 2.62 s | 20/90 | 2% | **.87** | **.80** |
+| 1.5 s | **1.07 s** | **1.14 s** | **1.91 s** | **12/90** | 9% | .71 | .66 |
+
+Halving W halves the lag, but targets from 1.5 s of audio are noisy. The student learns to be jumpy: late-clip accuracy drops 16 points and premature switches rise to 9%. So W trades switch speed against stability, and **3 s is the better default**.
+
+**Lever 2: reset at turn boundaries.** This is where real switches mostly happen: a caller changes language between sentences, not mid-word. We re-built the switch clips with a 0.5 s pause between the two languages, detected the pause with a 20-line energy VAD (320 ms below −35 dB; found in 77/90 clips), and compared (final causal student, θ 0.8, `scripts/turn_reset.py`):
+
+| at a detected pause | committed lag | missed | flips/min | premature |
+|---|---|---|---|---|
+| nothing | 2.57 s | 31/90 | 0.1 | 2% |
+| reset the commit smoothing | 2.57 s | 26/90 | 0.2 | 3% |
+| **reset smoothing + start a fresh student stream** (keep routing the old language until the new turn commits) | **2.08 s** | **21/90** | 0.2 | 2% |
+
+A fresh stream per turn turns every switch into a **first decision**. So the switch lag becomes the first-commit time, which is exactly what the centred-target student is 2× faster at: with the same reset it reaches ~1.0–1.25 s. But that student also names the language from pure silence 64% of the time (README §3). Its speed is partly a recording-condition shortcut, so we did not ship it. Per-turn reset keeps a stable long-window student *within* a turn and gets fresh re-decisions *between* turns. That is what we would ship with the causal student. Getting the first-decision time below ~1.5 s honestly needs a teacher that is better on short audio, not a target that peeks.
 - **Weakest pair:** Hindi→Indian-English (7/10 missed), inherited from the teacher's Indian-English accuracy (.63).
 
 ## 5. Fallback and priors

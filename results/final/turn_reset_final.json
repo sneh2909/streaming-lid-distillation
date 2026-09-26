@@ -1,0 +1,24 @@
+{
+  "gap_s": 0.5,
+  "policy": {
+    "switch_lag_median_s": 2.5650000000000004,
+    "missed": 26,
+    "flips_per_min": 0.1931098964326812,
+    "premature_rate": 0.03333333333333333
+  },
+  "chunk": 4,
+  "pause_detected": 77,
+  "n": 90,
+  "none": {
+    "switch_lag_median_s": 2.5650000000000004,
+    "missed": 31,
+    "flips_per_min": 0.1078826237054085,
+    "premature_rate": 0.022222222222222223
+  },
+  "state": {
+    "switch_lag_median_s": 2.085,
+    "missed": 21,
+    "flips_per_min": 0.20584500615054957,
+    "premature_rate": 0.022222222222222223
+  }
+}

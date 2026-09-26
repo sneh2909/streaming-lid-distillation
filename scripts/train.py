@@ -92,8 +92,8 @@ def main() -> None:
     ap.add_argument("--tel-p", type=float, default=0.5, help="share of training clips run through telephony sim")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out", default=None)
-    ap.add_argument("--left-frames", type=int, default=64, help="attention history in 80 ms frames (-1 = unlimited)")
-    ap.add_argument("--rel-pos", type=int, default=1, help="relative position bias instead of absolute sinusoids")
+    ap.add_argument("--left-frames", type=int, default=-1, help="attention history in 80 ms frames (-1 = unlimited)")
+    ap.add_argument("--rel-pos", type=int, default=0, help="relative position bias instead of absolute sinusoids")
     args = ap.parse_args()
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
 

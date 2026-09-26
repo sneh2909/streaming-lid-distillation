@@ -1,0 +1,15 @@
+=== ecapa 01:51:49
+Could not parse CUDA device string 'cuda': not enough values to unpack (expected 2, got 1). Falling back to device 0.
+CategoricalEncoder.expect_len was never called: assuming category count of 107 to be correct! Sanity check your encoder using `.expect_len`. Ensure that downstream code also uses the correct size. If you are sure this does not apply to you, use `.ignore_len`.
+ecapa: acc@1s 0.308 acc@3s 0.760 full 0.871 | tel full 0.823 | hi->en lag 2.185 s | 5.9 ms/call
+=== ambernet 01:54:54
+ambernet: acc@1s 0.346 acc@3s 0.792 full 0.867 | tel full 0.842 | hi->en lag 2.7775 s | 11.9 ms/call
+=== xlsr-voxlingua 01:57:26
+[W926 02:01:33.860978565 CUDACachingAllocator.cpp:3934] memory allocation failed with OOM on device 0 while trying to allocate 19499319296 bytes (free: 3316645888, total: 6438780928).
+[W926 02:01:33.056155854 CUDACachingAllocator.cpp:3934] memory allocation failed with OOM on device 0 while trying to allocate 19499319296 bytes (free: 3958374400, total: 6438780928).
+xlsr-voxlingua: acc@1s 0.365 acc@3s 0.821 full 0.917 | tel full 0.904 | hi->en lag 2.3449999999999998 s | 390.1 ms/call
+=== whisper-turbo 02:35:25
+=== whisper-turbo 12:21:17
+whisper-turbo: acc@1s 0.277 acc@3s 0.492 full 0.610 | tel full 0.575 | hi->en lag 1.545 s | 130.6 ms/call
+=== indic-transcribe 12:42:05
+indic-transcribe: acc@1s 0.431 acc@3s 0.887 full 0.900 | tel full 0.896 | hi->en lag 2.6174999999999997 s | 10.7 ms/call
