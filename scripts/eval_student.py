@@ -21,7 +21,7 @@ from slid.audio import SR, load_wav, telephony
 from slid.commit import commit_stream
 from slid.config import LANGS
 from slid.metrics import ece, flips_per_min, frame_time, switch_lag
-from slid.student import StreamingLID
+from slid.student import StreamingLID, load_student
 
 ROOT = Path(__file__).resolve().parents[1]
 CHUNKS = (1, 2, 4, 8)
@@ -59,23 +59,23 @@ def main() -> None:
     ap.add_argument("--teacher", required=True)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--ref-kind", default="causal", help="teacher targets used for agreement and teacher lag")
     args = ap.parse_args()
 
-    ck = torch.load(args.ckpt, map_location="cpu")
-    model = StreamingLID(ck["n_langs"]).to(args.device).eval()
-    model.load_state_dict(ck["state"])
-    causal_t = torch.load(ROOT / f"data/targets/{args.teacher}/causal.pt")
+    model = load_student(args.ckpt, args.device)
+    causal_t = torch.load(ROOT / f"data/targets/{args.teacher}/{args.ref_kind}.pt")
 
     mono = read_jsonl("eval")
     group = lambda it: "en-in" if it.get("source") == "svarah" else it["lang"]
     switch = read_jsonl("switch")
     wav = {it["path"]: load_wav(it["path"]) for it in mono + switch}
-    res = {"ckpt": args.ckpt, "teacher": args.teacher, "by_chunk": {}}
+    res = {"ckpt": args.ckpt, "teacher": args.teacher, "ref_kind": args.ref_kind, "by_chunk": {}}
 
     for chunk in CHUNKS:
         r = {"lookahead_ms": chunk * 80}
         for cond in ("clean", "telephony"):
             acc_at = {a: [] for a in AT_S}
+            q_at = {a: ([], []) for a in (1.0, 2.0)}
             by_group = {}
             agree, qs, ys, fc_t, fc_wrong = [], [], [], [], []
             for i, it in enumerate(mono):
@@ -86,6 +86,8 @@ def main() -> None:
                     f = frame_at(a, len(p))
                     if f >= 0 and a <= it["dur"]:
                         acc_at[a].append(p[f].argmax() == y)
+                        if a in q_at:
+                            q_at[a][0].append(p[f]); q_at[a][1].append(y)
                         if a == 2.0:
                             by_group.setdefault(group(it), []).append(p[f].argmax() == y)
                 qs.append(p[-1]); ys.append(y)
@@ -100,6 +102,7 @@ def main() -> None:
                 "acc_at_2s_by_group": {g: float(np.mean(v)) for g, v in sorted(by_group.items())},
                 "acc_end": float((np.array(qs).argmax(1) == np.array(ys)).mean()),
                 "ece_end": ece(np.array(qs), np.array(ys)),
+                "ece_at": {f"{a:g}s": ece(np.array(v[0]), np.array(v[1])) for a, v in q_at.items()},
                 "first_correct_commit_s_median": float(np.nanmedian(fc_t)),
                 "wrong_first_commit_rate": float(np.mean(fc_wrong)),
             }
@@ -116,13 +119,18 @@ def main() -> None:
             fr = np.arange(len(p))
             tf, tq = causal_t[sw["path"]]
             d = lag.setdefault(sw["pair"], {"raw": [], "committed": [], "teacher": [], "flips_raw": [],
-                                            "flips_committed": []})
+                                            "flips_committed": [], "pre_switch_acc": [], "premature": []})
+            old = LANGS.index(sw["segments"][0][0])
+            tt = frame_time(fr)
+            pre = (tt >= 0.5) & (tt < sw["switch_s"])
+            d["pre_switch_acc"].append(float((raw[pre] == old).mean()))
+            d["premature"].append(float((com[tt < sw["switch_s"]] == new).any()))
             d["raw"].append(switch_lag(fr, raw, new, sw["switch_s"]))
             d["committed"].append(switch_lag(fr, com, new, sw["switch_s"]))
             d["teacher"].append(switch_lag(tf.numpy(), tq.numpy().argmax(1), new, sw["switch_s"]))
             d["flips_raw"].append(flips_per_min(raw, 1))
             d["flips_committed"].append(flips_per_min(com[com >= 0], 1))
-        r["switch"] = {pair: {k: (float(np.nanmedian(v)) if not k.startswith("flips") else float(np.nanmean(v)))
+        r["switch"] = {pair: {k: (float(np.nanmean(v)) if k.startswith(("flips", "pre_switch", "premature")) else float(np.nanmedian(v)))
                               for k, v in d.items()} | {"missed_committed": int(np.isnan(d["committed"]).sum()),
                                                          "n": len(d["raw"])}
                        for pair, d in lag.items()}
@@ -131,11 +139,11 @@ def main() -> None:
         hs = r["switch"].get("hi->en", {})
         print(f"chunk {chunk} ({chunk*80} ms): acc@1s {c['acc_at']['1s']:.3f} @2s {c['acc_at']['2s']:.3f} "
               f"end {c['acc_end']:.3f} agree {c['teacher_agreement_causal']:.3f} | tel end "
-              f"{r['telephony']['acc_end']:.3f} | hi->en lag raw {hs.get('raw')} com {hs.get('committed')} "
-              f"teacher {hs.get('teacher')}")
+              f"{r['telephony']['acc_end']:.3f} | ECE@1s {c['ece_at']['1s']:.3f} | hi->en lag raw {hs.get('raw'):.2f} "
+              f"com {hs.get('committed'):.2f} (missed {hs.get('missed_committed')}) teacher {hs.get('teacher'):.2f} "
+              f"pre-switch acc {hs.get('pre_switch_acc'):.2f} premature {hs.get('premature'):.2f}")
 
-    cpu = StreamingLID(ck["n_langs"]).eval()
-    cpu.load_state_dict(ck["state"])
+    cpu = load_student(args.ckpt, "cpu")
     torch.set_num_threads(1)
     x = torch.randn(1, 10 * SR)
     with torch.no_grad():

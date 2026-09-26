@@ -21,6 +21,7 @@ def main() -> None:
     ap.add_argument("--teacher", required=True)
     ap.add_argument("--kinds", nargs="+", default=list(KINDS))
     ap.add_argument("--window-s", type=float, default=3.0)
+    ap.add_argument("--suffix", default="", help="e.g. _w1.5 -> saves causal_w1.5.pt")
     args = ap.parse_args()
 
     teacher = load_teacher(args.teacher)
@@ -28,7 +29,7 @@ def main() -> None:
     out_dir = ROOT / "data/targets" / args.teacher
     out_dir.mkdir(parents=True, exist_ok=True)
     for kind in args.kinds:
-        out_path = out_dir / f"{kind}.pt"
+        out_path = out_dir / f"{kind}{args.suffix}.pt"
         if out_path.exists():
             print("exists:", out_path)
             continue

@@ -16,7 +16,7 @@ from slid.audio import load_wav
 from slid.commit import commit_stream
 from slid.config import LANGS
 from slid.metrics import flips_per_min, frame_time, switch_lag
-from slid.student import StreamingLID
+from slid.student import StreamingLID, load_student
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,11 +29,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", default="checkpoints/ensemble_causal/student.pt")
     ap.add_argument("--chunk", type=int, default=4)
+    ap.add_argument("--out", default=None)
     args = ap.parse_args()
     dev = "cuda" if torch.cuda.is_available() else "cpu"
-    ck = torch.load(ROOT / args.ckpt, map_location="cpu")
-    model = StreamingLID(ck["n_langs"]).to(dev).eval()
-    model.load_state_dict(ck["state"])
+    model = load_student(ROOT / args.ckpt, dev)
 
     @torch.no_grad()
     def post(path):
@@ -71,7 +70,7 @@ def main() -> None:
             print(f"theta {th:.1f} dwell {dwell}: commit {r['first_correct_commit_s_median']:.2f}s "
                   f"wrong {r['wrong_first_commit_rate']:.3f} | switch lag {r['hi_en_switch_lag_s_median']:.2f}s "
                   f"missed {r['hi_en_switch_missed_rate']:.2f} flips/min {r['flips_per_min']:.1f}")
-    out = ROOT / "results/commit_sweep.json"
+    out = ROOT / (args.out or "results/commit_sweep.json")
     out.write_text(json.dumps({"ckpt": args.ckpt, "chunk": args.chunk, "rows": rows}, indent=2))
     print("->", out)
 

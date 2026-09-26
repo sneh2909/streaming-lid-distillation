@@ -94,10 +94,12 @@ The loss left over at that optimum is E[ KL(q_t ‖ E[q_t | x[0:e(t)]]) ]. This 
 
 | View V_t (`slid/targets.py`) | Inside the student's view? | What the optimal student learns |
 |---|---|---|
-| **full:** x[0:N] | No | E[final clip label ∣ prefix]: a *forecast* of the whole-clip answer. Early frames get a confident target the student cannot justify, so it hedges or guesses. On a Hindi→English clip the one label is wrong for half the clip. |
-| **centred:** x[e−W/2 : e+W/2] | No (W/2 of future) | A forecast of the next 1.5 s. Near a switch it is asked to anticipate a language not yet spoken, so the loss cannot reach zero and the posterior blurs. |
-| **prefix:** x[0:e] | Yes | The teacher exactly. Early targets are honestly uncertain, so the student is calibrated. But after a switch the teacher still hears all the earlier audio, so the *target itself* is slow to switch. |
-| **causal (ours):** x[e−W : e], W = 3 s | Yes | The teacher exactly, **and** it forgets audio older than 3 s, so it can follow a switch. |
+| **full:** x[0:N] | No | E[whole-clip label ∣ prefix]: a *forecast* of the clip's final answer. On one-language audio that forecast is well defined and calibrated. On a switch clip it can only learn "the language this clip will end up being", so it cannot follow a switch. |
+| **centred:** x[e−W/2 : e+W/2] | No (W/2 of future) | A forecast of the next 1.5 s. When the next 1.5 s is the same language (almost always), that is a *better* label than the teacher on short audio. Across a switch it rewards jumping on the first hint of a new language. |
+| **prefix:** x[0:e] | Yes | The teacher exactly, including its weakness on short audio. After a switch the teacher still hears all the earlier audio, so the *target itself* is slow to switch. |
+| **causal (ours):** x[e−W : e], W = 3 s | Yes | The teacher exactly (again inheriting its short-audio weakness), **and** it forgets audio older than 3 s, so it can follow a switch. |
+
+The leftover term is not "the student is wrong". It measures the future information the target demands. Whether that hurts depends on whether the future is *predictable from the past*. On one-language audio it is (the language doesn't change). Across a switch it is not. The ablation below measures exactly this.
 
 **Connection to the "emit delay" recipe.** The causal window ending at e(t) is the centred window of the frame W/2 earlier. So training on causal targets means reporting the teacher's centred decision about time t − W/2 at time t: an **emit delay Δ = W/2 = 1.5 s** that is built into the target, not a separate knob. Shrinking W trades less lag for noisier targets, since the teacher is weaker on short audio (see the bake-off).
 
@@ -105,9 +107,41 @@ The loss left over at that optimum is E[ KL(q_t ‖ E[q_t | x[0:e(t)]]) ]. This 
 - **No per-frame down-weighting.** With information-matched targets, early frames already have high-entropy targets, so there's no need to hand-tune "don't trust early frames". The first target is placed after 0.4 s of audio because a 0.1 s teacher call is meaningless.
 - **Temperature T = 1.** The targets are already soft and calibrated (ECE in the bake-off). Sharpening or smoothing them would break the calibration that the Part 2 commit threshold relies on.
 
-**Measured, same student and same teacher, 4 target types** (`results/ablation/`):
+### Measured: 5 target types, same student, teacher, data and steps
 
-⟨TBD table: acc@1/2/3 s, end, ECE, teacher agreement, hi→en lag (raw / committed), flips/min⟩
+Setup: Indic-T teacher, 5,000 steps, telephony augmentation on, 320 ms chunks. `checkpoints/indic-transcribe_<kind>/eval.json` and `results/ablation/`. "Hybrid" = whole-clip targets on one-language clips, causal targets on multi-language clips.
+
+| target | acc @1 s | ECE @1 s | acc end | telephony end | switches missed (of 90) | correct *before* the switch | raw switch lag (median) | raw flips/min |
+|---|---|---|---|---|---|---|---|---|
+| full | .75 | .047 | .85 | .77 | **78** | .61 | 3.03 s | 46 |
+| prefix | .62 | .113 | **.89** | .80 | **69** | .73 | 2.67 s | 40 |
+| **causal** | .58 | .117 | **.89** | **.83** | 41 | .69 | 2.18 s | **39** |
+| centred | **.81** | **.034** | .85 | .75 | 42 | .71 | **1.10 s** | 47 |
+| hybrid | .75 | .047 | .88 | .74 | **38** | .68 | 2.11 s | 51 |
+
+The same students under the commit policy, compared at **equal wrong-commit rate** (sweep over θ, `results/ablation/commit_sweep_*.json`):
+
+| target | θ | first correct commit | wrong first commit | committed switch lag | switches missed |
+|---|---|---|---|---|---|
+| causal | 0.8 | 1.71 s | 6.5% | 2.03 s | 47% |
+| centred | 0.8 | **0.82 s** | 5.8% | **1.62 s** | 57% |
+| hybrid | 0.9 | 1.15 s | 5.0% | 2.38 s | 75% |
+
+**What this shows:**
+1. **The theory's warning is real, and it is about switches.**
+   - Targets that cannot follow the local language miss most switches: full misses 78/90, because the one clip label is wrong for half the clip; prefix misses 69/90, because it can't forget.
+   - Only local targets (causal, centred) track them.
+2. **Information-matching has a price: the student inherits the teacher's short-audio weakness.**
+   - At 1 s the causal target is "the teacher on 1 s of audio", and the teacher is 44% right and poorly calibrated there.
+   - The centred target at 1 s is the teacher on ~2.5 s. It peeks at the future, but at call start the future is almost always the same language, so the label is simply better: 2× faster first commit at equal error.
+3. **The peek is not free:**
+   - More switches are missed at strict thresholds.
+   - More raw flips: it learns to jump on the first hint of a new language.
+   - It is less robust on telephony (.75 vs .83).
+   - These are the costs the theory predicts wherever the future is *not* predictable from the past.
+4. **Hybrid is dominated by centred** at every threshold, so we drop it.
+
+The final choice between causal and centred for the production student is made on the ensemble teacher below (§5).
 
 ## 4. Student and latency budget (`slid/student.py`)
 
@@ -117,12 +151,23 @@ The loss left over at that optimum is E[ KL(q_t ‖ E[q_t | x[0:e(t)]]) ]. This 
 - 3 causal stride-2 convolutions give 80 ms frames.
 - 6 Conformer blocks: d = 144, 4 heads, FFN 576, causal depthwise conv with kernel 15, LayerNorm instead of BatchNorm.
 - Linear head over the 7 languages. 3.06M parameters.
+- **Production variant (v2):** attention history bounded to the last 128 frames (10.24 s) plus the current chunk, and a learned **relative position bias** per head instead of absolute sinusoids. So nothing depends on "frame number 5,000" and a 2-hour call is fine.
+  - The target-type comparison in §3 used v1 (unlimited history, absolute positions); every student there shares that architecture.
 
 **Causality:**
 - Convolutions are left-padded.
-- Self-attention uses a **chunk mask**: a frame sees its own chunk and all earlier ones. So the lookahead is bounded by the chunk no matter how many layers are stacked (per-frame lookahead masks would add up across layers).
+- Self-attention uses a **chunk mask**: a frame sees its own chunk and earlier frames (up to the history bound). So the lookahead is bounded by the chunk no matter how many layers are stacked. With a per-frame "1 frame ahead" mask, layer 2 would read layer 1's output at t+1, which had already seen t+2, so the lookahead would grow by one frame per layer.
 - The decision is read at the last frame of each chunk.
 - `tests/test_student.py` checks that perturbing audio after a chunk ends leaves every earlier output bit-identical, for chunk sizes 1/2/4/8.
+
+**Real incremental inference** (`slid/streaming.py`): `StreamingSession(model, chunk).push(samples) → posteriors`. It keeps only:
+- raw audio for the front end's 14-mel-frame receptive field (< 0.3 s)
+- per layer, a **key/value cache** of the last 128 frames
+- per layer, the last 14 inputs of the causal depthwise conv
+
+Memory and compute per chunk are **constant**, so there's no maximum call length. `tests/test_streaming.py`:
+- **Equivalence:** audio pushed in random 100–5,000-sample pieces gives the same posteriors as the whole-clip forward (to 1e-4), for every chunk size.
+- **Constant memory:** 2 minutes of audio run with a constant-size cache and audio buffer.
 
 **Latency** (why this architecture):
 - **Algorithmic latency** = 25 ms window + one chunk of buffering: 80 / 160 / 320 / 640 ms at chunk 1 / 2 / 4 / 8. The default operating point is 320 ms.
@@ -202,17 +247,18 @@ pytest -q
 - teacher interface for 5 teachers
 - the bake-off
 - the ensemble
-- 4 target types
+- 5 target types
 - the student
-- training with a NaN guard
-- streaming evaluation with a runnable commit policy
-- unit tests
+- training with a NaN guard and telephony augmentation
+- **incremental streaming inference with a KV cache** (tested equal to the batch forward)
+- streaming evaluation with a runnable, swept commit policy
+- unit tests (13)
 
 **Stubbed or not done:**
-- **True cached streaming inference:** we simulate streaming with masks, which gives identical outputs.
-- **Real code-switched evaluation data.**
+- **Real code-switched evaluation data:** switches are synthetic concatenations.
 - **Training to convergence** on hundreds of hours.
-- **Bounded-memory / per-call language cache** in the student (see DESIGN §7).
+- **A per-call language cache** (Sortformer-style) in the student; see DESIGN §7.
+- **Export** (ONNX/TorchScript) of the streaming session.
 
 **With more compute:**
 - ~1k hours of IndicVoices + MUCS + Svarah-style accented English, relabelled by the ensemble teacher

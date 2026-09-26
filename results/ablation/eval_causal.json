@@ -1,0 +1,637 @@
+{
+  "ckpt": "checkpoints/indic-transcribe_causal/student.pt",
+  "teacher": "indic-transcribe",
+  "ref_kind": "causal",
+  "by_chunk": {
+    "1": {
+      "lookahead_ms": 80,
+      "clean": {
+        "acc_at": {
+          "0.5s": 0.14791666666666667,
+          "1s": 0.4666666666666667,
+          "2s": 0.8354166666666667,
+          "3s": 0.8789808917197452
+        },
+        "acc_at_2s_by_group": {
+          "bn": 0.95,
+          "en": 0.9,
+          "en-in": 0.16666666666666666,
+          "gu": 0.9666666666666667,
+          "hi": 0.8333333333333334,
+          "mr": 0.9666666666666667,
+          "ta": 0.95,
+          "te": 0.95
+        },
+        "acc_end": 0.89375,
+        "ece_end": 0.01807081637283168,
+        "ece_at": {
+          "1s": 0.1457273523633679,
+          "2s": 0.04210514941563207
+        },
+        "first_correct_commit_s_median": 1.625,
+        "wrong_first_commit_rate": 0.08125,
+        "teacher_agreement_causal": 0.8317075199162431
+      },
+      "telephony": {
+        "acc_at": {
+          "0.5s": 0.14166666666666666,
+          "1s": 0.36875,
+          "2s": 0.7229166666666667,
+          "3s": 0.7919320594479831
+        },
+        "acc_at_2s_by_group": {
+          "bn": 0.8166666666666667,
+          "en": 0.8,
+          "en-in": 0.21666666666666667,
+          "gu": 0.7333333333333333,
+          "hi": 0.65,
+          "mr": 0.9,
+          "ta": 0.7666666666666667,
+          "te": 0.9
+        },
+        "acc_end": 0.8104166666666667,
+        "ece_end": 0.03201597811033327,
+        "ece_at": {
+          "1s": 0.08708603379006186,
+          "2s": 0.026766627468168724
+        },
+        "first_correct_commit_s_median": 1.865,
+        "wrong_first_commit_rate": 0.15
+      },
+      "switch": {
+        "hi->en": {
+          "raw": 2.3774999999999995,
+          "committed": 3.1449999999999996,
+          "teacher": 2.6174999999999997,
+          "flips_raw": 21.0,
+          "flips_committed": 1.0,
+          "pre_switch_acc": 0.7272727272727273,
+          "premature": 0.0,
+          "missed_committed": 3,
+          "n": 10
+        },
+        "en->hi": {
+          "raw": 2.2649999999999997,
+          "committed": 1.7850000000000001,
+          "teacher": 1.545,
+          "flips_raw": 52.5,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.6545454545454545,
+          "premature": 0.0,
+          "missed_committed": 5,
+          "n": 10
+        },
+        "hi->en-in": {
+          "raw": 2.2649999999999997,
+          "committed": 1.665,
+          "teacher": 3.9450000000000003,
+          "flips_raw": 21.0,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.8795454545454545,
+          "premature": 0.1,
+          "missed_committed": 8,
+          "n": 10
+        },
+        "en-in->hi": {
+          "raw": 0.5049999999999999,
+          "committed": 1.0650000000000004,
+          "teacher": 1.065,
+          "flips_raw": 58.5,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.08409090909090909,
+          "premature": 0.3,
+          "missed_committed": 1,
+          "n": 10
+        },
+        "gu->en": {
+          "raw": 2.585,
+          "committed": 3.3049999999999997,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 39.0,
+          "flips_committed": 0.9259259259259259,
+          "pre_switch_acc": 0.7318181818181817,
+          "premature": 0.0,
+          "missed_committed": 5,
+          "n": 10
+        },
+        "mr->en": {
+          "raw": 2.9050000000000002,
+          "committed": 3.585,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 33.0,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.8727272727272727,
+          "premature": 0.0,
+          "missed_committed": 6,
+          "n": 10
+        },
+        "bn->en": {
+          "raw": 1.545,
+          "committed": 2.825,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 21.06122448979592,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.9045454545454545,
+          "premature": 0.0,
+          "missed_committed": 3,
+          "n": 10
+        },
+        "ta->en": {
+          "raw": 2.665,
+          "committed": 3.2249999999999996,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 44.25,
+          "flips_committed": 1.0416666666666667,
+          "pre_switch_acc": 0.6545454545454545,
+          "premature": 0.0,
+          "missed_committed": 9,
+          "n": 10
+        },
+        "te->en": {
+          "raw": 2.225,
+          "committed": 3.185,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 33.0,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.6977272727272728,
+          "premature": 0.0,
+          "missed_committed": 2,
+          "n": 10
+        }
+      }
+    },
+    "2": {
+      "lookahead_ms": 160,
+      "clean": {
+        "acc_at": {
+          "0.5s": 0.15,
+          "1s": 0.5375,
+          "2s": 0.8333333333333334,
+          "3s": 0.8789808917197452
+        },
+        "acc_at_2s_by_group": {
+          "bn": 0.95,
+          "en": 0.9166666666666666,
+          "en-in": 0.13333333333333333,
+          "gu": 0.9666666666666667,
+          "hi": 0.8333333333333334,
+          "mr": 0.9666666666666667,
+          "ta": 0.95,
+          "te": 0.95
+        },
+        "acc_end": 0.89375,
+        "ece_end": 0.020760198806722984,
+        "ece_at": {
+          "1s": 0.15362398959696294,
+          "2s": 0.037038659925262146
+        },
+        "first_correct_commit_s_median": 1.545,
+        "wrong_first_commit_rate": 0.075,
+        "teacher_agreement_causal": 0.8317905107391332
+      },
+      "telephony": {
+        "acc_at": {
+          "0.5s": 0.14375,
+          "1s": 0.39375,
+          "2s": 0.7291666666666666,
+          "3s": 0.7876857749469215
+        },
+        "acc_at_2s_by_group": {
+          "bn": 0.8166666666666667,
+          "en": 0.8166666666666667,
+          "en-in": 0.23333333333333334,
+          "gu": 0.7333333333333333,
+          "hi": 0.65,
+          "mr": 0.8833333333333333,
+          "ta": 0.8,
+          "te": 0.9
+        },
+        "acc_end": 0.8229166666666666,
+        "ece_end": 0.029556641541421385,
+        "ece_at": {
+          "1s": 0.12161188709239164,
+          "2s": 0.04670786609252292
+        },
+        "first_correct_commit_s_median": 1.865,
+        "wrong_first_commit_rate": 0.14791666666666667
+      },
+      "switch": {
+        "hi->en": {
+          "raw": 2.4574999999999996,
+          "committed": 3.1449999999999996,
+          "teacher": 2.6174999999999997,
+          "flips_raw": 21.0,
+          "flips_committed": 2.0142393655371307,
+          "pre_switch_acc": 0.7068181818181818,
+          "premature": 0.1,
+          "missed_committed": 3,
+          "n": 10
+        },
+        "en->hi": {
+          "raw": 2.3449999999999998,
+          "committed": 1.545,
+          "teacher": 1.545,
+          "flips_raw": 60.0,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.6613636363636364,
+          "premature": 0.0,
+          "missed_committed": 5,
+          "n": 10
+        },
+        "hi->en-in": {
+          "raw": 2.2649999999999997,
+          "committed": 3.2249999999999996,
+          "teacher": 3.9450000000000003,
+          "flips_raw": 30.75,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.8681818181818182,
+          "premature": 0.1,
+          "missed_committed": 9,
+          "n": 10
+        },
+        "en-in->hi": {
+          "raw": 0.5049999999999999,
+          "committed": 1.0650000000000004,
+          "teacher": 1.065,
+          "flips_raw": 69.75,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.09318181818181819,
+          "premature": 0.3,
+          "missed_committed": 1,
+          "n": 10
+        },
+        "gu->en": {
+          "raw": 2.665,
+          "committed": 3.3449999999999998,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 39.75,
+          "flips_committed": 0.9146341463414634,
+          "pre_switch_acc": 0.7431818181818182,
+          "premature": 0.0,
+          "missed_committed": 6,
+          "n": 10
+        },
+        "mr->en": {
+          "raw": 2.9050000000000002,
+          "committed": 3.585,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 33.75,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.875,
+          "premature": 0.0,
+          "missed_committed": 6,
+          "n": 10
+        },
+        "bn->en": {
+          "raw": 1.7850000000000001,
+          "committed": 2.825,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 17.28061224489796,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.9090909090909092,
+          "premature": 0.0,
+          "missed_committed": 3,
+          "n": 10
+        },
+        "ta->en": {
+          "raw": 2.665,
+          "committed": 3.2249999999999996,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 44.25,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.6613636363636364,
+          "premature": 0.0,
+          "missed_committed": 9,
+          "n": 10
+        },
+        "te->en": {
+          "raw": 2.2249999999999996,
+          "committed": 2.9850000000000003,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 35.25,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.7,
+          "premature": 0.0,
+          "missed_committed": 2,
+          "n": 10
+        }
+      }
+    },
+    "4": {
+      "lookahead_ms": 320,
+      "clean": {
+        "acc_at": {
+          "0.5s": 0.15833333333333333,
+          "1s": 0.5791666666666667,
+          "2s": 0.8270833333333333,
+          "3s": 0.8726114649681529
+        },
+        "acc_at_2s_by_group": {
+          "bn": 0.9333333333333333,
+          "en": 0.9166666666666666,
+          "en-in": 0.15,
+          "gu": 0.9666666666666667,
+          "hi": 0.8333333333333334,
+          "mr": 0.95,
+          "ta": 0.9333333333333333,
+          "te": 0.9333333333333333
+        },
+        "acc_end": 0.8895833333333333,
+        "ece_end": 0.026232144484917355,
+        "ece_at": {
+          "1s": 0.11652009580284359,
+          "2s": 0.04075216942777232
+        },
+        "first_correct_commit_s_median": 1.545,
+        "wrong_first_commit_rate": 0.07916666666666666,
+        "teacher_agreement_causal": 0.8304322053580155
+      },
+      "telephony": {
+        "acc_at": {
+          "0.5s": 0.15416666666666667,
+          "1s": 0.45,
+          "2s": 0.7395833333333334,
+          "3s": 0.802547770700637
+        },
+        "acc_at_2s_by_group": {
+          "bn": 0.8333333333333334,
+          "en": 0.8166666666666667,
+          "en-in": 0.25,
+          "gu": 0.7333333333333333,
+          "hi": 0.6666666666666666,
+          "mr": 0.9,
+          "ta": 0.8166666666666667,
+          "te": 0.9
+        },
+        "acc_end": 0.8333333333333334,
+        "ece_end": 0.036787017434835464,
+        "ece_at": {
+          "1s": 0.08956862774988017,
+          "2s": 0.03310625329613687
+        },
+        "first_correct_commit_s_median": 1.785,
+        "wrong_first_commit_rate": 0.14583333333333334
+      },
+      "switch": {
+        "hi->en": {
+          "raw": 2.4574999999999996,
+          "committed": 3.1449999999999996,
+          "teacher": 2.6174999999999997,
+          "flips_raw": 15.75,
+          "flips_committed": 2.0014232342999465,
+          "pre_switch_acc": 0.7,
+          "premature": 0.1,
+          "missed_committed": 3,
+          "n": 10
+        },
+        "en->hi": {
+          "raw": 1.9849999999999999,
+          "committed": 1.545,
+          "teacher": 1.545,
+          "flips_raw": 51.75,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.6681818181818181,
+          "premature": 0.0,
+          "missed_committed": 5,
+          "n": 10
+        },
+        "hi->en-in": {
+          "raw": 2.1849999999999996,
+          "committed": 3.1449999999999996,
+          "teacher": 3.9450000000000003,
+          "flips_raw": 30.75,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.8613636363636363,
+          "premature": 0.1,
+          "missed_committed": 9,
+          "n": 10
+        },
+        "en-in->hi": {
+          "raw": 0.5449999999999999,
+          "committed": 0.9850000000000003,
+          "teacher": 1.065,
+          "flips_raw": 82.5,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.0659090909090909,
+          "premature": 0.3,
+          "missed_committed": 0,
+          "n": 10
+        },
+        "gu->en": {
+          "raw": 2.425,
+          "committed": 3.465,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 33.75,
+          "flips_committed": 0.9146341463414634,
+          "pre_switch_acc": 0.7659090909090909,
+          "premature": 0.0,
+          "missed_committed": 5,
+          "n": 10
+        },
+        "mr->en": {
+          "raw": 2.9050000000000002,
+          "committed": 3.705,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 38.25,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.8931818181818182,
+          "premature": 0.0,
+          "missed_committed": 5,
+          "n": 10
+        },
+        "bn->en": {
+          "raw": 1.8650000000000002,
+          "committed": 2.745,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 21.03061224489796,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.9113636363636364,
+          "premature": 0.0,
+          "missed_committed": 3,
+          "n": 10
+        },
+        "ta->en": {
+          "raw": 2.985,
+          "committed": 3.3049999999999997,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 39.0,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.6590909090909092,
+          "premature": 0.0,
+          "missed_committed": 9,
+          "n": 10
+        },
+        "te->en": {
+          "raw": 2.145,
+          "committed": 2.865,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 35.25,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.7045454545454546,
+          "premature": 0.0,
+          "missed_committed": 2,
+          "n": 10
+        }
+      }
+    },
+    "8": {
+      "lookahead_ms": 640,
+      "clean": {
+        "acc_at": {
+          "0.5s": 0.15833333333333333,
+          "1s": 0.6041666666666666,
+          "2s": 0.8541666666666666,
+          "3s": 0.881104033970276
+        },
+        "acc_at_2s_by_group": {
+          "bn": 0.9666666666666667,
+          "en": 0.9333333333333333,
+          "en-in": 0.2,
+          "gu": 0.9666666666666667,
+          "hi": 0.8666666666666667,
+          "mr": 0.9666666666666667,
+          "ta": 0.95,
+          "te": 0.9833333333333333
+        },
+        "acc_end": 0.8854166666666666,
+        "ece_end": 0.025999460369348523,
+        "ece_at": {
+          "1s": 0.13504692558199163,
+          "2s": 0.02729962573697166
+        },
+        "first_correct_commit_s_median": 1.545,
+        "wrong_first_commit_rate": 0.07708333333333334,
+        "teacher_agreement_causal": 0.8332270476032829
+      },
+      "telephony": {
+        "acc_at": {
+          "0.5s": 0.15416666666666667,
+          "1s": 0.4708333333333333,
+          "2s": 0.74375,
+          "3s": 0.7940552016985138
+        },
+        "acc_at_2s_by_group": {
+          "bn": 0.8333333333333334,
+          "en": 0.8333333333333334,
+          "en-in": 0.26666666666666666,
+          "gu": 0.75,
+          "hi": 0.65,
+          "mr": 0.8833333333333333,
+          "ta": 0.8333333333333334,
+          "te": 0.9
+        },
+        "acc_end": 0.8270833333333333,
+        "ece_end": 0.04862997873375813,
+        "ece_at": {
+          "1s": 0.09042684780433773,
+          "2s": 0.047372434412439685
+        },
+        "first_correct_commit_s_median": 1.705,
+        "wrong_first_commit_rate": 0.16041666666666668
+      },
+      "switch": {
+        "hi->en": {
+          "raw": 2.4574999999999996,
+          "committed": 3.1300000000000003,
+          "teacher": 2.6174999999999997,
+          "flips_raw": 15.75,
+          "flips_committed": 0.9615384615384615,
+          "pre_switch_acc": 0.7113636363636363,
+          "premature": 0.0,
+          "missed_committed": 3,
+          "n": 10
+        },
+        "en->hi": {
+          "raw": 2.105,
+          "committed": 1.7850000000000001,
+          "teacher": 1.545,
+          "flips_raw": 45.75,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.6749999999999999,
+          "premature": 0.0,
+          "missed_committed": 4,
+          "n": 10
+        },
+        "hi->en-in": {
+          "raw": 3.0250000000000004,
+          "committed": 2.9050000000000002,
+          "teacher": 3.9450000000000003,
+          "flips_raw": 29.25,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.8659090909090909,
+          "premature": 0.1,
+          "missed_committed": 9,
+          "n": 10
+        },
+        "en-in->hi": {
+          "raw": 0.3849999999999998,
+          "committed": 1.0250000000000004,
+          "teacher": 1.065,
+          "flips_raw": 96.75,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.07727272727272727,
+          "premature": 0.3,
+          "missed_committed": 0,
+          "n": 10
+        },
+        "gu->en": {
+          "raw": 2.505,
+          "committed": 3.465,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 31.5,
+          "flips_committed": 0.9036144578313252,
+          "pre_switch_acc": 0.775,
+          "premature": 0.0,
+          "missed_committed": 5,
+          "n": 10
+        },
+        "mr->en": {
+          "raw": 2.785,
+          "committed": 3.545,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 27.75,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.925,
+          "premature": 0.0,
+          "missed_committed": 5,
+          "n": 10
+        },
+        "bn->en": {
+          "raw": 1.8650000000000002,
+          "committed": 2.745,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 18.78061224489796,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.9295454545454547,
+          "premature": 0.0,
+          "missed_committed": 3,
+          "n": 10
+        },
+        "ta->en": {
+          "raw": 2.825,
+          "committed": 3.465,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 43.5,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.6636363636363637,
+          "premature": 0.0,
+          "missed_committed": 9,
+          "n": 10
+        },
+        "te->en": {
+          "raw": 2.185,
+          "committed": 3.0250000000000004,
+          "teacher": 2.3449999999999998,
+          "flips_raw": 57.0,
+          "flips_committed": 0.0,
+          "pre_switch_acc": 0.7022727272727272,
+          "premature": 0.0,
+          "missed_committed": 4,
+          "n": 10
+        }
+      }
+    }
+  },
+  "cpu_rtf_1thread": 0.0035890022913614905,
+  "n_params": 3060871
+}

@@ -53,7 +53,7 @@ def extract(manifests: dict[str, str]) -> int:
 
 
 @app.function(gpu="L4", volumes={DATA: vol}, timeout=3600, max_containers=10)
-def targets_shard(paths: list[str]) -> dict:
+def targets_shard(paths: list[str], window_s: float = 3.0, kind: str = "causal") -> dict:
     import numpy as np
     from slid.audio import load_wav
     from slid.targets import build_targets
@@ -62,7 +62,7 @@ def targets_shard(paths: list[str]) -> dict:
     t.batch_size = 32
     out = {}
     for p in paths:
-        frames, q = build_targets(t, load_wav(p), "causal", window_s=3.0)
+        frames, q = build_targets(t, load_wav(p), kind, window_s=window_s)
         out[p] = (frames.astype(np.int64), q)
     return out
 
@@ -93,28 +93,29 @@ def indic():
 
 
 @app.local_entrypoint()
-def main(shard_size: int = 100):
+def main(shard_size: int = 100, window_s: float = 3.0, suffix: str = "", targets_only: bool = False,
+         kind: str = "causal"):
     import torch
     root = Path(REPO)
     manifests = {f"{m}.jsonl": (root / f"data/manifests/{m}.jsonl").read_text()
                  for m in ("train", "train_mix", "eval", "switch")}
     print("wav files on volume:", extract.remote(manifests))
 
-    b_eval = bakeoff.spawn([])
-    b_train = bakeoff.spawn(["--manifest", "train", "--max-per-lang", "25", "--no-switch"])
+    futs = [] if targets_only else [bakeoff.spawn([]),
+                                    bakeoff.spawn(["--manifest", "train", "--max-per-lang", "25", "--no-switch"])]
 
     paths = [json.loads(l)["path"] for text in manifests.values() for l in text.splitlines()]
     shards = [paths[i: i + shard_size] for i in range(0, len(paths), shard_size)]
     targets = {}
-    for i, part in enumerate(targets_shard.map(shards)):
+    for i, part in enumerate(targets_shard.map(shards, kwargs={"window_s": window_s, "kind": kind})):
         targets.update({p: (torch.from_numpy(f), torch.from_numpy(q)) for p, (f, q) in part.items()})
         print(f"shard {i + 1}/{len(shards)} done, {len(targets)} clips")
     out = root / "data/targets/whisper-turbo"
     out.mkdir(parents=True, exist_ok=True)
-    torch.save(targets, out / "causal.pt")
-    print("saved", out / "causal.pt", len(targets))
+    torch.save(targets, out / f"{kind}{suffix}.pt")
+    print("saved", out / f"{kind}{suffix}.pt", len(targets))
 
-    for fut in (b_eval, b_train):
+    for fut in futs:
         for name, data in fut.get().items():
             (root / "results/teachers" / name).write_bytes(data)
             print("wrote results/teachers/" + name)
