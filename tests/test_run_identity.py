@@ -155,6 +155,20 @@ def test_complete_run_identity_contract_accepts_one_bound_run(tmp_path: Path) ->
     assert validated["corpus"]["audio_sha256_by_clip"].keys() == {"clip"}
 
 
+def test_main_capture_rejects_a_live_path_source_identity(tmp_path: Path) -> None:
+    contract = _valid_contract(tmp_path)
+
+    with pytest.raises(RuntimeError, match="pre-import executed-source snapshot"):
+        capture_run_dependency_snapshot(
+            records=contract["records"],
+            manifest_path=contract["manifest_path"],
+            target_cache_identity=contract["target_identity"],
+            target_metadata_path=contract["target_metadata_path"],
+            training=contract["training"],
+            require_executed_source=True,
+        )
+
+
 def test_launch_snapshot_is_immutable_and_recheck_detects_changed_audio(
     tmp_path: Path,
 ) -> None:

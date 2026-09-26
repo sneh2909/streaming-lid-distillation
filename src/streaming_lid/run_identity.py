@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import sys
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -45,11 +46,14 @@ from .data import (
 )
 
 
-RUN_IDENTITY_SCHEMA_VERSION = 2
-CHECKPOINT_SCHEMA_VERSION = 2
+RUN_IDENTITY_SCHEMA_VERSION = 3
+CHECKPOINT_SCHEMA_VERSION = 3
 PIPELINE_SOURCE_FILES = (
     "scripts/train.py",
     "scripts/eval.py",
+    "scripts/source_stage.py",
+    "scripts/teacher_targets.py",
+    "src/streaming_lid/__init__.py",
     "src/streaming_lid/audio.py",
     "src/streaming_lid/config.py",
     "src/streaming_lid/data.py",
@@ -71,7 +75,19 @@ def configured_model_kwargs() -> dict[str, Any]:
 
 
 def pipeline_source_identity() -> dict[str, Any]:
-    """Fingerprint source that defines training and evaluation semantics."""
+    """Identify staged executed source, with a live-path fallback for libraries."""
+    source_stage = sys.modules.get("source_stage")
+    if source_stage is not None:
+        executed_source_identity = getattr(
+            source_stage, "executed_source_identity", None
+        )
+        if callable(executed_source_identity):
+            try:
+                return executed_source_identity()
+            except RuntimeError as error:
+                if "source-stage child was not prepared" not in str(error):
+                    raise
+
     repository_root = Path(__file__).resolve().parents[2]
     files = {}
     for relative_path in PIPELINE_SOURCE_FILES:
@@ -81,9 +97,36 @@ def pipeline_source_identity() -> dict[str, Any]:
             "bytes": len(payload),
         }
     return {
+        "schema_version": 0,
+        "kind": "live_path_snapshot",
         "source_sha256": canonical_json_sha256(files),
         "files": files,
     }
+
+
+def _require_executed_source(pipeline: Mapping[str, Any]) -> None:
+    source = pipeline.get("source")
+    if not isinstance(source, Mapping) or source.get("kind") != "executed_source_snapshot":
+        raise RuntimeError(
+            "main pipeline requires a pre-import executed-source snapshot"
+        )
+    required = {
+        "snapshot_root_sha256",
+        "files",
+        "entrypoints",
+        "local_module_origins",
+        "environment",
+        "site_path_policy",
+    }
+    missing = sorted(required - set(source))
+    if missing:
+        raise RuntimeError(f"executed-source identity is incomplete: {missing}")
+    if source.get("source_sha256") != source.get("snapshot_root_sha256"):
+        raise RuntimeError("executed-source aliases disagree on the snapshot digest")
+    if not source.get("stage_verified_before_import") or not source.get(
+        "workspace_escape_checked"
+    ):
+        raise RuntimeError("executed-source pre-import/origin gates did not pass")
 
 
 def pipeline_configuration() -> dict[str, Any]:
@@ -246,10 +289,14 @@ def capture_run_dependency_snapshot(
     target_cache_identity: Mapping[str, Any],
     target_metadata_path: str | Path,
     training: Mapping[str, Any],
+    require_executed_source: bool = False,
 ) -> dict[str, Any]:
     """Capture every live dependency before audio/target tensors are preloaded."""
+    pipeline = pipeline_configuration()
+    if require_executed_source:
+        _require_executed_source(pipeline)
     return {
-        "pipeline": pipeline_configuration(),
+        "pipeline": pipeline,
         "corpus": corpus_identity(records, manifest_path),
         "target_cache": target_cache_run_identity(
             target_cache_identity, target_metadata_path
@@ -267,6 +314,7 @@ def assert_run_dependency_snapshot_unchanged(
     target_metadata_path: str | Path,
     training: Mapping[str, Any],
     stage: str,
+    require_executed_source: bool = False,
 ) -> None:
     """Fail publication if any source, data, target, or setting changed in-run."""
     current = capture_run_dependency_snapshot(
@@ -275,6 +323,7 @@ def assert_run_dependency_snapshot_unchanged(
         target_cache_identity=target_cache_identity,
         target_metadata_path=target_metadata_path,
         training=training,
+        require_executed_source=require_executed_source,
     )
     changed = [
         name
@@ -335,6 +384,7 @@ def validate_evaluation_run_contract(
     manifest_path: str | Path,
     target_cache_identity: Mapping[str, Any],
     target_metadata_path: str | Path,
+    require_executed_source: bool = False,
 ) -> dict[str, Any]:
     """Fail closed unless checkpoint, data, targets, config, and metrics are one run."""
     if checkpoint.get("checkpoint_schema_version") != CHECKPOINT_SCHEMA_VERSION:
@@ -363,6 +413,8 @@ def validate_evaluation_run_contract(
         raise ValueError("checkpoint model state differs from its run identity")
 
     current_pipeline = pipeline_configuration()
+    if require_executed_source:
+        _require_executed_source(current_pipeline)
     if run_identity.get("pipeline") != current_pipeline:
         raise ValueError(
             "evaluation pipeline configuration/source differs from the training run"

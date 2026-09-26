@@ -3,6 +3,22 @@
 
 from __future__ import annotations
 
+import sys
+
+_SOURCE_STAGE_CONTEXT = None
+if __name__ == "__main__":
+    from source_stage import (
+        is_staged_child,
+        launch_in_source_snapshot,
+        prepare_staged_child,
+    )
+
+    if not is_staged_child():
+        raise SystemExit(
+            launch_in_source_snapshot("scripts/eval.py", sys.argv[1:])
+        )
+    _SOURCE_STAGE_CONTEXT = prepare_staged_child("scripts/eval.py")
+
 import argparse
 import json
 import math
@@ -190,6 +206,11 @@ def benchmark_rtf(
 
 
 def main() -> None:
+    if _SOURCE_STAGE_CONTEXT is None:
+        raise RuntimeError(
+            "evaluation must be launched through scripts/eval.py so project imports "
+            "come from a verified source stage"
+        )
     args = parse_args()
     torch.set_num_threads(args.threads)
     checkpoint_sha256 = file_sha256(args.checkpoint)
@@ -210,7 +231,11 @@ def main() -> None:
         manifest_path=args.manifest,
         target_cache_identity=target_cache.identity,
         target_metadata_path=target_cache.targets_dir / "metadata.json",
+        require_executed_source=True,
     )
+    from source_stage import stage_verification_count
+
+    evaluation_source_stage_checks = stage_verification_count()
     pipeline = run_identity["pipeline"]
     language_codes = tuple(pipeline["language_codes"])
     frontend_config = pipeline["frontend"]
@@ -541,6 +566,10 @@ def main() -> None:
         "dependency_snapshot_unchanged_at_publication": train_metrics[
             "dependency_snapshot_unchanged_at_publication"
         ],
+        "executed_source_snapshot_validated": True,
+        "evaluation_source_stage_verified_before_import": True,
+        "evaluation_source_stage_verification_checks": evaluation_source_stage_checks,
+        "evaluation_child_entrypoint": "scripts/eval.py",
         "heldout_teacher_agreement_micro": heldout_teacher_agreement,
         "heldout_teacher_agreement_macro": heldout_teacher_agreement_macro,
         "heldout_student_label_accuracy_micro": heldout_student_label_accuracy,
@@ -601,6 +630,20 @@ def main() -> None:
         "pipeline_source_sha256": run_identity["pipeline"]["source"][
             "source_sha256"
         ],
+        "executed_source_snapshot_validated": True,
+        "source_snapshot_kind": run_identity["pipeline"]["source"][
+            "snapshot_kind"
+        ],
+        "source_stage_verified_before_import": train_metrics[
+            "source_stage_verified_before_import"
+        ],
+        "source_stage_verified_before_publication": train_metrics[
+            "source_stage_verified_before_publication"
+        ],
+        "source_stage_verification_checks": train_metrics[
+            "source_stage_verification_checks"
+        ],
+        "evaluation_source_stage_verification_checks": evaluation_source_stage_checks,
         "audio_files_sha256": run_identity["corpus"]["audio_files_sha256"],
         "target_metadata_sha256": run_identity["target_cache"][
             "metadata_sha256"

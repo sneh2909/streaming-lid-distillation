@@ -15,6 +15,7 @@ than the requested duration instead of padding them with silence.
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import importlib.metadata
 import json
@@ -109,6 +110,8 @@ PREFIX_SECONDS: tuple[float | str, ...] = (0.5, 1.0, 2.0, 4.0, "full")
 SELECTION_PREFIX_KEYS = ("1", "2", "full")
 STUDENT_BATCH_SIZE = 24
 TEACHER_BATCH_SIZE = 16
+TEACHER_4S_BATCH_SIZE = 8
+TEACHER_FULL_BATCH_SIZE = 2
 BOOTSTRAP_REPLICATES = 10_000
 BOOTSTRAP_SEED = 7
 EXTERNAL_LABEL_GAIN_GATE_PP = 2.0
@@ -662,13 +665,23 @@ def evaluate_teacher(
     started = time.perf_counter()
     for prefix in PREFIX_SECONDS:
         key = prefix_key(prefix)
+        if prefix == "full":
+            batch_size = TEACHER_FULL_BATCH_SIZE
+        elif float(prefix) >= 4.0:
+            batch_size = TEACHER_4S_BATCH_SIZE
+        else:
+            batch_size = TEACHER_BATCH_SIZE
+        print(
+            f"teacher scoring prefix={key} with batch_size={batch_size}",
+            flush=True,
+        )
         eligible = eligible_indices(examples, prefix)
         order = sorted(eligible, key=lambda index: int(examples[index]["num_samples"]))
         guessed: list[str | None] = [None] * len(examples)
         maximums: list[float | None] = [None] * len(examples)
         retained: list[float] = []
-        for start in range(0, len(order), TEACHER_BATCH_SIZE):
-            batch_indices = order[start : start + TEACHER_BATCH_SIZE]
+        for start in range(0, len(order), batch_size):
+            batch_indices = order[start : start + batch_size]
             waveforms = []
             lengths = []
             for index in batch_indices:
@@ -691,11 +704,13 @@ def evaluate_teacher(
                 guessed[batch_index] = LANGUAGE_CODES[winner]
                 maximums[batch_index] = float(posterior[winner])
                 retained.append(float(mass))
+            del padded, log_probabilities, selected_logs, conditional, masses
         predictions[key] = {
             "prediction": guessed,
             "max_probability": maximums,
         }
         retained_mass_by_prefix[key] = retained
+        gc.collect()
     wall_seconds = time.perf_counter() - started
     summary = summarize_predictions(examples, predictions)
     for key, masses in retained_mass_by_prefix.items():
@@ -1150,7 +1165,13 @@ def main() -> None:
         "selection_prefixes": list(SELECTION_PREFIX_KEYS),
         "short_clip_policy": "exclude from that prefix; never zero-pad",
         "student_batch_size": STUDENT_BATCH_SIZE,
-        "teacher_batch_size": TEACHER_BATCH_SIZE,
+        "teacher_batch_size_by_prefix": {
+            "0.5": TEACHER_BATCH_SIZE,
+            "1": TEACHER_BATCH_SIZE,
+            "2": TEACHER_BATCH_SIZE,
+            "4": TEACHER_4S_BATCH_SIZE,
+            "full": TEACHER_FULL_BATCH_SIZE,
+        },
         "external_validation": external_manifest["identity"],
         "external_label_gain_gate_pp": EXTERNAL_LABEL_GAIN_GATE_PP,
         "label_eligibility_tolerance_pp": 100 * LABEL_ELIGIBILITY_TOLERANCE,

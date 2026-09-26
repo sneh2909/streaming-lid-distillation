@@ -3,6 +3,22 @@
 
 from __future__ import annotations
 
+import sys
+
+_SOURCE_STAGE_CONTEXT = None
+if __name__ == "__main__":
+    from source_stage import (
+        is_staged_child,
+        launch_in_source_snapshot,
+        prepare_staged_child,
+    )
+
+    if not is_staged_child():
+        raise SystemExit(
+            launch_in_source_snapshot("scripts/train.py", sys.argv[1:])
+        )
+    _SOURCE_STAGE_CONTEXT = prepare_staged_child("scripts/train.py")
+
 import argparse
 import json
 import math
@@ -209,6 +225,11 @@ def build_training_contract(
 
 
 def main() -> None:
+    if _SOURCE_STAGE_CONTEXT is None:
+        raise RuntimeError(
+            "training must be launched through scripts/train.py so project imports "
+            "come from a verified source stage"
+        )
     args = parse_args()
     validate_training_args(args)
     torch.set_num_threads(args.threads)
@@ -229,6 +250,7 @@ def main() -> None:
         target_cache_identity=target_cache.identity,
         target_metadata_path=target_cache.targets_dir / "metadata.json",
         training=training_settings,
+        require_executed_source=True,
     )
     # The run identity names the complete target release, so validate every
     # target/audio file at launch even though optimization consumes only train.
@@ -241,6 +263,7 @@ def main() -> None:
         target_metadata_path=target_cache.targets_dir / "metadata.json",
         training=training_settings,
         stage="dataset preload",
+        require_executed_source=True,
     )
     dataset = DistillationDataset(
         args.manifest,
@@ -257,6 +280,7 @@ def main() -> None:
         target_metadata_path=target_cache.targets_dir / "metadata.json",
         training=training_settings,
         stage="optimization",
+        require_executed_source=True,
     )
     validate_full_batch_training_set(len(dataset), args.batch_size)
     generator = torch.Generator().manual_seed(args.seed)
@@ -421,6 +445,18 @@ def main() -> None:
         target_metadata_path=target_cache.targets_dir / "metadata.json",
         training=training_settings,
         stage="checkpoint publication",
+        require_executed_source=True,
+    )
+    from source_stage import stage_verification_count
+
+    training_evidence.update(
+        {
+            "executed_source_snapshot_validated": True,
+            "source_stage_verified_before_import": True,
+            "source_stage_verified_before_publication": True,
+            "source_stage_verification_checks": stage_verification_count(),
+            "training_child_entrypoint": "scripts/train.py",
+        }
     )
     run_identity = build_run_identity(
         dependency_snapshot=launch_dependency_snapshot,
