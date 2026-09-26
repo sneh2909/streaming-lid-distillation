@@ -8,6 +8,7 @@
   :root { --bg:#fcfcfb; --card:#ffffff; --ink:#1f1f1e; --muted:#6b6a64; --line:#e6e5df;
           --hi:#2a78d6; --en:#eb6834; --mix:#1baf7a; --rec:#d23b3b; }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin:0; background:var(--bg); color:var(--ink);
          font:16px/1.5 system-ui, -apple-system, "Segoe UI", "Noto Sans", "Noto Sans Devanagari", sans-serif; }
   .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 64px; }
@@ -55,7 +56,7 @@
 <body>
 <div class="wrap">
   <h1>Code-switch recorder</h1>
-  <p class="sub">Read each sentence aloud. Press <kbd>Space</kbd> (or <b>Next</b>) when you <b>start</b> the next sentence. Leave about a 1 s pause between sentences unless the script says otherwise. Files save to <span class="fname">data/user_recordings/</span>.</p>
+  <p class="sub">Read each sentence aloud. Press <kbd>Space</kbd> (or <b>Next</b>) when you <b>start</b> the next sentence. Leave about a 1 s pause between sentences unless the script says otherwise. After <b>Stop</b>, listen to the take, then <b>Save</b> or <b>Discard</b>. Nothing is written until you save. Files save to <span class="fname">data/user_recordings/</span>.</p>
   <div class="layout">
     <div class="list" id="list"></div>
     <div class="card">
@@ -66,11 +67,15 @@
       <div class="controls">
         <button class="b rec" id="btnRec">● Start recording</button>
         <button class="b" id="btnNext" disabled>Next sentence ▸</button>
-        <button class="b primary" id="btnStop" disabled>■ Stop &amp; save</button>
+        <button class="b primary" id="btnStop" disabled>■ Stop</button>
         <div class="meter" title="input level"><div id="lvl"></div></div>
       </div>
       <div class="status" id="status"></div>
       <audio id="player" controls hidden></audio>
+      <div class="controls" id="review" hidden>
+        <button class="b primary" id="btnSave">✓ Save this take</button>
+        <button class="b" id="btnDiscard">✗ Discard &amp; re-record</button>
+      </div>
     </div>
   </div>
 </div>
@@ -109,6 +114,7 @@ const SCRIPTS = [
 const fileName = s => `${s.id}_${s.sents.map(x => x[0]).join("-")}${s.nopause ? "_nopause" : ""}`;
 
 let cur = 0, idx = -1, ctx, src, proc, stream, chunks = [], t0 = 0, marks = [], recording = false, saved = new Set();
+let pending = null;   // {name, blob, meta} of the take being reviewed
 const $ = id => document.getElementById(id);
 
 function renderList() {
@@ -118,7 +124,7 @@ function renderList() {
     b.className = "item" + (i === cur ? " active" : "");
     b.innerHTML = `<div class="t">${s.id} · ${s.title}</div><div class="s">${s.sents.map(x => x[0]).join(" → ")}</div>` +
                   (saved.has(fileName(s)) ? `<div class="done">✓ saved</div>` : "");
-    b.onclick = () => { if (!recording) { cur = i; idx = -1; render(); } };
+    b.onclick = () => { if (!recording && !pending) { cur = i; idx = -1; render(); } };
     $("list").appendChild(b);
   });
 }
@@ -153,7 +159,7 @@ async function start() {
   src.connect(proc); proc.connect(ctx.destination);
   t0 = ctx.currentTime; recording = true; idx = 0; marks = [{ idx: 0, lang: SCRIPTS[cur].sents[0][0], t: 0 }];
   $("btnRec").disabled = true; $("btnNext").disabled = SCRIPTS[cur].sents.length < 2; $("btnStop").disabled = false;
-  $("player").hidden = true;
+  $("player").hidden = true; $("review").hidden = true; pending = null;
   $("status").innerHTML = `<span class="dot"></span>Recording… read sentence 1, press Space when you start the next one.`;
   render();
 }
@@ -187,19 +193,34 @@ async function stop() {
   const s = SCRIPTS[cur], name = fileName(s), blob = wav(all, rate);
   const meta = { name, sample_rate: rate, duration_s: +(n / rate).toFixed(3), script: s.id, nopause: !!s.nopause,
                  sentences: s.sents.map(x => ({ lang: x[0], text: x[1], roman: x[2] || null })), marks };
-  $("status").textContent = "Saving…";
+  pending = { name, blob, meta };
+  $("player").src = URL.createObjectURL(blob); $("player").hidden = false; $("review").hidden = false;
+  $("status").textContent = `Take ready (${meta.duration_s.toFixed(1)} s). Listen, then Save or Discard.`;
+  $("btnRec").disabled = true; $("btnNext").disabled = true; $("btnStop").disabled = true;
+  idx = -1; render();
+  $("player").play().catch(() => {});
+}
+async function savePending() {
+  if (!pending) return;
+  const { name, blob, meta } = pending;
+  $("btnSave").disabled = true; $("status").textContent = "Saving…";
   try {
     const r1 = await fetch(`/save_wav?name=${name}`, { method: "POST", body: blob });
     const r2 = await fetch(`/save_json?name=${name}`, { method: "POST", body: JSON.stringify(meta, null, 1) });
     if (!r1.ok || !r2.ok) throw new Error(await r1.text());
-    saved.add(name);
-    $("status").textContent = `Saved ${name}.wav (${meta.duration_s.toFixed(1)} s). Listen below; record again to overwrite.`;
+    saved.add(name); pending = null;
+    $("status").textContent = `Saved ${name}.wav (${meta.duration_s.toFixed(1)} s). Pick the next script, or record this one again to overwrite.`;
+    $("review").hidden = true; $("btnRec").disabled = false; $("btnRec").textContent = "● Record again"; render();
   } catch (e) { $("status").textContent = "Save failed: " + e.message; }
-  $("player").src = URL.createObjectURL(blob); $("player").hidden = false;
-  $("btnRec").disabled = false; $("btnNext").disabled = true; $("btnStop").disabled = true;
-  $("btnRec").textContent = "● Record again"; idx = -1; render();
+  $("btnSave").disabled = false;
+}
+function discardPending() {
+  pending = null; $("review").hidden = true; $("player").hidden = true; $("player").pause();
+  $("btnRec").disabled = false; $("btnRec").textContent = "● Start recording";
+  $("status").textContent = "Take discarded. Press Start recording to try again."; render();
 }
 $("btnRec").onclick = start; $("btnNext").onclick = next; $("btnStop").onclick = stop;
+$("btnSave").onclick = savePending; $("btnDiscard").onclick = discardPending;
 document.addEventListener("keydown", e => {
   if (e.code === "Space" && recording) { e.preventDefault(); next(); }
 });
