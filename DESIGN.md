@@ -23,6 +23,34 @@ flowchart LR
 
 The LID runs only on the caller's inbound track (never the bot's own TTS or echo), and only on VAD speech frames, so silence cannot move the decision.
 
+**Turn-level flow (the design we'd ship):**
+
+```
+audio ─► Silero VAD ─speech─► LID student (streaming, fresh state per turn)
+                │                  ├─ EARLY ROUTE: first commit (θ) → start streaming the turn to that ASR
+                │                  └─ (keeps updating while the caller speaks)
+                └─ end of turn (≥300 ms silence) ─► FINAL LID = student posterior at the endpoint
+                                                     ├─ final == early → transcript already done
+                                                     └─ final ≠ early  → re-decode the buffered turn
+                                                                          with the right ASR
+```
+
+- **The bot acts on a turn only at the endpoint.** So the number that decides what it *says* is the **final LID at the endpoint**. The early route only decides which ASR produces streaming partials; a wrong early route costs one re-decode of a ≤10 s turn (~100–300 ms), not a wrong reply.
+- **Mid-turn switch lag** then affects only partial transcripts. Between turns, the fresh stream per turn turns every switch into a first decision.
+- **Short turns** (< ~1 s, e.g. "haan", "ok") rarely reach θ: keep the previous turn's language.
+- **At the endpoint you can afford a bigger model once per turn** (Indic-Transcribe batched runs ~20 ms per clip on a GPU) as a verifier. That's optional; we have not measured it end to end.
+
+**Measured** with `scripts/turn_eval.py` (Silero VAD turns on the 90 switch clips → 200 turns, fresh student per turn, θ 0.8; `results/final/turn_eval.json`):
+
+| | value |
+|---|---|
+| **final LID at the endpoint** | **94.5%** of turns correct (94.7% on turns ≥ 1.5 s) |
+| early route issued | on 85% of turns, median **1.23 s** after the turn starts |
+| early route correct | 94% |
+| re-decode needed (early ≠ final) | 3% of turns |
+
+The old model (trained before the data fix) scored 72% final LID and routed early on only 52% of turns.
+
 ## 2. Commit and calibration policy
 
 The student emits a posterior every 80 ms frame. Raw argmax is jittery, so routing reads a small state machine (`slid/commit.py`, tested in `tests/test_commit.py`):
@@ -48,21 +76,23 @@ The procedure, on a labelled dev set of real calls:
 
 The student is trained on information-matched targets, so its early posteriors are honestly uncertain, and a probability threshold means what it says. A student distilled from future-informed targets can be *confident for the wrong reason*: our centred-target student names the language from pure silence 64% of the time (README §3). A threshold would happily pass that shortcut confidence, and on real phone lines it would not hold.
 
-**Measured** (final student, 320 ms chunks, 480 held-out clips, `scripts/commit_sweep.py` → `results/final/commit_sweep_final.json`; dwell 3 frames, θ_switch = θ_commit + 0.1):
+**Measured** (final student, 320 ms chunks, 480 held-out speech-only clips, `scripts/commit_sweep.py` → `results/final/commit_sweep_final.json`; dwell 3 frames, θ_switch = θ_commit + 0.1):
 
 | θ_commit | median first *correct* commit | wrong first commit | hi↔en committed switch lag | switches missed | flips/min |
 |---|---|---|---|---|---|
-| 0.5 | 1.54 s | 66% | 2.26 s | 23% | 2.8 |
-| 0.7 | 1.62 s | 14% | 2.26 s | 30% | 0.5 |
-| **0.8** | **1.78 s** | **7%** | 2.30 s | 40% | 0.3 |
-| 0.9 | 2.10 s | 4% | 2.38 s | 50% | 0.0 |
+| 0.5 | 0.98 s | 32% | 1.84 s | 30% | 2.0 |
+| 0.6 | 1.06 s | 19% | 1.90 s | 33% | 1.1 |
+| 0.7 | 1.23 s | 15% | 1.99 s | 38% | 0.4 |
+| **0.8** | **1.47 s** | **11%** | 2.24 s | 40% | 0.0 |
+| 0.9 | 1.78 s | 7.5% | 2.48 s | 40% | 0.0 |
 
 ![commit trade-off](results/figures/commit_tradeoff.png)
 
 **Reading the sweep:**
-- **The curve has a sharp knee.** From 0.6 to 0.7 the wrong-commit rate drops from 49% to 14% at no extra delay. From 0.7 to 0.8 it halves again for +160 ms. Above that, each further halving costs ~300 ms.
-- **Operating point: θ_commit = 0.8** (the evaluation tables in the README use 0.7).
-- **The cost of a high threshold is switch recall, not first-commit latency.** At 0.9, half the synthetic switches never reach the switch bar within 4 s. This is why the switch threshold and the first-commit threshold are separate knobs.
+- **Each 0.1 of θ costs ~0.1–0.3 s and roughly halves-to-thirds the wrong first commits.**
+- **Operating point: θ_commit = 0.8.** 1.5 s to a first route, 11% of first routes wrong.
+- **Why 11% wrong is acceptable here:** in the turn pipeline (§1) the first route only chooses which ASR streams partials. The **final LID at the endpoint is right on 95% of turns**, and only 3% of turns need a re-decode (`results/final/turn_eval.json`). A product that acts *before* the endpoint (barge-in, very early intent) should take θ = 0.9.
+- **The cost of a high threshold is switch recall, not first-commit latency.** This is why the switch threshold and the first-commit threshold are separate knobs.
 - **Tune on real calls, not synthetic data.** In production this sweep runs on a labelled dev set of real calls; the numbers here come from synthetic concatenations.
 
 ## 3. ASR routing and the cost of switching
@@ -105,18 +135,18 @@ The student is trained on information-matched targets, so its early posteriors a
   - **Also reported:** misses (never switched) and extra label changes per minute (flip-flops).
   - **On real data:** replace synthetic boundaries with word-level language tags from MUCS 2021 Hindi-English (script-based alignment), or DISPLACE language-diarization labels.
 
-**Measured** (Hindi→English, 10 held-out clips, 320 ms chunks, medians):
+**Measured** (Hindi→English, 10 held-out clips, 320 ms chunks, medians, no per-turn reset):
 
 | | switch lag |
 |---|---|
-| teacher target | 2.46 s |
-| student raw | 2.26 s |
-| committed | 2.83 s |
+| teacher target | 1.90 s |
+| student raw | 1.56 s |
+| committed | 2.28 s |
 
-- **Flip-flops:** 17.3/min raw vs **1.9/min committed**.
+- **Flip-flops:** 18.5/min raw vs **0/min committed**.
 - **Most of the lag is the 3 s teacher window,** not the student and not the policy. We tested both levers.
 
-**Lever 1: shorter teacher window W** (same ensemble teacher, streaming-v2 student, 320 ms chunks):
+**Lever 1: shorter teacher window W** (original data; same ensemble teacher, streaming-v2 student, 320 ms chunks):
 
 | W | teacher lag | student raw lag | committed lag | missed switches | premature switches | acc end (1-language) | telephony end |
 |---|---|---|---|---|---|---|---|
@@ -125,16 +155,19 @@ The student is trained on information-matched targets, so its early posteriors a
 
 Halving W halves the lag, but targets from 1.5 s of audio are noisy. The student learns to be jumpy: late-clip accuracy drops 16 points and premature switches rise to 9%. So W trades switch speed against stability, and **3 s is the better default**.
 
-**Lever 2: reset at turn boundaries.** This is where real switches mostly happen: a caller changes language between sentences, not mid-word. We re-built the switch clips with a 0.5 s pause between the two languages, detected the pause with a 20-line energy VAD (320 ms below −35 dB; found in 77/90 clips), and compared (final causal student, θ 0.8, `scripts/turn_reset.py`):
+**Lever 2: reset at turn boundaries.** This is where real switches mostly happen: a caller changes language between sentences, not mid-word. The cleaned switch clips are sentence + 0.25–0.6 s pause + sentence. We detected the pause with a 20-line energy VAD (320 ms below −35 dB; found in 82/90 clips) and compared (final student, θ 0.8, `scripts/turn_reset.py` → `results/final/turn_reset_final.json`):
 
 | at a detected pause | committed lag | missed | flips/min | premature |
 |---|---|---|---|---|
-| nothing | 2.57 s | 31/90 | 0.1 | 2% |
-| reset the commit smoothing | 2.57 s | 26/90 | 0.2 | 3% |
-| **reset smoothing + start a fresh student stream** (keep routing the old language until the new turn commits) | **2.08 s** | **21/90** | 0.2 | 2% |
+| nothing | 2.69 s | 29/90 | 0.1 | 0% |
+| reset the commit smoothing | 2.69 s | 29/90 | 0.2 | 0% |
+| **reset smoothing + start a fresh student stream** (keep routing the old language until the new turn commits) | **0.95 s** | **16/90** | 0.1 | 0% |
 
-A fresh stream per turn turns every switch into a **first decision**. So the switch lag becomes the first-commit time, which is exactly what the centred-target student is 2× faster at: with the same reset it reaches ~1.0–1.25 s. But that student also names the language from pure silence 64% of the time (README §3). Its speed is partly a recording-condition shortcut, so we did not ship it. Per-turn reset keeps a stable long-window student *within* a turn and gets fresh re-decisions *between* turns. That is what we would ship with the causal student. Getting the first-decision time below ~1.5 s honestly needs a teacher that is better on short audio, not a target that peeks.
-- **Weakest pair:** Hindi→Indian-English (7/10 missed), inherited from the teacher's Indian-English accuracy (.63).
+- **A fresh stream per turn turns every switch into a first decision,** so the switch lag becomes the first-commit time: under a second.
+- **The centred-target student** (original data) was even faster with the same reset (~1.0–1.25 s vs 2.08 s then), but it also names the language from pure silence 64% of the time. After the data fix the causal student gets below a second honestly.
+- **This is the turn-level design of §1.** It keeps a stable long-window student *within* a turn and gets fresh decisions *between* turns.
+
+- **Weakest pair:** Hindi→Indian-English within a clip (9/10 missed without reset), inherited from the teacher's Indian-English accuracy (.72).
 
 ## 5. Fallback and priors
 

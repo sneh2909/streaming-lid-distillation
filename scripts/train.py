@@ -34,6 +34,8 @@ def make_batch(clips, targets, max_s, tel_p=0.0, rng=None):
     With probability tel_p a clip is passed through the telephony simulation; its target is
     still the teacher's posterior on the CLEAN audio (the teacher gets privileged input)."""
     xs = [c[: int(max_s * SR)] for c in clips["wav"]]
+    if rng is not None:                                       # random gain: level must carry no information
+        xs = [(x * 10 ** (rng.uniform(-10, 10) / 20)).astype(np.float32) for x in xs]
     if tel_p > 0:
         xs = [telephony(x, snr_db=rng.uniform(10, 30), seed=rng.randrange(1 << 30))[: len(x)]
               if rng.random() < tel_p else x for x in xs]

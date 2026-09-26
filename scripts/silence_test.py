@@ -17,7 +17,7 @@ from slid.config import LANGS
 from slid.student import load_student
 
 ROOT = Path(__file__).resolve().parents[1]
-MODELS = ["final", "ensemble_centered", "indic-transcribe_causal", "indic-transcribe_prefix",
+MODELS = ["final", "final_v1data", "ensemble_centered", "indic-transcribe_causal", "indic-transcribe_prefix",
           "indic-transcribe_centered", "indic-transcribe_full", "indic-transcribe_hybrid"]
 
 
@@ -33,7 +33,7 @@ def main() -> None:
     items = [json.loads(l) for l in open(ROOT / "data/manifests/eval.jsonl", encoding="utf-8")]
     segs = []
     for it in items:
-        x = load_wav(it["path"])
+        x = load_wav(it.get("raw_path", it["path"]))       # raw clip: the clean copies are VAD-trimmed
         s = leading_silence_samples(x)
         if s >= int(0.45 * SR):
             segs.append((x[:s], LANGS.index(it["lang"])))

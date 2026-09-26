@@ -24,3 +24,7 @@ logs/
 checkpoints/*
 !checkpoints/final/
 !checkpoints/final/student.pt
+data/user_recordings/
+data/clean/
+data/manifests_v1/
+results/recordings/

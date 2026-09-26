@@ -1,24 +1,25 @@
 {
   "gap_s": 0.5,
   "policy": {
-    "switch_lag_median_s": 2.5650000000000004,
-    "missed": 26,
-    "flips_per_min": 0.1931098964326812,
-    "premature_rate": 0.03333333333333333
+    "switch_lag_median_s": 2.6942500000000003,
+    "missed": 29,
+    "flips_per_min": 0.20348516061112157,
+    "premature_rate": 0.0
   },
   "chunk": 4,
-  "pause_detected": 77,
+  "pause_detected": 82,
   "n": 90,
   "none": {
-    "switch_lag_median_s": 2.5650000000000004,
-    "missed": 31,
-    "flips_per_min": 0.1078826237054085,
-    "premature_rate": 0.022222222222222223
+    "switch_lag_median_s": 2.6942500000000003,
+    "missed": 29,
+    "flips_per_min": 0.09260402518829484,
+    "premature_rate": 0.0
   },
   "state": {
-    "switch_lag_median_s": 2.085,
-    "missed": 21,
-    "flips_per_min": 0.20584500615054957,
-    "premature_rate": 0.022222222222222223
-  }
+    "switch_lag_median_s": 0.9541874999999997,
+    "missed": 16,
+    "flips_per_min": 0.09365634365634365,
+    "premature_rate": 0.0
+  },
+  "ckpt": "checkpoints/final/student.pt"
 }

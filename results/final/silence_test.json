@@ -3,12 +3,16 @@
   "chance": 0.14285714285714285,
   "models": {
     "final": {
+      "acc_on_silence": 0.11864406779661017,
+      "mean_top_prob": 0.6306817531585693
+    },
+    "final_v1data": {
       "acc_on_silence": 0.09322033898305085,
       "mean_top_prob": 0.6486291289329529
     },
     "ensemble_centered": {
       "acc_on_silence": 0.6440677966101694,
-      "mean_top_prob": 0.665125846862793
+      "mean_top_prob": 0.6651257872581482
     },
     "indic-transcribe_causal": {
       "acc_on_silence": 0.13559322033898305,
@@ -20,7 +24,7 @@
     },
     "indic-transcribe_centered": {
       "acc_on_silence": 0.7288135593220338,
-      "mean_top_prob": 0.6791112422943115
+      "mean_top_prob": 0.6791113018989563
     },
     "indic-transcribe_full": {
       "acc_on_silence": 0.6186440677966102,
