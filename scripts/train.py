@@ -16,7 +16,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from slid.audio import SR, load_wav
+from slid.audio import SR, load_wav, telephony
 from slid.config import LANGS
 from slid.student import StreamingLID, frame_end_sample
 
@@ -28,10 +28,15 @@ def read_jsonl(name):
     return [json.loads(l) for l in open(ROOT / f"data/manifests/{name}.jsonl", encoding="utf-8")]
 
 
-def make_batch(clips, targets, max_s):
+def make_batch(clips, targets, max_s, tel_p=0.0, rng=None):
     """Clips are only truncated at the END: cutting the start would change what the
-    causal student has heard relative to what the prefix/causal teacher heard."""
+    causal student has heard relative to what the prefix/causal teacher heard.
+    With probability tel_p a clip is passed through the telephony simulation; its target is
+    still the teacher's posterior on the CLEAN audio (the teacher gets privileged input)."""
     xs = [c[: int(max_s * SR)] for c in clips["wav"]]
+    if tel_p > 0:
+        xs = [telephony(x, snr_db=rng.uniform(10, 30), seed=rng.randrange(1 << 30))[: len(x)]
+              if rng.random() < tel_p else x for x in xs]
     n = max(len(x) for x in xs)
     wav = torch.zeros(len(xs), n)
     for i, x in enumerate(xs):
@@ -84,6 +89,7 @@ def main() -> None:
     ap.add_argument("--max-s", type=float, default=10.0)
     ap.add_argument("--eval-every", type=int, default=250)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--tel-p", type=float, default=0.5, help="share of training clips run through telephony sim")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
@@ -96,7 +102,9 @@ def main() -> None:
     train_d, held_d = load(train), load(held)
 
     model = StreamingLID(len(LANGS)).to(args.device)
-    fit_cmvn(model, random.sample(train_d["wav"], 200), args.device)
+    cmvn_wavs = random.sample(train_d["wav"], 200)
+    cmvn_wavs = [telephony(w, seed=i)[: len(w)] if i % 2 and args.tel_p > 0 else w for i, w in enumerate(cmvn_wavs)]
+    fit_cmvn(model, cmvn_wavs, args.device)
     n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-2)
     warm = max(1, args.steps // 20)
@@ -111,7 +119,7 @@ def main() -> None:
         idx = random.sample(range(len(train)), args.batch)
         clips = {k: [v[i] for i in idx] for k, v in train_d.items()}
         chunk = random.choice(CHUNKS)
-        wav, rows, frames, q = make_batch(clips, targets, args.max_s)
+        wav, rows, frames, q = make_batch(clips, targets, args.max_s, args.tel_p, random)
         logits = model(wav.to(args.device), chunk)
         loss = kd_loss(logits, rows.to(args.device), frames.to(args.device), q.to(args.device))
         if not torch.isfinite(loss):
