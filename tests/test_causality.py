@@ -72,13 +72,70 @@ def test_growing_prefix_withholds_tail_and_emits_each_stable_logit_once() -> Non
 
     # Frames 20..23 are provisional after the first prefix and appear only
     # after real right context arrives with the continuation.
-    assert first.shape[1] == 24 - lookahead
-    assert second.shape[1] == 50 - lookahead - first.shape[1]
+    assert first.logits.shape[1] == 24 - lookahead
+    assert second.logits.shape[1] == 50 - lookahead - first.logits.shape[1]
+    assert (first.output_start_frame, first.output_stop_frame) == (0, 20)
+    assert (second.output_start_frame, second.output_stop_frame) == (20, 46)
+    assert first.latest_received_feature_frame == 23
+    assert second.latest_received_feature_frame == 49
     assert state.next_output_frame == 50 - lookahead
     assert state.feature_buffer is not None
     assert state.feature_buffer.shape[1] == model.receptive_field_frames - 1 + lookahead
     torch.testing.assert_close(
-        torch.cat((first, second), dim=1), stable_whole, rtol=1e-5, atol=1e-6
+        torch.cat((first.logits, second.logits), dim=1),
+        stable_whole,
+        rtol=1e-5,
+        atol=1e-6,
+    )
+
+
+def test_actual_emission_groups_keep_scheduler_phase_and_clocks() -> None:
+    torch.manual_seed(23)
+    model = CausalLIDStudent(
+        num_languages=3,
+        n_mels=8,
+        hidden_size=16,
+        lookahead_frames=4,
+        dilations=(1, 2, 4),
+    ).eval()
+    features = torch.randn(1, 798, 8)
+    ticks = iter(10.0 + index * 0.001 for index in range(50))
+
+    with torch.inference_mode():
+        trace = model.streaming_policy_trace(
+            features,
+            chunk_frames=16,
+            min_output_frame=21,
+            hop_length=160,
+            win_length=400,
+            sample_rate=16_000,
+            clock=lambda: next(ticks),
+        )
+        stable_whole = model(features)[:, :-model.lookahead_frames].squeeze(0)
+
+    records = trace.emission_records
+    assert len(records) == 50
+    assert [record["emitted_frames"] for record in records[:3]] == [12, 16, 16]
+    assert records[-1]["emitted_frames"] == 14
+    assert [record["output_start_frame"] for record in records] == [
+        0,
+        *[12 + 16 * index for index in range(49)],
+    ]
+    assert trace.stable_logits.shape[0] == 794
+    assert sum(record["aligned_frames"] for record in records) == 773
+    assert trace.chunk_posteriors.shape == (49, 3)
+    assert records[0]["policy_call_index"] is None
+    assert records[1]["policy_call_index"] == 0
+    assert records[1]["aligned_frames"] == 7
+    assert records[1]["latest_received_feature_frame"] == 31
+    assert records[1]["latest_audio_sample_exclusive"] == 5_360
+    assert trace.chunk_audio_available_seconds[0] == 0.335
+    assert abs(records[1]["emitted_monotonic_offset_seconds"] - 0.001) < 1e-12
+    torch.testing.assert_close(
+        trace.stable_logits,
+        stable_whole,
+        rtol=1e-5,
+        atol=1e-6,
     )
 
 

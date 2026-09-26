@@ -72,7 +72,12 @@ def chunk_availability_times(
     win_length: int,
     sample_rate: int,
 ) -> np.ndarray:
-    """Wall-clock audio time at which each chunk's logits become available."""
+    """Reconstruct the historical output-aligned schedule.
+
+    The main evaluator no longer uses this helper: output-aligned reslicing
+    loses the phase of the actual streaming calls. It remains only so frozen
+    experiment drivers can identify their historical schedule explicitly.
+    """
     times = np.empty(num_frames, dtype=np.float32)
     for start in range(0, num_frames, chunk_frames):
         n_emit = min(chunk_frames, num_frames - start)
@@ -371,27 +376,26 @@ def main() -> None:
     switch_waveform = load_audio(resolve_audio_path(switch_item, args.manifest))
     with torch.inference_mode():
         switch_features = frontend(switch_waveform)
-        switch_logits = model.streaming_forward(
-            switch_features, chunk_frames=chunk_frames
-        ).squeeze(0)
-        switch_probabilities = torch.softmax(switch_logits, dim=-1).numpy()
+        switch_trace = model.streaming_policy_trace(
+            switch_features,
+            chunk_frames=chunk_frames,
+            min_output_frame=label_delay_frames,
+            hop_length=int(frontend_config["hop_length"]),
+            win_length=int(frontend_config["win_length"]),
+            sample_rate=int(frontend_config["sample_rate"]),
+        )
+        switch_logits = switch_trace.stable_logits
+        switch_probabilities = switch_trace.stable_probabilities
     teacher_switch = target_cache.load(
         switch_item,
         "teacher_probs",
         expected_frames=len(switch_features[0]),
     )
-    availability = chunk_availability_times(
-        len(switch_probabilities),
-        chunk_frames=chunk_frames,
-        lookahead_frames=lookahead_frames,
-        hop_length=int(frontend_config["hop_length"]),
-        win_length=int(frontend_config["win_length"]),
-        sample_rate=int(frontend_config["sample_rate"]),
-    )
     # Frames before D have no corresponding teacher target and are never trained.
-    student_chunks, student_chunk_times = chunk_posteriors(
-        switch_probabilities, availability, min_frame=label_delay_frames
-    )
+    # Each remaining average is exactly one streaming_step emission group; it is
+    # never reconstructed by slicing the concatenated stable output tensor.
+    student_chunks = switch_trace.chunk_posteriors
+    student_chunk_times = switch_trace.chunk_audio_available_seconds
     student_smoothed = smooth_posteriors(student_chunks, new_weight=0.30)
     detected_seconds, detector_config = detect_hi_to_en_switch(
         student_chunks,
@@ -405,6 +409,51 @@ def main() -> None:
         if detected_seconds is None
         else 1_000 * (detected_seconds - true_switch_seconds)
     )
+    legacy_availability = chunk_availability_times(
+        len(switch_probabilities),
+        chunk_frames=chunk_frames,
+        lookahead_frames=lookahead_frames,
+        hop_length=int(frontend_config["hop_length"]),
+        win_length=int(frontend_config["win_length"]),
+        sample_rate=int(frontend_config["sample_rate"]),
+    )
+    legacy_chunks, legacy_chunk_times = chunk_posteriors(
+        switch_probabilities,
+        legacy_availability,
+        min_frame=label_delay_frames,
+    )
+    if legacy_chunks.shape != student_chunks.shape:
+        raise AssertionError("legacy and actual policy group counts differ")
+    legacy_group_l1 = np.abs(student_chunks - legacy_chunks).sum(axis=1)
+    switch_emission_schedule = {
+        "grouping": "actual_streaming_step_calls",
+        "input_feature_frames": int(switch_features.shape[1]),
+        "stable_output_frames": int(switch_logits.shape[0]),
+        "aligned_output_frames": int(
+            sum(record["aligned_frames"] for record in switch_trace.emission_records)
+        ),
+        "streaming_calls": len(switch_trace.emission_records),
+        "policy_calls": len(student_chunks),
+        "first_policy_audio_available_seconds": float(student_chunk_times[0]),
+        "legacy_reconstructed_first_policy_audio_available_seconds": float(
+            legacy_chunk_times[0]
+        ),
+        "legacy_reconstructed_group_posterior_l1_mean": float(
+            legacy_group_l1.mean()
+        ),
+        "legacy_reconstructed_group_posterior_l1_max": float(
+            legacy_group_l1.max()
+        ),
+        "audio_clock": "latest_received_feature_end_sample_exclusive",
+        "monotonic_clock": "offline_feature_replay_call_completion",
+        "incremental_frontend_included": False,
+        "calls": list(switch_trace.emission_records),
+    }
+    switch_emission_schedule_summary = {
+        key: value
+        for key, value in switch_emission_schedule.items()
+        if key != "calls"
+    }
 
     args.results_dir.mkdir(parents=True, exist_ok=True)
     target_time = (
@@ -474,6 +523,8 @@ def main() -> None:
         and math.isfinite(heldout_teacher_label_accuracy)
         and math.isfinite(cpu_rtf)
         and np.isfinite(switch_probabilities).all()
+        and np.isfinite(student_chunks).all()
+        and np.isfinite(student_chunk_times).all()
         and np.isfinite(teacher_switch).all()
     )
     eval_metrics = {
@@ -527,6 +578,7 @@ def main() -> None:
         "switch_detected_seconds": detected_seconds,
         "true_switch_seconds": true_switch_seconds,
         "switch_lag_ms": switch_lag_ms,
+        "switch_emission_schedule": switch_emission_schedule,
         "detector": detector_config,
         "cpu_rtf": cpu_rtf,
         "cpu_rtf_runs": benchmark_rtfs,
@@ -534,6 +586,7 @@ def main() -> None:
         "chunk_equivalence_checked": True,
         "provisional_tail_withheld": True,
         "withheld_tail_frames": model.lookahead_frames,
+        "actual_streaming_emission_groups_preserved": True,
         "nan_free": bool(finite_eval),
     }
     (args.results_dir / "eval_metrics.json").write_text(
@@ -616,6 +669,8 @@ def main() -> None:
         "algorithmic_latency_ms": streaming_config["algorithmic_latency_ms"],
         "provisional_tail_withheld": True,
         "withheld_tail_frames": model.lookahead_frames,
+        "actual_streaming_emission_groups_preserved": True,
+        "switch_emission_schedule": switch_emission_schedule_summary,
         "cpu_rtf": cpu_rtf,
         "losses": train_metrics["losses"],
         "optimizer_steps": train_metrics["optimizer_steps"],

@@ -1,5 +1,5 @@
 {
-  "run_id": "lidrun-f2d2fbcd036e60616cf7ff39569347e9c5655f8763ce0982764068c6f545f2c3",
+  "run_id": "lidrun-ee92beb26f08a819782219d413112227c88d6e1ec370c854a1536a4a41ece4a5",
   "run_identity": {
     "schema_version": 2,
     "pipeline": {
@@ -66,15 +66,15 @@
         "provisional_tail_withheld": true
       },
       "source": {
-        "source_sha256": "d52b65911bb28a5ef9a9d8938f12024f6ac7e718097986c3d257707c01cb6374",
+        "source_sha256": "3827bebf1d58dd52df2ccb6a732a807a2d9bd3d1a50763758e9af227a9f698a7",
         "files": {
           "scripts/train.py": {
             "sha256": "efbd805dbd85729d8bec4e3c1fdc7d31899ae811cf0dd0f671ce21339968fe87",
             "bytes": 17256
           },
           "scripts/eval.py": {
-            "sha256": "491f801c01ea8d2bae6af8638539c11d0c960cc441bbaf7ba35abd1ddd7207de",
-            "bytes": 27346
+            "sha256": "c62d3f50538e62d4e193559ea145c40596a91999a6d3af2dd369466d96fe8763",
+            "bytes": 29959
           },
           "src/streaming_lid/audio.py": {
             "sha256": "4cce5b81f784526f92d61fce0dbd65f3a3a90069134717da4f7d54a2736260cd",
@@ -93,8 +93,8 @@
             "bytes": 3066
           },
           "src/streaming_lid/model.py": {
-            "sha256": "6e11216a8b7be9bbbd2324c06759771d4e26ed29bf95c89612bf1ad9e01d6e9b",
-            "bytes": 8049
+            "sha256": "bf0b73f22cc5584dd41228ba37cf3ab101447fdae1d48b17bc0ab3b10f9b2e68",
+            "bytes": 16837
           },
           "src/streaming_lid/run_identity.py": {
             "sha256": "2a9721992abe8faea4a321110aaef7b01513aec03a699ec8a6fa7c277c591139",
@@ -231,7 +231,7 @@
     },
     "model_state_sha256": "b96a856c4d77f0a70be10421fa362d838be4b7c047596fb1049b977629b42273"
   },
-  "checkpoint_sha256": "9ed06da143ff086c621b41c1bc936fd588c415e9c86b6171874d65d309f729a8",
+  "checkpoint_sha256": "1e677e1c805073f5475264939e2c9f5d39211c7e0ea3d75d0c896ba13e86ae3f",
   "optimizer_steps": 1600,
   "requested_optimizer_steps": 1600,
   "successful_optimizer_steps": 1600,
