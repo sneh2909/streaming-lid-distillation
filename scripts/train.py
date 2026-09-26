@@ -42,9 +42,9 @@ from streaming_lid.config import (
 from streaming_lid.data import (
     DistillationDataset,
     TeacherTargetCache,
+    capture_manifest_snapshot,
     collate_distillation_batch,
     file_sha256,
-    read_manifest,
     require_speaker_disjoint,
 )
 from streaming_lid.loss import delayed_distillation_loss
@@ -234,9 +234,10 @@ def main() -> None:
     validate_training_args(args)
     torch.set_num_threads(args.threads)
     seed_everything(args.seed)
-    records = read_manifest(args.manifest)
+    manifest_snapshot = capture_manifest_snapshot(args.manifest)
+    records = manifest_snapshot.records_copy()
     speaker_audit = require_speaker_disjoint(records)
-    target_cache = TeacherTargetCache(args.manifest, args.targets_dir)
+    target_cache = TeacherTargetCache(manifest_snapshot, args.targets_dir)
     training_settings = training_configuration(
         steps=args.steps,
         batch_size=args.batch_size,
@@ -245,8 +246,7 @@ def main() -> None:
         seed=args.seed,
     )
     launch_dependency_snapshot = capture_run_dependency_snapshot(
-        records=records,
-        manifest_path=args.manifest,
+        manifest_snapshot=manifest_snapshot,
         target_cache_identity=target_cache.identity,
         target_metadata_path=target_cache.targets_dir / "metadata.json",
         training=training_settings,
@@ -257,8 +257,7 @@ def main() -> None:
     target_cache.validate_all()
     assert_run_dependency_snapshot_unchanged(
         launch_dependency_snapshot,
-        records=records,
-        manifest_path=args.manifest,
+        manifest_snapshot=manifest_snapshot,
         target_cache_identity=target_cache.identity,
         target_metadata_path=target_cache.targets_dir / "metadata.json",
         training=training_settings,
@@ -266,16 +265,14 @@ def main() -> None:
         require_executed_source=True,
     )
     dataset = DistillationDataset(
-        args.manifest,
+        manifest_snapshot,
         args.targets_dir,
         splits=("train",),
         target_cache=target_cache,
-        records=records,
     )
     assert_run_dependency_snapshot_unchanged(
         launch_dependency_snapshot,
-        records=records,
-        manifest_path=args.manifest,
+        manifest_snapshot=manifest_snapshot,
         target_cache_identity=target_cache.identity,
         target_metadata_path=target_cache.targets_dir / "metadata.json",
         training=training_settings,
@@ -430,6 +427,10 @@ def main() -> None:
             "real_audio_optimizer_step"
         ],
         "launch_dependency_snapshot_captured_before_preload": True,
+        "manifest_snapshot_captured_once_before_consumers": True,
+        "manifest_bindings_equal": launch_dependency_snapshot[
+            "manifest_bindings_equal"
+        ],
         "dependency_snapshot_validation_checks": 3,
         "dependency_snapshot_unchanged_at_publication": True,
     }
@@ -439,8 +440,7 @@ def main() -> None:
     target_cache.validate_all()
     assert_run_dependency_snapshot_unchanged(
         launch_dependency_snapshot,
-        records=records,
-        manifest_path=args.manifest,
+        manifest_snapshot=manifest_snapshot,
         target_cache_identity=target_cache.identity,
         target_metadata_path=target_cache.targets_dir / "metadata.json",
         training=training_settings,

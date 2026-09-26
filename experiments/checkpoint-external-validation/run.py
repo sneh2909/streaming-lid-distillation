@@ -15,6 +15,7 @@ than the requested duration instead of padding them with silence.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import gc
 import hashlib
 import importlib.metadata
@@ -107,6 +108,7 @@ SAMPLE_PER_LANGUAGE = 100
 SELECTION_ALGORITHM = "lowest_sha256(revision\\0config\\0row_idx\\0id\\0basename)"
 
 PREFIX_SECONDS: tuple[float | str, ...] = (0.5, 1.0, 2.0, 4.0, "full")
+TEACHER_PREFIX_SECONDS: tuple[float | str, ...] = ("full", 4.0, 2.0, 1.0, 0.5)
 SELECTION_PREFIX_KEYS = ("1", "2", "full")
 STUDENT_BATCH_SIZE = 24
 TEACHER_BATCH_SIZE = 16
@@ -568,9 +570,12 @@ def classification_summary(
     }
     for truth, guess in zip(expected, predicted, strict=True):
         confusion[truth][guess] += 1
-    for language in LANGUAGE_CODES:
-        if not support[language]:
-            raise ValueError(f"classification slice has no {language} examples")
+    supported_languages = [
+        language for language in LANGUAGE_CODES if support[language]
+    ]
+    if not supported_languages:
+        raise ValueError("classification slice has no supported language")
+    for language in supported_languages:
         true_positive = confusion[language][language]
         false_negative = support[language] - true_positive
         false_positive = sum(
@@ -589,6 +594,10 @@ def classification_summary(
         "language_macro_accuracy": float(np.mean(list(recalls.values()))),
         "macro_f1": float(np.mean(list(f1s.values()))),
         "minimum_language_recall": min(recalls.values()),
+        "languages_with_support": supported_languages,
+        "languages_without_support": [
+            language for language in LANGUAGE_CODES if not support[language]
+        ],
         "per_language_recall": recalls,
         "per_language_f1": f1s,
         "support_per_language": {language: support[language] for language in LANGUAGE_CODES},
@@ -663,7 +672,7 @@ def evaluate_teacher(
     predictions: dict[str, Mapping[str, Any]] = {}
     retained_mass_by_prefix: dict[str, list[float]] = {}
     started = time.perf_counter()
-    for prefix in PREFIX_SECONDS:
+    for prefix in TEACHER_PREFIX_SECONDS:
         key = prefix_key(prefix)
         if prefix == "full":
             batch_size = TEACHER_FULL_BATCH_SIZE
@@ -676,7 +685,14 @@ def evaluate_teacher(
             flush=True,
         )
         eligible = eligible_indices(examples, prefix)
-        order = sorted(eligible, key=lambda index: int(examples[index]["num_samples"]))
+        # Longest-first allocates the maximum workspace once.  Ascending batches
+        # caused glibc/PyTorch to retain successive allocation sizes and exceeded
+        # this host's memory even though an isolated 35.28 s call peaks near 1 GB.
+        order = sorted(
+            eligible,
+            key=lambda index: int(examples[index]["num_samples"]),
+            reverse=True,
+        )
         guessed: list[str | None] = [None] * len(examples)
         maximums: list[float | None] = [None] * len(examples)
         retained: list[float] = []
@@ -711,6 +727,10 @@ def evaluate_teacher(
         }
         retained_mass_by_prefix[key] = retained
         gc.collect()
+        try:
+            ctypes.CDLL(None).malloc_trim(0)
+        except (AttributeError, OSError):
+            pass
     wall_seconds = time.perf_counter() - started
     summary = summarize_predictions(examples, predictions)
     for key, masses in retained_mass_by_prefix.items():
@@ -726,6 +746,74 @@ def evaluate_teacher(
         "artifact_sha256": TEACHER_ARTIFACT_SHA256,
         "wall_seconds": wall_seconds,
         "conditional_prediction_space": "selected_7way_conditional_T1",
+    }
+
+
+def teacher_cache_identity(external_manifest: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "external_manifest_sha256": external_manifest["manifest_sha256"],
+        "teacher_model_id": TEACHER_NAME,
+        "teacher_revision": TEACHER_REVISION,
+        "teacher_artifact_sha256": TEACHER_ARTIFACT_SHA256,
+        "prefix_seconds": ["full", 4, 2, 1, 0.5],
+        "short_clip_policy": "exclude from that prefix; never zero-pad",
+        "prediction_space": "selected_7way_conditional_T1",
+    }
+
+
+def cached_or_fresh_teacher(
+    examples: Sequence[Mapping[str, Any]],
+    external_manifest: Mapping[str, Any],
+    data_dir: Path,
+    model_dir: Path,
+) -> tuple[
+    dict[str, Any],
+    dict[str, Mapping[str, Any]],
+    dict[str, Any],
+    dict[str, Any],
+]:
+    cache_path = data_dir / "teacher-cache.json"
+    expected_identity = teacher_cache_identity(external_manifest)
+    if cache_path.is_file():
+        cache = json.loads(cache_path.read_text(encoding="utf-8"))
+        payload = {key: value for key, value in cache.items() if key != "cache_sha256"}
+        if canonical_sha256(payload) != cache["cache_sha256"]:
+            raise ValueError("teacher cache canonical hash differs")
+        if cache["identity"] != expected_identity:
+            raise ValueError("teacher cache identity differs")
+        predictions = cache["predictions"]
+        for prefix in PREFIX_SECONDS:
+            key = prefix_key(prefix)
+            if len(predictions[key]["prediction"]) != len(examples):
+                raise ValueError(f"teacher cache prediction count differs at {key}")
+            if len(predictions[key]["max_probability"]) != len(examples):
+                raise ValueError(f"teacher cache probability count differs at {key}")
+        print(f"reusing identity-bound teacher cache {cache_path}", flush=True)
+        return (
+            cache["summary"],
+            predictions,
+            cache["teacher_identity"],
+            {
+                "reused": True,
+                "path": str(cache_path),
+                "cache_sha256": cache["cache_sha256"],
+            },
+        )
+
+    summary, predictions, identity = evaluate_teacher(examples, model_dir)
+    payload = {
+        "identity": expected_identity,
+        "summary": summary,
+        "predictions": predictions,
+        "teacher_identity": identity,
+    }
+    cache = {**payload, "cache_sha256": canonical_sha256(payload)}
+    atomic_json_write(cache, cache_path)
+    return summary, predictions, identity, {
+        "reused": False,
+        "path": str(cache_path),
+        "cache_sha256": cache["cache_sha256"],
     }
 
 
@@ -1090,8 +1178,15 @@ def main() -> None:
         flush=True,
     )
 
-    teacher_summary, teacher_predictions, teacher_identity = evaluate_teacher(
+    (
+        teacher_summary,
+        teacher_predictions,
+        teacher_identity,
+        teacher_cache_audit,
+    ) = cached_or_fresh_teacher(
         external_examples,
+        external_manifest,
+        args.data_dir,
         REPO_ROOT / ".cache/models/lang-id-voxlingua107-ecapa-external-validation",
     )
     print(
@@ -1236,6 +1331,7 @@ def main() -> None:
         },
         "teacher": {
             "identity": teacher_identity,
+            "cache_audit": teacher_cache_audit,
             "external_validation": teacher_summary,
             "predictions": compact_predictions(
                 external_examples, teacher_predictions
@@ -1256,7 +1352,10 @@ def main() -> None:
         },
         "selection": selection,
         "timing": {
-            "teacher_inference_wall_seconds": teacher_identity["wall_seconds"],
+            "teacher_inference_wall_seconds_when_computed": teacher_identity[
+                "wall_seconds"
+            ],
+            "teacher_cache_reused": teacher_cache_audit["reused"],
             "feature_extraction_wall_seconds": feature_wall_seconds,
             "student_shortlist_scoring_wall_seconds": student_scoring_wall_seconds,
         },

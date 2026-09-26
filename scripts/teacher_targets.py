@@ -36,12 +36,11 @@ from streaming_lid.data import (
     TARGET_CACHE_SCHEMA_VERSION,
     TeacherTargetCache,
     canonical_json_sha256,
+    capture_manifest_snapshot,
     expand_local_posteriors,
     file_sha256,
     local_target_availability_ledger,
     manifest_record_sha256,
-    manifest_records_sha256,
-    read_manifest,
     require_speaker_disjoint,
     resolve_audio_path,
     target_cache_configuration,
@@ -174,16 +173,17 @@ def main() -> None:
     teacher.eval()
     teacher.hparams.label_encoder.ignore_len()
     selected_indices = label_indices(teacher)
-    records = read_manifest(args.manifest)
+    manifest_snapshot = capture_manifest_snapshot(args.manifest)
+    records = manifest_snapshot.records_copy()
     speaker_audit = require_speaker_disjoint(records)
     target_configuration = target_cache_configuration()
     target_configuration_hash = canonical_json_sha256(target_configuration)
     generator_identity = target_configuration["target_generator"]
-    manifest_hash = manifest_records_sha256(records)
+    manifest_identity = manifest_snapshot.identity()
     summary_records = []
 
     for clip_number, item in enumerate(records, start=1):
-        waveform = load_audio(resolve_audio_path(item, args.manifest))
+        waveform = load_audio(resolve_audio_path(item, manifest_snapshot))
         num_frames = feature_frame_count(len(waveform))
         target_kind = target_kind_for_item(item)
         if target_kind == "local_windows":
@@ -248,7 +248,7 @@ def main() -> None:
             soft = np.repeat(soft_anchors.astype(np.float32), num_frames, axis=0)
         in_set_mass = torch.cat(in_set_masses).numpy()
         output_path = args.output_dir / f"{item['id']}.npz"
-        audio_path = resolve_audio_path(item, args.manifest)
+        audio_path = resolve_audio_path(item, manifest_snapshot)
         audio_hash = file_sha256(audio_path)
         record_hash = manifest_record_sha256(item)
         target_payload = {
@@ -265,6 +265,9 @@ def main() -> None:
             "num_frames": np.asarray(num_frames),
             "audio_sha256": np.asarray(audio_hash),
             "manifest_record_sha256": np.asarray(record_hash),
+            "manifest_file_sha256": np.asarray(
+                manifest_identity["manifest_file_sha256"]
+            ),
             "target_configuration_sha256": np.asarray(target_configuration_hash),
             "teacher_name": np.asarray(TEACHER_NAME),
             "teacher_revision": np.asarray(TEACHER_REVISION),
@@ -363,7 +366,11 @@ def main() -> None:
         "dense_target_validation_atol": DENSE_TARGET_VALIDATION_ATOL,
         "target_configuration": target_configuration,
         "target_configuration_sha256": target_configuration_hash,
-        "manifest_records_sha256": manifest_hash,
+        "manifest_snapshot": manifest_identity,
+        "manifest_file_sha256": manifest_identity["manifest_file_sha256"],
+        "manifest_records_sha256": manifest_identity[
+            "manifest_records_sha256"
+        ],
         "target_files_sha256": canonical_json_sha256(
             {
                 record["id"]: record["target_file_sha256"]
@@ -375,7 +382,9 @@ def main() -> None:
     (args.output_dir / "metadata.json").write_text(
         json.dumps(metadata, indent=2) + "\n"
     )
-    cache_audit = TeacherTargetCache(args.manifest, args.output_dir).validate_all()
+    cache_audit = TeacherTargetCache(
+        manifest_snapshot, args.output_dir
+    ).validate_all()
     mean_accuracy = np.mean(
         [record["anchor_label_accuracy"] for record in summary_records]
     )

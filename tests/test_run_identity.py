@@ -6,6 +6,7 @@ import pytest
 import torch
 
 from streaming_lid.config import LANGUAGE_CODES, TEACHER_NAME
+from streaming_lid.data import capture_manifest_snapshot
 from streaming_lid.run_identity import (
     CHECKPOINT_SCHEMA_VERSION,
     assert_run_dependency_snapshot_unchanged,
@@ -30,13 +31,16 @@ def _valid_contract(tmp_path: Path) -> dict:
     }
     manifest_path = tmp_path / "manifest.jsonl"
     manifest_path.write_text(json.dumps(item) + "\n", encoding="utf-8")
+    manifest_snapshot = capture_manifest_snapshot(manifest_path)
     audio_path = tmp_path / "clip.wav"
     audio_path.write_bytes(b"audio-one")
     metadata_path = tmp_path / "metadata.json"
     target_identity = {
-        "schema_version": 2,
+        "schema_version": 5,
         "target_configuration_sha256": "configuration-one",
-        "manifest_records_sha256": "manifest-one",
+        "manifest_snapshot": manifest_snapshot.identity(),
+        "manifest_file_sha256": manifest_snapshot.manifest_file_sha256,
+        "manifest_records_sha256": manifest_snapshot.manifest_records_sha256,
         "target_files_sha256": "targets-one",
         "teacher_revision": "teacher-revision-one",
         "teacher_artifact_sha256": "teacher-artifact-one",
@@ -47,6 +51,8 @@ def _valid_contract(tmp_path: Path) -> dict:
         "target_configuration_sha256": target_identity[
             "target_configuration_sha256"
         ],
+        "manifest_snapshot": target_identity["manifest_snapshot"],
+        "manifest_file_sha256": target_identity["manifest_file_sha256"],
         "manifest_records_sha256": target_identity["manifest_records_sha256"],
         "target_files_sha256": target_identity["target_files_sha256"],
         "teacher_identity": {
@@ -69,8 +75,7 @@ def _valid_contract(tmp_path: Path) -> dict:
         seed=7,
     )
     dependency_snapshot = capture_run_dependency_snapshot(
-        records=[item],
-        manifest_path=manifest_path,
+        manifest_snapshot=manifest_snapshot,
         target_cache_identity=target_identity,
         target_metadata_path=metadata_path,
         training=training,
@@ -124,6 +129,7 @@ def _valid_contract(tmp_path: Path) -> dict:
         "train_metrics": train_metrics,
         "records": [item],
         "manifest_path": manifest_path,
+        "manifest_snapshot": manifest_snapshot,
         "target_cache_identity": target_identity,
         "target_metadata_path": metadata_path,
         "target_metadata": target_metadata,
@@ -139,8 +145,7 @@ def _validate(contract: dict) -> dict:
         checkpoint=contract["checkpoint"],
         checkpoint_sha256=contract["checkpoint_sha256"],
         train_metrics=contract["train_metrics"],
-        records=contract["records"],
-        manifest_path=contract["manifest_path"],
+        manifest_snapshot=contract["manifest_snapshot"],
         target_cache_identity=contract["target_cache_identity"],
         target_metadata_path=contract["target_metadata_path"],
     )
@@ -155,13 +160,76 @@ def test_complete_run_identity_contract_accepts_one_bound_run(tmp_path: Path) ->
     assert validated["corpus"]["audio_sha256_by_clip"].keys() == {"clip"}
 
 
+def test_capture_rejects_an_a_b_a_manifest_generation_mix(tmp_path: Path) -> None:
+    contract = _valid_contract(tmp_path)
+    snapshot_a = contract["manifest_snapshot"]
+    item_b = {**contract["records"][0], "text": "release B"}
+    contract["manifest_path"].write_text(
+        json.dumps(item_b) + "\n", encoding="utf-8"
+    )
+    snapshot_b = capture_manifest_snapshot(contract["manifest_path"])
+    target_identity_b = {
+        **contract["target_identity"],
+        "manifest_snapshot": snapshot_b.identity(),
+        "manifest_file_sha256": snapshot_b.manifest_file_sha256,
+        "manifest_records_sha256": snapshot_b.manifest_records_sha256,
+    }
+    metadata_b = {
+        **contract["target_metadata"],
+        "manifest_snapshot": snapshot_b.identity(),
+        "manifest_file_sha256": snapshot_b.manifest_file_sha256,
+        "manifest_records_sha256": snapshot_b.manifest_records_sha256,
+    }
+    contract["target_metadata_path"].write_text(
+        json.dumps(metadata_b) + "\n", encoding="utf-8"
+    )
+    contract["manifest_path"].write_bytes(snapshot_a.raw_bytes)
+
+    with pytest.raises(RuntimeError, match="manifest snapshot bindings differ"):
+        capture_run_dependency_snapshot(
+            manifest_snapshot=snapshot_a,
+            target_cache_identity=target_identity_b,
+            target_metadata_path=contract["target_metadata_path"],
+            training=contract["training"],
+        )
+
+
+def test_build_run_identity_rejects_a_forged_child_manifest_binding(
+    tmp_path: Path,
+) -> None:
+    contract = _valid_contract(tmp_path)
+    forged = copy.deepcopy(contract["dependency_snapshot"])
+    forged["corpus"]["manifest_snapshot"]["manifest_file_sha256"] = "b" * 64
+
+    with pytest.raises(ValueError, match="manifest snapshot bindings differ"):
+        build_run_identity(
+            dependency_snapshot=forged,
+            model_state=contract["checkpoint"]["model_state"],
+        )
+
+
+def test_evaluation_rejects_a_different_manifest_generation_before_scoring(
+    tmp_path: Path,
+) -> None:
+    contract = _valid_contract(tmp_path)
+    changed = {**contract["records"][0], "text": "evaluation release B"}
+    contract["manifest_path"].write_text(
+        json.dumps(changed) + "\n", encoding="utf-8"
+    )
+    contract["manifest_snapshot"] = capture_manifest_snapshot(
+        contract["manifest_path"]
+    )
+
+    with pytest.raises(ValueError, match="evaluation manifest snapshot differs"):
+        _validate(contract)
+
+
 def test_main_capture_rejects_a_live_path_source_identity(tmp_path: Path) -> None:
     contract = _valid_contract(tmp_path)
 
     with pytest.raises(RuntimeError, match="pre-import executed-source snapshot"):
         capture_run_dependency_snapshot(
-            records=contract["records"],
-            manifest_path=contract["manifest_path"],
+            manifest_snapshot=contract["manifest_snapshot"],
             target_cache_identity=contract["target_identity"],
             target_metadata_path=contract["target_metadata_path"],
             training=contract["training"],
@@ -186,8 +254,7 @@ def test_launch_snapshot_is_immutable_and_recheck_detects_changed_audio(
     with pytest.raises(RuntimeError, match="corpus"):
         assert_run_dependency_snapshot_unchanged(
             contract["dependency_snapshot"],
-            records=contract["records"],
-            manifest_path=contract["manifest_path"],
+            manifest_snapshot=contract["manifest_snapshot"],
             target_cache_identity=contract["target_identity"],
             target_metadata_path=contract["target_metadata_path"],
             training=launch_snapshot["training"],
@@ -203,11 +270,10 @@ def test_dependency_recheck_rejects_stale_manifest_and_target_metadata(
     manifest_contract["manifest_path"].write_text(
         json.dumps(changed_item) + "\n", encoding="utf-8"
     )
-    with pytest.raises(RuntimeError, match="manifest records changed"):
+    with pytest.raises(RuntimeError, match="manifest snapshot changed"):
         assert_run_dependency_snapshot_unchanged(
             manifest_contract["dependency_snapshot"],
-            records=manifest_contract["records"],
-            manifest_path=manifest_contract["manifest_path"],
+            manifest_snapshot=manifest_contract["manifest_snapshot"],
             target_cache_identity=manifest_contract["target_identity"],
             target_metadata_path=manifest_contract["target_metadata_path"],
             training=manifest_contract["training"],
@@ -223,8 +289,7 @@ def test_dependency_recheck_rejects_stale_manifest_and_target_metadata(
     with pytest.raises(RuntimeError, match="target cache identity changed"):
         assert_run_dependency_snapshot_unchanged(
             target_contract["dependency_snapshot"],
-            records=target_contract["records"],
-            manifest_path=target_contract["manifest_path"],
+            manifest_snapshot=target_contract["manifest_snapshot"],
             target_cache_identity=target_contract["target_identity"],
             target_metadata_path=target_contract["target_metadata_path"],
             training=target_contract["training"],

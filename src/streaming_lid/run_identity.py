@@ -39,15 +39,16 @@ from .config import (
     WIN_LENGTH,
 )
 from .data import (
+    ManifestSnapshot,
     canonical_json_sha256,
+    capture_manifest_snapshot,
     file_sha256,
-    manifest_records_sha256,
     resolve_audio_path,
 )
 
 
-RUN_IDENTITY_SCHEMA_VERSION = 3
-CHECKPOINT_SCHEMA_VERSION = 3
+RUN_IDENTITY_SCHEMA_VERSION = 4
+CHECKPOINT_SCHEMA_VERSION = 4
 PIPELINE_SOURCE_FILES = (
     "scripts/train.py",
     "scripts/eval.py",
@@ -179,36 +180,43 @@ def pipeline_configuration() -> dict[str, Any]:
     }
 
 
-def _manifest_file_snapshot(manifest_path: str | Path) -> tuple[list[dict], str]:
-    """Parse records and hash the exact same manifest byte snapshot."""
-    path = Path(manifest_path)
-    payload = path.read_bytes()
-    try:
-        text = payload.decode("utf-8")
-        records = [json.loads(line) for line in text.splitlines() if line.strip()]
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ValueError(f"cannot parse manifest snapshot {path}: {error}") from error
-    return records, hashlib.sha256(payload).hexdigest()
-
-
-def corpus_identity(records: list[dict], manifest_path: str | Path) -> dict[str, Any]:
-    """Bind one coherent manifest byte snapshot to every referenced audio file."""
-    live_records, manifest_file_sha256 = _manifest_file_snapshot(manifest_path)
-    if records != live_records:
+def _coerce_manifest_snapshot(
+    manifest_snapshot: ManifestSnapshot | None,
+    *,
+    records: list[dict] | None = None,
+    manifest_path: str | Path | None = None,
+) -> ManifestSnapshot:
+    """Return one snapshot while preserving a narrow legacy-call compatibility."""
+    if manifest_snapshot is None:
+        if manifest_path is None:
+            raise TypeError("manifest_snapshot is required")
+        manifest_snapshot = capture_manifest_snapshot(manifest_path)
+    if records is not None and records != manifest_snapshot.records_copy():
         raise RuntimeError("manifest records changed while capturing run dependencies")
-    ids = [item.get("id") for item in records]
-    if any(not isinstance(clip_id, str) for clip_id in ids):
-        raise ValueError("every manifest record must have a string clip ID")
-    if len(set(ids)) != len(ids):
-        raise ValueError("manifest contains duplicate clip IDs")
+    return manifest_snapshot
+
+
+def corpus_identity(
+    manifest_snapshot: ManifestSnapshot | list[dict],
+    manifest_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Bind one consumed manifest generation to every referenced audio file."""
+    if isinstance(manifest_snapshot, ManifestSnapshot):
+        snapshot = manifest_snapshot
+    else:
+        snapshot = _coerce_manifest_snapshot(
+            None, records=manifest_snapshot, manifest_path=manifest_path
+        )
+    records = snapshot.records_copy()
     audio_sha256_by_clip = {
-        item["id"]: file_sha256(resolve_audio_path(item, manifest_path))
+        item["id"]: file_sha256(resolve_audio_path(item, snapshot))
         for item in records
     }
     return {
         "n_records": len(records),
-        "manifest_file_sha256": manifest_file_sha256,
-        "manifest_records_sha256": manifest_records_sha256(records),
+        "manifest_snapshot": snapshot.identity(),
+        "manifest_file_sha256": snapshot.manifest_file_sha256,
+        "manifest_records_sha256": snapshot.manifest_records_sha256,
         "audio_files_sha256": canonical_json_sha256(audio_sha256_by_clip),
         "audio_sha256_by_clip": audio_sha256_by_clip,
     }
@@ -226,6 +234,8 @@ def _target_identity_from_metadata(
             "target_configuration_sha256": metadata[
                 "target_configuration_sha256"
             ],
+            "manifest_snapshot": metadata["manifest_snapshot"],
+            "manifest_file_sha256": metadata["manifest_file_sha256"],
             "manifest_records_sha256": metadata["manifest_records_sha256"],
             "target_files_sha256": metadata["target_files_sha256"],
             "teacher_revision": teacher_identity["revision"],
@@ -282,34 +292,76 @@ def training_configuration(
     }
 
 
+def _validate_manifest_bindings(
+    manifest_identity: Mapping[str, Any],
+    corpus: Mapping[str, Any],
+    target_cache: Mapping[str, Any],
+    *,
+    error_type: type[Exception] = RuntimeError,
+) -> None:
+    """Require root, corpus, and target metadata to name one exact generation."""
+    target_identity = target_cache.get("identity")
+    if not isinstance(target_identity, Mapping):
+        raise error_type("target cache identity is missing from manifest bindings")
+    bindings = {
+        "root": dict(manifest_identity),
+        "corpus": corpus.get("manifest_snapshot"),
+        "target_cache": target_identity.get("manifest_snapshot"),
+    }
+    if bindings["corpus"] != bindings["root"] or bindings[
+        "target_cache"
+    ] != bindings["root"]:
+        raise error_type(
+            "manifest snapshot bindings differ across root, corpus, and target cache"
+        )
+    for child_name, child in (("corpus", corpus), ("target cache", target_identity)):
+        if child.get("manifest_file_sha256") != manifest_identity.get(
+            "manifest_file_sha256"
+        ) or child.get("manifest_records_sha256") != manifest_identity.get(
+            "manifest_records_sha256"
+        ):
+            raise error_type(f"{child_name} manifest digest aliases are inconsistent")
+
+
 def capture_run_dependency_snapshot(
     *,
-    records: list[dict],
-    manifest_path: str | Path,
+    manifest_snapshot: ManifestSnapshot | None = None,
+    records: list[dict] | None = None,
+    manifest_path: str | Path | None = None,
     target_cache_identity: Mapping[str, Any],
     target_metadata_path: str | Path,
     training: Mapping[str, Any],
     require_executed_source: bool = False,
 ) -> dict[str, Any]:
     """Capture every live dependency before audio/target tensors are preloaded."""
+    manifest_snapshot = _coerce_manifest_snapshot(
+        manifest_snapshot, records=records, manifest_path=manifest_path
+    )
     pipeline = pipeline_configuration()
     if require_executed_source:
         _require_executed_source(pipeline)
+    manifest_identity = manifest_snapshot.identity()
+    corpus = corpus_identity(manifest_snapshot)
+    target_cache = target_cache_run_identity(
+        target_cache_identity, target_metadata_path
+    )
+    _validate_manifest_bindings(manifest_identity, corpus, target_cache)
     return {
         "pipeline": pipeline,
-        "corpus": corpus_identity(records, manifest_path),
-        "target_cache": target_cache_run_identity(
-            target_cache_identity, target_metadata_path
-        ),
+        "manifest_snapshot": manifest_identity,
+        "corpus": corpus,
+        "target_cache": target_cache,
         "training": copy.deepcopy(dict(training)),
+        "manifest_bindings_equal": True,
     }
 
 
 def assert_run_dependency_snapshot_unchanged(
     launch_snapshot: Mapping[str, Any],
     *,
-    records: list[dict],
-    manifest_path: str | Path,
+    manifest_snapshot: ManifestSnapshot | None = None,
+    records: list[dict] | None = None,
+    manifest_path: str | Path | None = None,
     target_cache_identity: Mapping[str, Any],
     target_metadata_path: str | Path,
     training: Mapping[str, Any],
@@ -317,9 +369,16 @@ def assert_run_dependency_snapshot_unchanged(
     require_executed_source: bool = False,
 ) -> None:
     """Fail publication if any source, data, target, or setting changed in-run."""
+    manifest_snapshot = _coerce_manifest_snapshot(
+        manifest_snapshot, records=records, manifest_path=manifest_path
+    )
+    live_snapshot = capture_manifest_snapshot(manifest_snapshot.source_path)
+    if live_snapshot.identity() != manifest_snapshot.identity():
+        raise RuntimeError(
+            f"manifest snapshot changed after launch before {stage}"
+        )
     current = capture_run_dependency_snapshot(
-        records=records,
-        manifest_path=manifest_path,
+        manifest_snapshot=live_snapshot,
         target_cache_identity=target_cache_identity,
         target_metadata_path=target_metadata_path,
         training=training,
@@ -327,7 +386,14 @@ def assert_run_dependency_snapshot_unchanged(
     )
     changed = [
         name
-        for name in ("pipeline", "corpus", "target_cache", "training")
+        for name in (
+            "pipeline",
+            "manifest_snapshot",
+            "corpus",
+            "target_cache",
+            "training",
+            "manifest_bindings_equal",
+        )
         if launch_snapshot.get(name) != current[name]
     ]
     if changed:
@@ -358,11 +424,26 @@ def build_run_identity(
     model_state: Mapping[str, torch.Tensor],
 ) -> dict[str, Any]:
     """Bind the final model to the immutable dependency snapshot from launch."""
-    required = {"pipeline", "corpus", "target_cache", "training"}
+    required = {
+        "pipeline",
+        "manifest_snapshot",
+        "corpus",
+        "target_cache",
+        "training",
+        "manifest_bindings_equal",
+    }
     if set(dependency_snapshot) != required:
         raise ValueError(
             "dependency snapshot fields differ from the run-identity contract"
         )
+    if dependency_snapshot.get("manifest_bindings_equal") is not True:
+        raise ValueError("dependency snapshot manifest binding gate did not pass")
+    _validate_manifest_bindings(
+        dependency_snapshot["manifest_snapshot"],
+        dependency_snapshot["corpus"],
+        dependency_snapshot["target_cache"],
+        error_type=ValueError,
+    )
     return {
         "schema_version": RUN_IDENTITY_SCHEMA_VERSION,
         **copy.deepcopy(dict(dependency_snapshot)),
@@ -380,8 +461,9 @@ def validate_evaluation_run_contract(
     checkpoint: Mapping[str, Any],
     checkpoint_sha256: str,
     train_metrics: Mapping[str, Any],
-    records: list[dict],
-    manifest_path: str | Path,
+    manifest_snapshot: ManifestSnapshot | None = None,
+    records: list[dict] | None = None,
+    manifest_path: str | Path | None = None,
     target_cache_identity: Mapping[str, Any],
     target_metadata_path: str | Path,
     require_executed_source: bool = False,
@@ -395,10 +477,15 @@ def validate_evaluation_run_contract(
     if run_identity.get("schema_version") != RUN_IDENTITY_SCHEMA_VERSION:
         raise ValueError("run identity schema version is missing or unsupported")
 
-    expected_launch_snapshot = {
-        key: run_identity.get(key)
-        for key in ("pipeline", "corpus", "target_cache", "training")
-    }
+    snapshot_keys = (
+        "pipeline",
+        "manifest_snapshot",
+        "corpus",
+        "target_cache",
+        "training",
+        "manifest_bindings_equal",
+    )
+    expected_launch_snapshot = {key: run_identity.get(key) for key in snapshot_keys}
     if checkpoint.get("launch_dependency_snapshot") != expected_launch_snapshot:
         raise ValueError(
             "checkpoint launch dependency snapshot contradicts its run identity"
@@ -412,6 +499,15 @@ def validate_evaluation_run_contract(
     ):
         raise ValueError("checkpoint model state differs from its run identity")
 
+    if run_identity.get("manifest_bindings_equal") is not True:
+        raise ValueError("checkpoint manifest binding gate did not pass")
+    _validate_manifest_bindings(
+        run_identity.get("manifest_snapshot", {}),
+        run_identity.get("corpus", {}),
+        run_identity.get("target_cache", {}),
+        error_type=ValueError,
+    )
+
     current_pipeline = pipeline_configuration()
     if require_executed_source:
         _require_executed_source(current_pipeline)
@@ -419,11 +515,24 @@ def validate_evaluation_run_contract(
         raise ValueError(
             "evaluation pipeline configuration/source differs from the training run"
         )
-    current_corpus = corpus_identity(records, manifest_path)
+    manifest_snapshot = _coerce_manifest_snapshot(
+        manifest_snapshot, records=records, manifest_path=manifest_path
+    )
+    if run_identity.get("manifest_snapshot") != manifest_snapshot.identity():
+        raise ValueError(
+            "evaluation manifest snapshot differs from the training run"
+        )
+    current_corpus = corpus_identity(manifest_snapshot)
     if run_identity.get("corpus") != current_corpus:
         raise ValueError("evaluation manifest/audio corpus differs from the training run")
     current_targets = target_cache_run_identity(
         target_cache_identity, target_metadata_path
+    )
+    _validate_manifest_bindings(
+        manifest_snapshot.identity(),
+        current_corpus,
+        current_targets,
+        error_type=ValueError,
     )
     if run_identity.get("target_cache") != current_targets:
         raise ValueError("evaluation target cache differs from the training run")

@@ -9,6 +9,7 @@ import json
 import math
 import platform
 from collections.abc import Iterable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -40,7 +41,8 @@ from .config import (
 )
 
 
-TARGET_CACHE_SCHEMA_VERSION = 4
+TARGET_CACHE_SCHEMA_VERSION = 5
+MANIFEST_SNAPSHOT_SCHEMA_VERSION = 1
 DENSE_TARGET_VALIDATION_RTOL = 1e-6
 DENSE_TARGET_VALIDATION_ATOL = 2e-7
 TARGET_GENERATOR_SOURCE_FILES = (
@@ -66,14 +68,91 @@ TARGET_AVAILABILITY_KEYS = (
 )
 
 
-def read_manifest(path: str | Path) -> list[dict]:
+@dataclass(frozen=True)
+class ManifestSnapshot:
+    """One immutable, exact-byte manifest generation.
+
+    Parsed records are deliberately not stored as a mutable list. Every
+    consumer receives a fresh value decoded from ``canonical_records_bytes``.
+    """
+
+    source_path: Path
+    base_directory: Path
+    raw_bytes: bytes
+    canonical_records_bytes: bytes
+    manifest_file_sha256: str
+    manifest_records_sha256: str
+    n_records: int
+
+    def records_copy(self) -> list[dict]:
+        records = json.loads(self.canonical_records_bytes.decode("utf-8"))
+        if not isinstance(records, list):  # pragma: no cover - construction proves it
+            raise RuntimeError("manifest snapshot canonical records are not a list")
+        return records
+
+    def identity(self) -> dict[str, Any]:
+        return {
+            "schema_version": MANIFEST_SNAPSHOT_SCHEMA_VERSION,
+            "manifest_file_sha256": self.manifest_file_sha256,
+            "manifest_records_sha256": self.manifest_records_sha256,
+            "n_records": self.n_records,
+        }
+
+
+def _canonical_json_bytes(value: Any) -> bytes:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+
+
+def capture_manifest_snapshot(path: str | Path) -> ManifestSnapshot:
+    """Read and validate a manifest exactly once, retaining the consumed bytes."""
     manifest_path = Path(path)
-    with manifest_path.open(encoding="utf-8") as handle:
-        return [json.loads(line) for line in handle if line.strip()]
+    try:
+        payload = manifest_path.read_bytes()
+        text = payload.decode("utf-8")
+        records = [json.loads(line) for line in text.splitlines() if line.strip()]
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"cannot capture manifest snapshot {manifest_path}: {error}") from error
+    if not records:
+        raise ValueError(f"manifest snapshot {manifest_path} contains no records")
+    if any(not isinstance(item, dict) for item in records):
+        raise ValueError("every manifest record must be a JSON object")
+    ids = [item.get("id") for item in records]
+    if any(not isinstance(clip_id, str) or not clip_id for clip_id in ids):
+        raise ValueError("every manifest record must have a non-empty string clip ID")
+    if len(set(ids)) != len(ids):
+        raise ValueError("manifest contains duplicate clip IDs")
+    canonical_records_bytes = _canonical_json_bytes(records)
+    return ManifestSnapshot(
+        source_path=manifest_path,
+        base_directory=manifest_path.parent,
+        raw_bytes=payload,
+        canonical_records_bytes=canonical_records_bytes,
+        manifest_file_sha256=hashlib.sha256(payload).hexdigest(),
+        manifest_records_sha256=hashlib.sha256(canonical_records_bytes).hexdigest(),
+        n_records=len(records),
+    )
 
 
-def resolve_audio_path(item: dict, manifest_path: str | Path) -> Path:
-    return Path(manifest_path).parent / item["audio_path"]
+def read_manifest(path: str | Path) -> list[dict]:
+    """Compatibility wrapper; main pipeline consumers share one snapshot."""
+    return capture_manifest_snapshot(path).records_copy()
+
+
+def resolve_audio_path(
+    item: dict, manifest: ManifestSnapshot | str | Path
+) -> Path:
+    base_directory = (
+        manifest.base_directory
+        if isinstance(manifest, ManifestSnapshot)
+        else Path(manifest).parent
+    )
+    return base_directory / item["audio_path"]
 
 
 def file_sha256(path: str | Path) -> str:
@@ -87,14 +166,7 @@ def file_sha256(path: str | Path) -> str:
 
 def canonical_json_sha256(value: Any) -> str:
     """Hash JSON-compatible data independently of dictionary insertion order."""
-    payload = json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    ).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()
+    return hashlib.sha256(_canonical_json_bytes(value)).hexdigest()
 
 
 def teacher_artifact_identity() -> dict[str, Any]:
@@ -595,13 +667,22 @@ def load_teacher_target_array(
 class TeacherTargetCache:
     """Strict main-pipeline view of a content-bound teacher target directory."""
 
-    def __init__(self, manifest_path: str | Path, targets_dir: str | Path) -> None:
-        self.manifest_path = Path(manifest_path)
+    def __init__(
+        self,
+        manifest: ManifestSnapshot | str | Path,
+        targets_dir: str | Path,
+    ) -> None:
+        # Path input remains for isolated legacy callers. Main entry points pass
+        # their already-captured snapshot so this class never reopens the name.
+        self.manifest_snapshot = (
+            manifest
+            if isinstance(manifest, ManifestSnapshot)
+            else capture_manifest_snapshot(manifest)
+        )
+        self.manifest_path = self.manifest_snapshot.source_path
         self.targets_dir = Path(targets_dir)
-        self.records = read_manifest(self.manifest_path)
+        self.records = self.manifest_snapshot.records_copy()
         self.records_by_id = {item["id"]: item for item in self.records}
-        if len(self.records_by_id) != len(self.records):
-            raise ValueError("manifest contains duplicate clip IDs")
 
         metadata_path = self.targets_dir / "metadata.json"
         if not metadata_path.exists():
@@ -640,7 +721,19 @@ class TeacherTargetCache:
                 "target cache configuration SHA-256 is missing or inconsistent"
             )
 
-        expected_manifest_hash = manifest_records_sha256(self.records)
+        expected_manifest_identity = self.manifest_snapshot.identity()
+        expected_manifest_hash = expected_manifest_identity[
+            "manifest_records_sha256"
+        ]
+        if self.metadata.get("manifest_snapshot") != expected_manifest_identity:
+            raise ValueError(
+                "target cache was generated from a different manifest snapshot "
+                "(exact bytes or canonical records differ)"
+            )
+        if self.metadata.get("manifest_file_sha256") != expected_manifest_identity[
+            "manifest_file_sha256"
+        ]:
+            raise ValueError("target cache exact manifest-file digest is inconsistent")
         if self.metadata.get("manifest_records_sha256") != expected_manifest_hash:
             raise ValueError("target cache was generated from a different manifest")
 
@@ -723,6 +816,10 @@ class TeacherTargetCache:
         self.identity = {
             "schema_version": TARGET_CACHE_SCHEMA_VERSION,
             "target_configuration_sha256": expected_configuration_hash,
+            "manifest_snapshot": expected_manifest_identity,
+            "manifest_file_sha256": expected_manifest_identity[
+                "manifest_file_sha256"
+            ],
             "manifest_records_sha256": expected_manifest_hash,
             "target_files_sha256": expected_target_files_hash,
             "teacher_revision": TEACHER_REVISION,
@@ -784,6 +881,7 @@ class TeacherTargetCache:
                 "target_kind": expected_kind,
                 "audio_sha256": current_audio_hash,
                 "manifest_record_sha256": current_record_hash,
+                "manifest_file_sha256": self.identity["manifest_file_sha256"],
                 "target_configuration_sha256": self.identity[
                     "target_configuration_sha256"
                 ],
@@ -923,20 +1021,37 @@ class DistillationDataset(Dataset):
 
     def __init__(
         self,
-        manifest_path: str | Path,
+        manifest_path: ManifestSnapshot | str | Path,
         targets_dir: str | Path,
         splits: Iterable[str],
         *,
         target_cache: TeacherTargetCache | None = None,
         records: Iterable[dict] | None = None,
     ) -> None:
-        self.manifest_path = Path(manifest_path)
+        if isinstance(manifest_path, ManifestSnapshot):
+            manifest_snapshot = manifest_path
+        elif target_cache is not None:
+            # Reuse the cache's exact generation instead of opening the mutable
+            # manifest pathname for a second, independently valid view.
+            manifest_snapshot = target_cache.manifest_snapshot
+        else:
+            manifest_snapshot = capture_manifest_snapshot(manifest_path)
+        if (
+            target_cache is not None
+            and target_cache.manifest_snapshot.identity()
+            != manifest_snapshot.identity()
+        ):
+            raise ValueError("dataset and target cache manifest snapshots differ")
+        self.manifest_snapshot = manifest_snapshot
+        self.manifest_path = manifest_snapshot.source_path
         wanted = set(splits)
-        source_records = (
-            read_manifest(manifest_path)
-            if records is None
-            else copy.deepcopy(list(records))
-        )
+        snapshot_records = manifest_snapshot.records_copy()
+        if records is None:
+            source_records = snapshot_records
+        else:
+            source_records = copy.deepcopy(list(records))
+            if source_records != snapshot_records:
+                raise ValueError("dataset records differ from its manifest snapshot")
         self.items = [
             item for item in source_records if item["split"] in wanted
         ]
@@ -946,7 +1061,7 @@ class DistillationDataset(Dataset):
         self.examples: list[dict] = []
         with torch.inference_mode():
             for item in self.items:
-                waveform = load_audio(resolve_audio_path(item, self.manifest_path))
+                waveform = load_audio(resolve_audio_path(item, manifest_snapshot))
                 features = frontend(waveform).squeeze(0)
                 target_path = Path(targets_dir) / f"{item['id']}.npz"
                 if not target_path.exists():

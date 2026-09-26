@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
 
 from streaming_lid.config import (
     LANGUAGE_CODES,
@@ -14,18 +15,22 @@ from streaming_lid.data import (
     DENSE_TARGET_VALIDATION_ATOL,
     DENSE_TARGET_VALIDATION_RTOL,
     TARGET_CACHE_SCHEMA_VERSION,
+    DistillationDataset,
     TeacherTargetCache,
     canonical_json_sha256,
+    capture_manifest_snapshot,
     expand_local_posteriors,
     file_sha256,
     load_teacher_target_array,
     local_target_availability_ledger,
     manifest_record_sha256,
     manifest_records_sha256,
+    require_speaker_disjoint,
     target_cache_configuration,
     target_configuration_sha256,
     target_generator_identity,
 )
+from streaming_lid.run_identity import corpus_identity
 
 
 def _probabilities(frames: int) -> np.ndarray:
@@ -46,6 +51,7 @@ def _write_target_file(
     *,
     language_codes: tuple[str, ...] = LANGUAGE_CODES,
     teacher_revision: str = TEACHER_REVISION,
+    manifest_file_sha256: str = "unused-manifest",
 ) -> None:
     anchor_probs = _probabilities(1)
     anchor_soft_targets = _soften(anchor_probs)
@@ -66,6 +72,7 @@ def _write_target_file(
         num_frames=np.asarray(3),
         audio_sha256=np.asarray(audio_hash),
         manifest_record_sha256=np.asarray(manifest_record_sha256(item)),
+        manifest_file_sha256=np.asarray(manifest_file_sha256),
         target_configuration_sha256=np.asarray(target_configuration_sha256()),
         teacher_name=np.asarray(TEACHER_NAME),
         teacher_revision=np.asarray(teacher_revision),
@@ -93,7 +100,13 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
     targets_dir.mkdir()
     target_path = targets_dir / "clip.npz"
     audio_hash = file_sha256(audio_path)
-    _write_target_file(target_path, item, audio_hash)
+    manifest_snapshot = capture_manifest_snapshot(manifest_path)
+    _write_target_file(
+        target_path,
+        item,
+        audio_hash,
+        manifest_file_sha256=manifest_snapshot.manifest_file_sha256,
+    )
     configuration = target_cache_configuration()
     metadata = {
         "schema_version": TARGET_CACHE_SCHEMA_VERSION,
@@ -101,6 +114,8 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
         "target_generator": configuration["target_generator"],
         "target_configuration": configuration,
         "target_configuration_sha256": canonical_json_sha256(configuration),
+        "manifest_snapshot": manifest_snapshot.identity(),
+        "manifest_file_sha256": manifest_snapshot.manifest_file_sha256,
         "manifest_records_sha256": manifest_records_sha256([item]),
         "target_expansion": "previous_anchor_hold",
         "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
@@ -174,6 +189,7 @@ def _write_valid_local_cache(
     ledger["teacher_latest_samples"] = ledger["teacher_latest_samples"].copy()
     ledger["teacher_latest_samples"][1] += teacher_latest_offset
     audio_hash = file_sha256(audio_path)
+    manifest_snapshot = capture_manifest_snapshot(manifest_path)
     np.savez_compressed(
         target_path,
         teacher_probs=probabilities,
@@ -189,6 +205,7 @@ def _write_valid_local_cache(
         num_frames=np.asarray(3),
         audio_sha256=np.asarray(audio_hash),
         manifest_record_sha256=np.asarray(manifest_record_sha256(item)),
+        manifest_file_sha256=np.asarray(manifest_snapshot.manifest_file_sha256),
         target_configuration_sha256=np.asarray(target_configuration_sha256()),
         teacher_name=np.asarray(TEACHER_NAME),
         teacher_revision=np.asarray(TEACHER_REVISION),
@@ -219,6 +236,8 @@ def _write_valid_local_cache(
         "target_generator": configuration["target_generator"],
         "target_configuration": configuration,
         "target_configuration_sha256": canonical_json_sha256(configuration),
+        "manifest_snapshot": manifest_snapshot.identity(),
+        "manifest_file_sha256": manifest_snapshot.manifest_file_sha256,
         "manifest_records_sha256": manifest_records_sha256([item]),
         "target_expansion": "previous_anchor_hold",
         "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
@@ -251,6 +270,71 @@ def test_basic_loader_rejects_reordered_target_columns(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="language order"):
         load_teacher_target_array(target_path, "teacher_soft_targets")
+
+
+def test_manifest_snapshot_separates_exact_bytes_from_semantic_records(
+    tmp_path: Path,
+) -> None:
+    item = {
+        "id": "clip",
+        "audio_path": "clip.wav",
+        "split": "train",
+        "language": "en",
+        "speaker_id": "speaker",
+    }
+    manifest_path = tmp_path / "manifest.jsonl"
+    manifest_path.write_text(json.dumps(item) + "\n", encoding="utf-8")
+    first = capture_manifest_snapshot(manifest_path)
+    manifest_path.write_text(
+        "  " + json.dumps(item, sort_keys=True, separators=(", ", ": ")) + "  \n",
+        encoding="utf-8",
+    )
+    second = capture_manifest_snapshot(manifest_path)
+
+    assert first.manifest_file_sha256 != second.manifest_file_sha256
+    assert first.manifest_records_sha256 == second.manifest_records_sha256
+    assert first.canonical_records_bytes == second.canonical_records_bytes
+
+
+def test_manifest_snapshot_returns_defensive_record_copies(tmp_path: Path) -> None:
+    manifest_path, _, item = _write_valid_cache(tmp_path)
+    snapshot = capture_manifest_snapshot(manifest_path)
+    first = snapshot.records_copy()
+    first[0]["text"] = "mutated by one consumer"
+
+    assert snapshot.records_copy() == [item]
+    assert snapshot.manifest_records_sha256 == manifest_records_sha256([item])
+
+
+def test_shared_manifest_snapshot_feeds_consumers_without_a_second_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest_path, targets_dir, _ = _write_valid_cache(tmp_path)
+    snapshot = capture_manifest_snapshot(manifest_path)
+    original_read_bytes = Path.read_bytes
+
+    def guarded_read_bytes(path: Path) -> bytes:
+        if path == manifest_path:
+            raise AssertionError("manifest pathname was reopened")
+        return original_read_bytes(path)
+
+    monkeypatch.setattr(Path, "read_bytes", guarded_read_bytes)
+    monkeypatch.setattr(
+        "streaming_lid.data.load_audio", lambda _path: torch.zeros(720)
+    )
+
+    records = snapshot.records_copy()
+    assert require_speaker_disjoint(records)["speaker_disjoint"] is True
+    cache = TeacherTargetCache(snapshot, targets_dir)
+    assert corpus_identity(snapshot)["manifest_snapshot"] == snapshot.identity()
+    assert cache.validate_all()["validated_clips"] == 1
+    dataset = DistillationDataset(
+        snapshot,
+        targets_dir,
+        splits=("train",),
+        target_cache=cache,
+    )
+    assert len(dataset) == 1
 
 
 def test_strict_cache_accepts_content_bound_target(tmp_path: Path) -> None:
@@ -366,6 +450,9 @@ def test_strict_cache_rejects_wrong_pinned_teacher(tmp_path: Path) -> None:
         item,
         file_sha256(tmp_path / "clip.wav"),
         teacher_revision="mutable-main",
+        manifest_file_sha256=capture_manifest_snapshot(
+            manifest_path
+        ).manifest_file_sha256,
     )
     metadata_path = targets_dir / "metadata.json"
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
@@ -382,7 +469,14 @@ def test_strict_cache_rejects_wrong_pinned_teacher(tmp_path: Path) -> None:
 
 def test_strict_cache_rejects_modified_target_file(tmp_path: Path) -> None:
     manifest_path, targets_dir, item = _write_valid_cache(tmp_path)
-    _write_target_file(targets_dir / "clip.npz", item, file_sha256(tmp_path / "clip.wav"))
+    _write_target_file(
+        targets_dir / "clip.npz",
+        item,
+        file_sha256(tmp_path / "clip.wav"),
+        manifest_file_sha256=capture_manifest_snapshot(
+            manifest_path
+        ).manifest_file_sha256,
+    )
     with (targets_dir / "clip.npz").open("ab") as handle:
         handle.write(b"tamper")
     cache = TeacherTargetCache(manifest_path, targets_dir)

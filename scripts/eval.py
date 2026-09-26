@@ -35,8 +35,8 @@ import torch
 from streaming_lid.audio import LogMelFrontend, load_audio
 from streaming_lid.data import (
     TeacherTargetCache,
+    capture_manifest_snapshot,
     file_sha256,
-    read_manifest,
     require_speaker_disjoint,
     resolve_audio_path,
 )
@@ -215,9 +215,10 @@ def main() -> None:
     torch.set_num_threads(args.threads)
     checkpoint_sha256 = file_sha256(args.checkpoint)
     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
-    records = read_manifest(args.manifest)
+    manifest_snapshot = capture_manifest_snapshot(args.manifest)
+    records = manifest_snapshot.records_copy()
     speaker_audit = require_speaker_disjoint(records)
-    target_cache = TeacherTargetCache(args.manifest, args.targets_dir)
+    target_cache = TeacherTargetCache(manifest_snapshot, args.targets_dir)
     # Evaluation is also the release gate: validate every indexed target/audio,
     # not only the clips that happen to contribute to the headline metrics.
     target_cache.validate_all()
@@ -227,8 +228,7 @@ def main() -> None:
         checkpoint=checkpoint,
         checkpoint_sha256=checkpoint_sha256,
         train_metrics=train_metrics,
-        records=records,
-        manifest_path=args.manifest,
+        manifest_snapshot=manifest_snapshot,
         target_cache_identity=target_cache.identity,
         target_metadata_path=target_cache.targets_dir / "metadata.json",
         require_executed_source=True,
@@ -566,6 +566,10 @@ def main() -> None:
         "dependency_snapshot_unchanged_at_publication": train_metrics[
             "dependency_snapshot_unchanged_at_publication"
         ],
+        "manifest_snapshot_captured_once_before_consumers": train_metrics[
+            "manifest_snapshot_captured_once_before_consumers"
+        ],
+        "manifest_bindings_equal": run_identity["manifest_bindings_equal"],
         "executed_source_snapshot_validated": True,
         "evaluation_source_stage_verified_before_import": True,
         "evaluation_source_stage_verification_checks": evaluation_source_stage_checks,
@@ -696,6 +700,11 @@ def main() -> None:
         ],
         "target_configuration_sha256": target_cache.identity[
             "target_configuration_sha256"
+        ],
+        "manifest_snapshot_captured_once_before_consumers": True,
+        "manifest_bindings_equal": run_identity["manifest_bindings_equal"],
+        "manifest_file_sha256": target_cache.identity[
+            "manifest_file_sha256"
         ],
         "manifest_records_sha256": target_cache.identity[
             "manifest_records_sha256"
