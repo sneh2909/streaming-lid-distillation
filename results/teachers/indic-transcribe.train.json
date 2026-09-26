@@ -1,0 +1,174 @@
+{
+  "teacher": "indic-transcribe",
+  "n_clips": 200,
+  "by_condition": {
+    "clean": {
+      "0.5s": {
+        "acc_restricted": 0.165,
+        "acc_unrestricted": 0.04,
+        "other_mass": 0.49821016299914006,
+        "ece_restricted": 0.35611516166604024,
+        "acc_by_lang": {
+          "bn": 0.0,
+          "en": 0.0,
+          "en-in": 0.12,
+          "gu": 0.04,
+          "hi": 0.92,
+          "mr": 0.04,
+          "ta": 0.04,
+          "te": 0.16
+        }
+      },
+      "1s": {
+        "acc_restricted": 0.4,
+        "acc_unrestricted": 0.31,
+        "other_mass": 0.3192692924542004,
+        "ece_restricted": 0.23500352000203004,
+        "acc_by_lang": {
+          "bn": 0.52,
+          "en": 0.24,
+          "en-in": 0.04,
+          "gu": 0.2,
+          "hi": 0.76,
+          "mr": 0.4,
+          "ta": 0.4,
+          "te": 0.64
+        }
+      },
+      "2s": {
+        "acc_restricted": 0.82,
+        "acc_unrestricted": 0.785,
+        "other_mass": 0.1106573579180723,
+        "ece_restricted": 0.09689954016060803,
+        "acc_by_lang": {
+          "bn": 1.0,
+          "en": 0.88,
+          "en-in": 0.12,
+          "gu": 0.88,
+          "hi": 0.92,
+          "mr": 0.88,
+          "ta": 0.88,
+          "te": 1.0
+        }
+      },
+      "3s": {
+        "acc_restricted": 0.89,
+        "acc_unrestricted": 0.875,
+        "other_mass": 0.05403278362286534,
+        "ece_restricted": 0.06861627113473759,
+        "acc_by_lang": {
+          "bn": 1.0,
+          "en": 1.0,
+          "en-in": 0.2,
+          "gu": 0.96,
+          "hi": 0.96,
+          "mr": 1.0,
+          "ta": 1.0,
+          "te": 1.0
+        }
+      },
+      "full": {
+        "acc_restricted": 0.9,
+        "acc_unrestricted": 0.89,
+        "other_mass": 0.06349085840440555,
+        "ece_restricted": 0.06910156291349315,
+        "acc_by_lang": {
+          "bn": 1.0,
+          "en": 1.0,
+          "en-in": 0.2,
+          "gu": 1.0,
+          "hi": 1.0,
+          "mr": 1.0,
+          "ta": 1.0,
+          "te": 1.0
+        }
+      },
+      "prefix_flip_gt1": 0.31
+    },
+    "telephony": {
+      "0.5s": {
+        "acc_restricted": 0.155,
+        "acc_unrestricted": 0.035,
+        "other_mass": 0.5687621334940404,
+        "ece_restricted": 0.5148355681766332,
+        "acc_by_lang": {
+          "bn": 0.0,
+          "en": 0.0,
+          "en-in": 0.0,
+          "gu": 0.0,
+          "hi": 1.0,
+          "mr": 0.04,
+          "ta": 0.04,
+          "te": 0.16
+        }
+      },
+      "1s": {
+        "acc_restricted": 0.39,
+        "acc_unrestricted": 0.27,
+        "other_mass": 0.3820574272068031,
+        "ece_restricted": 0.19481953596512866,
+        "acc_by_lang": {
+          "bn": 0.32,
+          "en": 0.04,
+          "en-in": 0.0,
+          "gu": 0.32,
+          "hi": 0.92,
+          "mr": 0.4,
+          "ta": 0.44,
+          "te": 0.68
+        }
+      },
+      "2s": {
+        "acc_restricted": 0.78,
+        "acc_unrestricted": 0.735,
+        "other_mass": 0.12443874475186938,
+        "ece_restricted": 0.11384065422355702,
+        "acc_by_lang": {
+          "bn": 0.96,
+          "en": 0.8,
+          "en-in": 0.04,
+          "gu": 0.88,
+          "hi": 0.88,
+          "mr": 0.84,
+          "ta": 0.84,
+          "te": 1.0
+        }
+      },
+      "3s": {
+        "acc_restricted": 0.86,
+        "acc_unrestricted": 0.855,
+        "other_mass": 0.055114594484848844,
+        "ece_restricted": 0.08677751817293824,
+        "acc_by_lang": {
+          "bn": 0.96,
+          "en": 1.0,
+          "en-in": 0.04,
+          "gu": 0.96,
+          "hi": 0.96,
+          "mr": 0.96,
+          "ta": 1.0,
+          "te": 1.0
+        }
+      },
+      "full": {
+        "acc_restricted": 0.88,
+        "acc_unrestricted": 0.88,
+        "other_mass": 0.05566509483365129,
+        "ece_restricted": 0.08517486004051743,
+        "acc_by_lang": {
+          "bn": 1.0,
+          "en": 1.0,
+          "en-in": 0.04,
+          "gu": 1.0,
+          "hi": 1.0,
+          "mr": 1.0,
+          "ta": 1.0,
+          "te": 1.0
+        }
+      },
+      "prefix_flip_gt1": 0.335
+    }
+  },
+  "switch_lag_s_causal3s": {},
+  "ms_per_call": 6.478454947471619
+}

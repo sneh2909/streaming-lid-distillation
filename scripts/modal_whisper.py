@@ -27,7 +27,7 @@ def _download():
 image = (
     modal.Image.debian_slim(python_version="3.10")
     .pip_install("torch", "torchaudio", "transformers", "numpy", "soundfile",
-                 "huggingface_hub", "tqdm")
+                 "huggingface_hub", "tqdm", "sentencepiece", "safetensors")
     .run_function(_download)
     .add_local_python_source("slid")
     .add_local_dir(f"{REPO}/scripts", f"{REPO}/scripts")
@@ -72,6 +72,24 @@ def bakeoff(extra_args: list[str]) -> dict[str, bytes]:
     subprocess.run(["python", f"{REPO}/scripts/teacher_bakeoff.py", "--teacher", "whisper-turbo", *extra_args],
                    check=True, cwd=REPO, env={**os.environ, "PYTHONPATH": "/root"})
     return {p.name: p.read_bytes() for p in Path(f"{REPO}/results/teachers").glob("whisper-turbo*")}
+
+
+@app.function(gpu="L4", volumes={DATA: vol}, timeout=3600, secrets=[modal.Secret.from_name("hf-token")])
+def bakeoff_indic(extra_args: list[str]) -> dict[str, bytes]:
+    subprocess.run(["python", f"{REPO}/scripts/teacher_bakeoff.py", "--teacher", "indic-transcribe", *extra_args],
+                   check=True, cwd=REPO, env={**os.environ, "PYTHONPATH": "/root"})
+    return {p.name: p.read_bytes() for p in Path(f"{REPO}/results/teachers").glob("indic-transcribe*")}
+
+
+@app.local_entrypoint()
+def indic():
+    root = Path(REPO)
+    futs = [bakeoff_indic.spawn([]),
+            bakeoff_indic.spawn(["--manifest", "train", "--max-per-lang", "25", "--no-switch"])]
+    for fut in futs:
+        for name, data in fut.get().items():
+            (root / "results/teachers" / name).write_bytes(data)
+            print("wrote results/teachers/" + name)
 
 
 @app.local_entrypoint()

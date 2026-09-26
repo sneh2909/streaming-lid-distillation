@@ -62,7 +62,7 @@ def score(a: str, b: str, w: float) -> None:
         for k in KEYS:
             q = combine(restrict(A[f"{cond}/{k}"]), restrict(B[f"{cond}/{k}"]), w)
             rows[k] = {"acc_restricted": float((q.argmax(1) == y).mean()), "ece_restricted": ece(q, y),
-                       "acc_by_lang": {g: float((q[groups == g].argmax(1) == y[groups == g]).mean())
+                       "acc_by_lang": {str(g): float((q[groups == g].argmax(1) == y[groups == g]).mean())
                                        for g in sorted(set(groups))}}
             seq.append(q.argmax(1))
         rows["prefix_flip_gt1"] = float(((np.diff(np.stack(seq, 1), axis=1) != 0).sum(1) > 1).mean())

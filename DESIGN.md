@@ -48,7 +48,22 @@ The procedure, on a labelled dev set of real calls:
 
 The student is trained on information-matched targets, so its early posteriors are honestly uncertain. That makes a probability threshold meaningful. A student distilled from full-utterance targets is overconfident early, and no threshold would be safe.
 
-Measured on our synthetic set (student, 320 ms chunks): median time to first correct commit ⟨TBD⟩, wrong-first-commit rate ⟨TBD⟩.
+**Measured** (final student, 320 ms chunks, 480 held-out clips, `scripts/commit_sweep.py` → `results/commit_sweep.json`; dwell 3 frames, θ_switch = θ_commit + 0.1):
+
+| θ_commit | median first *correct* commit | wrong first commit | hi↔en committed switch lag | switches missed | flips/min |
+|---|---|---|---|---|---|
+| 0.5 | 1.54 s | 66% | 2.26 s | 23% | 2.8 |
+| 0.7 | 1.62 s | 14% | 2.26 s | 30% | 0.5 |
+| **0.8** | **1.78 s** | **7%** | 2.30 s | 40% | 0.3 |
+| 0.9 | 2.10 s | 4% | 2.38 s | 50% | 0.0 |
+
+![commit trade-off](results/figures/commit_tradeoff.png)
+
+**Reading the sweep:**
+- **The curve has a sharp knee.** From 0.6 to 0.7 the wrong-commit rate drops from 49% to 14% at no extra delay. From 0.7 to 0.8 it halves again for +160 ms. Above that, each further halving costs ~300 ms.
+- **Operating point: θ_commit = 0.8** (the evaluation tables in the README use 0.7).
+- **The cost of a high threshold is switch recall, not first-commit latency.** At 0.9, half the synthetic switches never reach the switch bar within 4 s. This is why the switch threshold and the first-commit threshold are separate knobs.
+- **Tune on real calls, not synthetic data.** In production this sweep runs on a labelled dev set of real calls; the numbers here come from synthetic concatenations.
 
 ## 3. ASR routing and the cost of switching
 
@@ -90,7 +105,17 @@ Measured on our synthetic set (student, 320 ms chunks): median time to first cor
   - **Also reported:** misses (never switched) and extra label changes per minute (flip-flops).
   - **On real data:** replace synthetic boundaries with word-level language tags from MUCS 2021 Hindi-English (script-based alignment), or DISPLACE language-diarization labels.
 
-Measured (hi→en, 320 ms chunks): teacher ⟨TBD⟩ s, student raw ⟨TBD⟩ s, committed ⟨TBD⟩ s, flips/min raw ⟨TBD⟩ vs committed ⟨TBD⟩.
+**Measured** (Hindi→English, 10 held-out clips, 320 ms chunks, medians):
+
+| | switch lag |
+|---|---|
+| teacher target | 2.46 s |
+| student raw | 2.26 s |
+| committed | 2.83 s |
+
+- **Flip-flops:** 17.3/min raw vs **1.9/min committed**.
+- **Most of the lag is the 3 s teacher window,** not the student and not the policy. The next lever is a shorter window W (faster switching, noisier targets) or a two-timescale student, not a looser commit rule.
+- **Weakest pair:** Hindi→Indian-English (7/10 missed), inherited from the teacher's Indian-English accuracy (.63).
 
 ## 5. Fallback and priors
 
