@@ -5,7 +5,7 @@ Distil a frozen, full-context (offline) spoken-language-ID **teacher** into a sm
 - **Part 1 (this file):** the implemented distillation.
 - **Part 2 ([`DESIGN.md`](DESIGN.md)):** how the streaming LID plugs into ASR.
 
-Everything here was run on one laptop (RTX 4050 6 GB for teachers and training; the required training step also runs on CPU).
+Run on one laptop (RTX 4050 6 GB for Indic-Transcribe and all training), with the slow Whisper teacher fanned out to Modal L4 GPUs. The required training step also runs on CPU (`--device cpu`).
 
 ## TL;DR
 
@@ -141,7 +141,7 @@ The same students under the commit policy, compared at **equal wrong-commit rate
    - Only local targets (causal, centred) track them.
 2. **Information-matching has a price: the student inherits the teacher's short-audio weakness.**
    - At 1 s the causal target is "the teacher on 1 s of audio", and the teacher is 44% right and poorly calibrated there.
-   - The centred target at 1 s is the teacher on ~2.5 s. It peeks at the future, but at call start the future is almost always the same language, so the label is simply better: 2× faster first commit at equal error.
+   - The centred target at 1 s is the teacher on ~2.5 s. It peeks at the future, but at call start the future is almost always the same language, so the label looks better: 2× faster first commit at equal error. (The silence test below shows part of this is a shortcut.)
 3. **The peek is not free:**
    - More switches are missed at strict thresholds.
    - More raw flips: it learns to jump on the first hint of a new language.
@@ -322,7 +322,7 @@ python scripts/figures.py
 - training with a NaN guard and telephony augmentation
 - **incremental streaming inference with a KV cache** (tested equal to the batch forward)
 - streaming evaluation with a runnable, swept commit policy
-- unit tests (13)
+- unit tests (12)
 
 **Stubbed or not done:**
 - **Real code-switched evaluation data:** switches are synthetic concatenations.
@@ -332,6 +332,6 @@ python scripts/figures.py
 
 **With more compute:**
 - ~1k hours of IndicVoices + MUCS + Svarah-style accented English, relabelled by the ensemble teacher
-- telephony augmentation in training
-- a sweep of window W and chunk size
+- real 8 kHz call-centre audio instead of simulated telephony
+- a fuller sweep of the teacher window W (we measured 1.5 s vs 3 s) and a two-timescale student
 - calibration (temperature scaling) checked on real calls
