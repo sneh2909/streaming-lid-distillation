@@ -85,7 +85,11 @@ EXPECTED_FLEURS_MANIFEST_SHA256 = (
 )
 FLEURS_REVISION = "70bb2e84b976b7e960aa89f1c648e09c59f894dd"
 VIEWS = OrderedDict((("1s", 1), ("2s", 2), ("4s", 4), ("full", None)))
-PRIMARY_VIEWS = ("1s", "2s", "full")
+PRIMARY_VIEWS_BY_COHORT = {
+    "train_mono": ("1s", "2s", "full"),
+    "heldout_mono": ("1s", "2s", "full"),
+    "fleurs_en_validation": ("1s", "2s", "4s"),
+}
 TARGETED_ENGLISH_IDS = (
     "en_train_06",
     "en_train_07",
@@ -872,8 +876,10 @@ def add_views(
     expected: str,
     waveform: torch.Tensor,
     metadata: Mapping[str, Any],
+    views: Sequence[str] = tuple(VIEWS),
 ) -> None:
-    for view, seconds in VIEWS.items():
+    for view in views:
+        seconds = VIEWS[view]
         if seconds is not None:
             required = seconds * SAMPLE_RATE
             if len(waveform) < required:
@@ -1013,6 +1019,7 @@ def build_cases(
                 "dataset_row_id": record["dataset_row_id"],
                 "num_samples": len(waveform),
             },
+            views=("1s", "2s", "4s"),
         )
 
     if len({case.key for case in cases}) != len(cases):
@@ -1182,17 +1189,19 @@ def classification_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
                     [float(row["expected_conditional_probability"]) for row in selected]
                 ),
             }
-        output[cohort]["primary_1s_2s_full_composite"] = {
+        primary_views = PRIMARY_VIEWS_BY_COHORT[cohort]
+        output[cohort]["primary_composite"] = {
+            "views": list(primary_views),
             "restricted_language_macro_accuracy": float(
                 statistics.mean(
                     output[cohort][view]["restricted_7way"]["language_macro_accuracy"]
-                    for view in PRIMARY_VIEWS
+                    for view in primary_views
                 )
             ),
             "native_language_macro_accuracy": float(
                 statistics.mean(
                     output[cohort][view]["native_full_space"]["language_macro_accuracy"]
-                    for view in PRIMARY_VIEWS
+                    for view in primary_views
                 )
             ),
         }
@@ -1434,7 +1443,7 @@ def metric(model: Mapping[str, Any], cohort: str, view: str, name: str) -> float
 
 def primary_composite(model: Mapping[str, Any], cohort: str) -> float:
     return float(
-        model["classification"][cohort]["primary_1s_2s_full_composite"][
+        model["classification"][cohort]["primary_composite"][
             "restricted_language_macro_accuracy"
         ]
     )
@@ -1596,7 +1605,9 @@ def main() -> None:
         "language_codes": list(LANGUAGE_CODES),
         "views": {key: value for key, value in VIEWS.items()},
         "prefix_policy": "true leading prefix; ineligible if source is one sample short; no padding",
-        "primary_views": list(PRIMARY_VIEWS),
+        "primary_views_by_cohort": {
+            key: list(value) for key, value in PRIMARY_VIEWS_BY_COHORT.items()
+        },
         "targeted_english_ids": list(TARGETED_ENGLISH_IDS),
         "switch_scorer": {
             "space": "restricted_7way",

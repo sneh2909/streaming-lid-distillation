@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate agreement, CPU RTF, and Hindi-to-English streaming switch lag."""
+"""Evaluate agreement, offline-replay wall RTF, and streaming switch lag."""
 
 from __future__ import annotations
 
@@ -570,7 +570,7 @@ def main() -> None:
     figure.savefig(args.results_dir / "switch_plot.png", dpi=160)
     plt.close(figure)
 
-    cpu_rtf, benchmark_rtfs = benchmark_rtf(
+    offline_replay_wall_rtf, offline_replay_wall_rtf_runs = benchmark_rtf(
         model,
         frontend,
         heldout_waveforms,
@@ -582,7 +582,7 @@ def main() -> None:
         math.isfinite(heldout_teacher_agreement)
         and math.isfinite(heldout_student_label_accuracy)
         and math.isfinite(heldout_teacher_label_accuracy)
-        and math.isfinite(cpu_rtf)
+        and math.isfinite(offline_replay_wall_rtf)
         and np.isfinite(switch_probabilities).all()
         and np.isfinite(student_chunks).all()
         and np.isfinite(student_chunk_times).all()
@@ -650,8 +650,19 @@ def main() -> None:
         "switch_lag_ms": switch_lag_ms,
         "switch_emission_schedule": switch_emission_schedule,
         "detector": detector_config,
-        "cpu_rtf": cpu_rtf,
-        "cpu_rtf_runs": benchmark_rtfs,
+        "offline_replay_frontend_student_wall_rtf": offline_replay_wall_rtf,
+        "offline_replay_frontend_student_wall_rtf_runs": (
+            offline_replay_wall_rtf_runs
+        ),
+        "offline_replay_timing_scope": (
+            "whole_waveform_frontend_plus_uncached_streaming_replay"
+        ),
+        "offline_replay_teacher_in_timed_region": False,
+        "offline_replay_outer_process_protocol": "opportunistic_single_process",
+        "cpu_rtf": offline_replay_wall_rtf,
+        "cpu_rtf_field_status": (
+            "deprecated_alias_of_offline_replay_frontend_student_wall_rtf"
+        ),
         "cpu_threads": args.threads,
         "chunk_equivalence_checked": True,
         "provisional_tail_withheld": True,
@@ -761,7 +772,15 @@ def main() -> None:
         "withheld_tail_frames": model.lookahead_frames,
         "actual_streaming_emission_groups_preserved": True,
         "switch_emission_schedule": switch_emission_schedule_summary,
-        "cpu_rtf": cpu_rtf,
+        "offline_replay_frontend_student_wall_rtf": offline_replay_wall_rtf,
+        "offline_replay_timing_scope": (
+            "whole_waveform_frontend_plus_uncached_streaming_replay"
+        ),
+        "offline_replay_teacher_in_timed_region": False,
+        "cpu_rtf": offline_replay_wall_rtf,
+        "cpu_rtf_field_status": (
+            "deprecated_alias_of_offline_replay_frontend_student_wall_rtf"
+        ),
         "losses": train_metrics["losses"],
         "optimizer_steps": train_metrics["optimizer_steps"],
         "requested_optimizer_steps": train_metrics[
@@ -807,7 +826,7 @@ def main() -> None:
         f"heldout teacher agreement={heldout_teacher_agreement:.3f}; "
         f"student label accuracy={heldout_student_label_accuracy:.3f}; "
         f"teacher label accuracy={heldout_teacher_label_accuracy:.3f}; "
-        f"CPU RTF={cpu_rtf:.4f}; "
+        f"offline-replay wall RTF={offline_replay_wall_rtf:.4f}; "
         f"switch lag={switch_lag_ms if switch_lag_ms is not None else 'not detected'} ms; "
         f"nan_free={summary['nan_free']}",
         flush=True,

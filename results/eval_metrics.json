@@ -1,5 +1,5 @@
 {
-  "run_id": "lidrun-e7d38e659ba32df60cbd6e8e3eb5d7432a8cfaa2a3aad484a5cb99261cd6cf2b",
+  "run_id": "lidrun-bf6bd58700ea194c735fffe2387507a28742bb7bf95c33442a2b3395b2963ad2",
   "run_identity": {
     "schema_version": 4,
     "pipeline": {
@@ -68,8 +68,8 @@
       "source": {
         "schema_version": 1,
         "kind": "executed_source_snapshot",
-        "source_sha256": "c97e1b0ba0d5af84e6eb3152851bc3fc22d5bebcfe7197278ddf306b9cd5fda2",
-        "snapshot_root_sha256": "c97e1b0ba0d5af84e6eb3152851bc3fc22d5bebcfe7197278ddf306b9cd5fda2",
+        "source_sha256": "bae713add67b9b5a857d6f8493d2df08eed6944f61ace6a29f81b6c4d42efbcf",
+        "snapshot_root_sha256": "bae713add67b9b5a857d6f8493d2df08eed6944f61ace6a29f81b6c4d42efbcf",
         "snapshot_kind": "captured_worktree",
         "files": {
           "pyproject.toml": {
@@ -77,9 +77,14 @@
             "bytes": 867,
             "mode": 365
           },
+          "scripts/benchmark_throughput.py": {
+            "sha256": "a9998d196832c4312dffea365e7190890fe4fdc0e9516d51839794313dd136eb",
+            "bytes": 38960,
+            "mode": 365
+          },
           "scripts/eval.py": {
-            "sha256": "90dccaf4aca543d9b5ce1f320744cc0c31fa10a30ef757b93113cfdf18857db5",
-            "bytes": 33998,
+            "sha256": "0f952214a0f2996444fa381363f6f370715a512ebde70c4d1e63f3839f1615ca",
+            "bytes": 35009,
             "mode": 365
           },
           "scripts/prepare_data.py": {
@@ -137,6 +142,11 @@
             "bytes": 21963,
             "mode": 365
           },
+          "src/streaming_lid/throughput.py": {
+            "sha256": "1b9da5b029886b6bcd1ef321a63dae7303221e34831272c8f37b8732219e8fc1",
+            "bytes": 11525,
+            "mode": 365
+          },
           "uv.lock": {
             "sha256": "b1155aa9f13a209648856197437b8c6759098cf0a71758f761e80bd912ceeb0c",
             "bytes": 132888,
@@ -150,7 +160,7 @@
           },
           "eval": {
             "path": "scripts/eval.py",
-            "sha256": "90dccaf4aca543d9b5ce1f320744cc0c31fa10a30ef757b93113cfdf18857db5"
+            "sha256": "0f952214a0f2996444fa381363f6f370715a512ebde70c4d1e63f3839f1615ca"
           }
         },
         "local_module_origins": {
@@ -160,7 +170,8 @@
           "streaming_lid.data": "src/streaming_lid/data.py",
           "streaming_lid.loss": "src/streaming_lid/loss.py",
           "streaming_lid.model": "src/streaming_lid/model.py",
-          "streaming_lid.run_identity": "src/streaming_lid/run_identity.py"
+          "streaming_lid.run_identity": "src/streaming_lid/run_identity.py",
+          "streaming_lid.throughput": "src/streaming_lid/throughput.py"
         },
         "environment": {
           "python": {
@@ -346,7 +357,7 @@
     "manifest_bindings_equal": true,
     "model_state_sha256": "b96a856c4d77f0a70be10421fa362d838be4b7c047596fb1049b977629b42273"
   },
-  "checkpoint_sha256": "0b871e75a79d76a3bbbf24351d8b982ea4f7436276020520044b28a2f76941ba",
+  "checkpoint_sha256": "edf2288f39d422f60840329a907b87d4b33677fe50450542393223d2597c9d4c",
   "evaluation_run_identity_validated": true,
   "launch_dependency_snapshot_captured_before_preload": true,
   "dependency_snapshot_validation_checks": 3,
@@ -1013,7 +1024,7 @@
         "latest_received_feature_frame": 31,
         "latest_audio_sample_exclusive": 5360,
         "audio_available_seconds": 0.335,
-        "emitted_monotonic_offset_seconds": 0.0009661889998824336
+        "emitted_monotonic_offset_seconds": 0.0011385479992895853
       },
       {
         "call_index": 2,
@@ -1027,7 +1038,7 @@
         "latest_received_feature_frame": 47,
         "latest_audio_sample_exclusive": 7920,
         "audio_available_seconds": 0.495,
-        "emitted_monotonic_offset_seconds": 0.0019803550003416603
+        "emitted_monotonic_offset_seconds": 0.002136815999620012
       },
       {
         "call_index": 3,
@@ -1041,7 +1052,7 @@
         "latest_received_feature_frame": 63,
         "latest_audio_sample_exclusive": 10480,
         "audio_available_seconds": 0.655,
-        "emitted_monotonic_offset_seconds": 0.002775857999949949
+        "emitted_monotonic_offset_seconds": 0.003350905999468523
       },
       {
         "call_index": 4,
@@ -1055,7 +1066,7 @@
         "latest_received_feature_frame": 79,
         "latest_audio_sample_exclusive": 13040,
         "audio_available_seconds": 0.815,
-        "emitted_monotonic_offset_seconds": 0.0035939869994763285
+        "emitted_monotonic_offset_seconds": 0.004409854000186897
       },
       {
         "call_index": 5,
@@ -1069,7 +1080,7 @@
         "latest_received_feature_frame": 95,
         "latest_audio_sample_exclusive": 15600,
         "audio_available_seconds": 0.975,
-        "emitted_monotonic_offset_seconds": 0.004447784000149113
+        "emitted_monotonic_offset_seconds": 0.00573075499960396
       },
       {
         "call_index": 6,
@@ -1083,7 +1094,7 @@
         "latest_received_feature_frame": 111,
         "latest_audio_sample_exclusive": 18160,
         "audio_available_seconds": 1.135,
-        "emitted_monotonic_offset_seconds": 0.00549956199938606
+        "emitted_monotonic_offset_seconds": 0.0067244450001453515
       },
       {
         "call_index": 7,
@@ -1097,7 +1108,7 @@
         "latest_received_feature_frame": 127,
         "latest_audio_sample_exclusive": 20720,
         "audio_available_seconds": 1.295,
-        "emitted_monotonic_offset_seconds": 0.006403366000085953
+        "emitted_monotonic_offset_seconds": 0.008481820999804768
       },
       {
         "call_index": 8,
@@ -1111,7 +1122,7 @@
         "latest_received_feature_frame": 143,
         "latest_audio_sample_exclusive": 23280,
         "audio_available_seconds": 1.455,
-        "emitted_monotonic_offset_seconds": 0.007450066999808769
+        "emitted_monotonic_offset_seconds": 0.010647107999830041
       },
       {
         "call_index": 9,
@@ -1125,7 +1136,7 @@
         "latest_received_feature_frame": 159,
         "latest_audio_sample_exclusive": 25840,
         "audio_available_seconds": 1.615,
-        "emitted_monotonic_offset_seconds": 0.00833252299889864
+        "emitted_monotonic_offset_seconds": 0.01299444200049038
       },
       {
         "call_index": 10,
@@ -1139,7 +1150,7 @@
         "latest_received_feature_frame": 175,
         "latest_audio_sample_exclusive": 28400,
         "audio_available_seconds": 1.775,
-        "emitted_monotonic_offset_seconds": 0.00937530000010156
+        "emitted_monotonic_offset_seconds": 0.01794843499919807
       },
       {
         "call_index": 11,
@@ -1153,7 +1164,7 @@
         "latest_received_feature_frame": 191,
         "latest_audio_sample_exclusive": 30960,
         "audio_available_seconds": 1.935,
-        "emitted_monotonic_offset_seconds": 0.01021825899988471
+        "emitted_monotonic_offset_seconds": 0.021024018000389333
       },
       {
         "call_index": 12,
@@ -1167,7 +1178,7 @@
         "latest_received_feature_frame": 207,
         "latest_audio_sample_exclusive": 33520,
         "audio_available_seconds": 2.095,
-        "emitted_monotonic_offset_seconds": 0.011151740000059363
+        "emitted_monotonic_offset_seconds": 0.022548757000549813
       },
       {
         "call_index": 13,
@@ -1181,7 +1192,7 @@
         "latest_received_feature_frame": 223,
         "latest_audio_sample_exclusive": 36080,
         "audio_available_seconds": 2.255,
-        "emitted_monotonic_offset_seconds": 0.011965286999839009
+        "emitted_monotonic_offset_seconds": 0.02399039299962169
       },
       {
         "call_index": 14,
@@ -1195,7 +1206,7 @@
         "latest_received_feature_frame": 239,
         "latest_audio_sample_exclusive": 38640,
         "audio_available_seconds": 2.415,
-        "emitted_monotonic_offset_seconds": 0.012870677999671898
+        "emitted_monotonic_offset_seconds": 0.025323234000097727
       },
       {
         "call_index": 15,
@@ -1209,7 +1220,7 @@
         "latest_received_feature_frame": 255,
         "latest_audio_sample_exclusive": 41200,
         "audio_available_seconds": 2.575,
-        "emitted_monotonic_offset_seconds": 0.013807411000016145
+        "emitted_monotonic_offset_seconds": 0.028568380999786314
       },
       {
         "call_index": 16,
@@ -1223,7 +1234,7 @@
         "latest_received_feature_frame": 271,
         "latest_audio_sample_exclusive": 43760,
         "audio_available_seconds": 2.735,
-        "emitted_monotonic_offset_seconds": 0.014657464000265463
+        "emitted_monotonic_offset_seconds": 0.031796315999599756
       },
       {
         "call_index": 17,
@@ -1237,7 +1248,7 @@
         "latest_received_feature_frame": 287,
         "latest_audio_sample_exclusive": 46320,
         "audio_available_seconds": 2.895,
-        "emitted_monotonic_offset_seconds": 0.015674176000175066
+        "emitted_monotonic_offset_seconds": 0.03446780100057367
       },
       {
         "call_index": 18,
@@ -1251,7 +1262,7 @@
         "latest_received_feature_frame": 303,
         "latest_audio_sample_exclusive": 48880,
         "audio_available_seconds": 3.055,
-        "emitted_monotonic_offset_seconds": 0.01652746699983254
+        "emitted_monotonic_offset_seconds": 0.03600263599946629
       },
       {
         "call_index": 19,
@@ -1265,7 +1276,7 @@
         "latest_received_feature_frame": 319,
         "latest_audio_sample_exclusive": 51440,
         "audio_available_seconds": 3.215,
-        "emitted_monotonic_offset_seconds": 0.0173626100004185
+        "emitted_monotonic_offset_seconds": 0.03753759000028367
       },
       {
         "call_index": 20,
@@ -1279,7 +1290,7 @@
         "latest_received_feature_frame": 335,
         "latest_audio_sample_exclusive": 54000,
         "audio_available_seconds": 3.375,
-        "emitted_monotonic_offset_seconds": 0.01820279300045513
+        "emitted_monotonic_offset_seconds": 0.03895941600057995
       },
       {
         "call_index": 21,
@@ -1293,7 +1304,7 @@
         "latest_received_feature_frame": 351,
         "latest_audio_sample_exclusive": 56560,
         "audio_available_seconds": 3.535,
-        "emitted_monotonic_offset_seconds": 0.019051876999583328
+        "emitted_monotonic_offset_seconds": 0.04057627799920738
       },
       {
         "call_index": 22,
@@ -1307,7 +1318,7 @@
         "latest_received_feature_frame": 367,
         "latest_audio_sample_exclusive": 59120,
         "audio_available_seconds": 3.695,
-        "emitted_monotonic_offset_seconds": 0.019849451000482077
+        "emitted_monotonic_offset_seconds": 0.042067845999554265
       },
       {
         "call_index": 23,
@@ -1321,7 +1332,7 @@
         "latest_received_feature_frame": 383,
         "latest_audio_sample_exclusive": 61680,
         "audio_available_seconds": 3.855,
-        "emitted_monotonic_offset_seconds": 0.020699847000287264
+        "emitted_monotonic_offset_seconds": 0.043502721999175265
       },
       {
         "call_index": 24,
@@ -1335,7 +1346,7 @@
         "latest_received_feature_frame": 399,
         "latest_audio_sample_exclusive": 64240,
         "audio_available_seconds": 4.015,
-        "emitted_monotonic_offset_seconds": 0.021817054999701213
+        "emitted_monotonic_offset_seconds": 0.045139404999645194
       },
       {
         "call_index": 25,
@@ -1349,7 +1360,7 @@
         "latest_received_feature_frame": 415,
         "latest_audio_sample_exclusive": 66800,
         "audio_available_seconds": 4.175,
-        "emitted_monotonic_offset_seconds": 0.022706378998918808
+        "emitted_monotonic_offset_seconds": 0.046499525000399444
       },
       {
         "call_index": 26,
@@ -1363,7 +1374,7 @@
         "latest_received_feature_frame": 431,
         "latest_audio_sample_exclusive": 69360,
         "audio_available_seconds": 4.335,
-        "emitted_monotonic_offset_seconds": 0.023569250999571523
+        "emitted_monotonic_offset_seconds": 0.047897110000121756
       },
       {
         "call_index": 27,
@@ -1377,7 +1388,7 @@
         "latest_received_feature_frame": 447,
         "latest_audio_sample_exclusive": 71920,
         "audio_available_seconds": 4.495,
-        "emitted_monotonic_offset_seconds": 0.024558621998949093
+        "emitted_monotonic_offset_seconds": 0.04952370699902531
       },
       {
         "call_index": 28,
@@ -1391,7 +1402,7 @@
         "latest_received_feature_frame": 463,
         "latest_audio_sample_exclusive": 74480,
         "audio_available_seconds": 4.655,
-        "emitted_monotonic_offset_seconds": 0.025465143999099382
+        "emitted_monotonic_offset_seconds": 0.05076459200063255
       },
       {
         "call_index": 29,
@@ -1405,7 +1416,7 @@
         "latest_received_feature_frame": 479,
         "latest_audio_sample_exclusive": 77040,
         "audio_available_seconds": 4.815,
-        "emitted_monotonic_offset_seconds": 0.02626172499913082
+        "emitted_monotonic_offset_seconds": 0.05189090199928614
       },
       {
         "call_index": 30,
@@ -1419,7 +1430,7 @@
         "latest_received_feature_frame": 495,
         "latest_audio_sample_exclusive": 79600,
         "audio_available_seconds": 4.975,
-        "emitted_monotonic_offset_seconds": 0.02710328700050013
+        "emitted_monotonic_offset_seconds": 0.0530735669999558
       },
       {
         "call_index": 31,
@@ -1433,7 +1444,7 @@
         "latest_received_feature_frame": 511,
         "latest_audio_sample_exclusive": 82160,
         "audio_available_seconds": 5.135,
-        "emitted_monotonic_offset_seconds": 0.027929820998906507
+        "emitted_monotonic_offset_seconds": 0.05428962299993145
       },
       {
         "call_index": 32,
@@ -1447,7 +1458,7 @@
         "latest_received_feature_frame": 527,
         "latest_audio_sample_exclusive": 84720,
         "audio_available_seconds": 5.295,
-        "emitted_monotonic_offset_seconds": 0.02898216500034323
+        "emitted_monotonic_offset_seconds": 0.05664346400044451
       },
       {
         "call_index": 33,
@@ -1461,7 +1472,7 @@
         "latest_received_feature_frame": 543,
         "latest_audio_sample_exclusive": 87280,
         "audio_available_seconds": 5.455,
-        "emitted_monotonic_offset_seconds": 0.029795765000017127
+        "emitted_monotonic_offset_seconds": 0.058525451000605244
       },
       {
         "call_index": 34,
@@ -1475,7 +1486,7 @@
         "latest_received_feature_frame": 559,
         "latest_audio_sample_exclusive": 89840,
         "audio_available_seconds": 5.615,
-        "emitted_monotonic_offset_seconds": 0.030651996999949915
+        "emitted_monotonic_offset_seconds": 0.06008146299973305
       },
       {
         "call_index": 35,
@@ -1489,7 +1500,7 @@
         "latest_received_feature_frame": 575,
         "latest_audio_sample_exclusive": 92400,
         "audio_available_seconds": 5.775,
-        "emitted_monotonic_offset_seconds": 0.03147590499975195
+        "emitted_monotonic_offset_seconds": 0.06158693599900289
       },
       {
         "call_index": 36,
@@ -1503,7 +1514,7 @@
         "latest_received_feature_frame": 591,
         "latest_audio_sample_exclusive": 94960,
         "audio_available_seconds": 5.935,
-        "emitted_monotonic_offset_seconds": 0.03232139499959885
+        "emitted_monotonic_offset_seconds": 0.06290638599966769
       },
       {
         "call_index": 37,
@@ -1517,7 +1528,7 @@
         "latest_received_feature_frame": 607,
         "latest_audio_sample_exclusive": 97520,
         "audio_available_seconds": 6.095,
-        "emitted_monotonic_offset_seconds": 0.033281537998846034
+        "emitted_monotonic_offset_seconds": 0.06427281799915363
       },
       {
         "call_index": 38,
@@ -1531,7 +1542,7 @@
         "latest_received_feature_frame": 623,
         "latest_audio_sample_exclusive": 100080,
         "audio_available_seconds": 6.255,
-        "emitted_monotonic_offset_seconds": 0.0341201289993478
+        "emitted_monotonic_offset_seconds": 0.06608228799996141
       },
       {
         "call_index": 39,
@@ -1545,7 +1556,7 @@
         "latest_received_feature_frame": 639,
         "latest_audio_sample_exclusive": 102640,
         "audio_available_seconds": 6.415,
-        "emitted_monotonic_offset_seconds": 0.03498975100046664
+        "emitted_monotonic_offset_seconds": 0.06773660599901632
       },
       {
         "call_index": 40,
@@ -1559,7 +1570,7 @@
         "latest_received_feature_frame": 655,
         "latest_audio_sample_exclusive": 105200,
         "audio_available_seconds": 6.575,
-        "emitted_monotonic_offset_seconds": 0.03581920299984631
+        "emitted_monotonic_offset_seconds": 0.06935048699961044
       },
       {
         "call_index": 41,
@@ -1573,7 +1584,7 @@
         "latest_received_feature_frame": 671,
         "latest_audio_sample_exclusive": 107760,
         "audio_available_seconds": 6.735,
-        "emitted_monotonic_offset_seconds": 0.03685126799973659
+        "emitted_monotonic_offset_seconds": 0.07082651800010353
       },
       {
         "call_index": 42,
@@ -1587,7 +1598,7 @@
         "latest_received_feature_frame": 687,
         "latest_audio_sample_exclusive": 110320,
         "audio_available_seconds": 6.895,
-        "emitted_monotonic_offset_seconds": 0.03773572799946123
+        "emitted_monotonic_offset_seconds": 0.0723240919996897
       },
       {
         "call_index": 43,
@@ -1601,7 +1612,7 @@
         "latest_received_feature_frame": 703,
         "latest_audio_sample_exclusive": 112880,
         "audio_available_seconds": 7.055,
-        "emitted_monotonic_offset_seconds": 0.038609291999819106
+        "emitted_monotonic_offset_seconds": 0.07388771700061625
       },
       {
         "call_index": 44,
@@ -1615,7 +1626,7 @@
         "latest_received_feature_frame": 719,
         "latest_audio_sample_exclusive": 115440,
         "audio_available_seconds": 7.215,
-        "emitted_monotonic_offset_seconds": 0.03944760500053235
+        "emitted_monotonic_offset_seconds": 0.0754514759992162
       },
       {
         "call_index": 45,
@@ -1629,7 +1640,7 @@
         "latest_received_feature_frame": 735,
         "latest_audio_sample_exclusive": 118000,
         "audio_available_seconds": 7.375,
-        "emitted_monotonic_offset_seconds": 0.04032459399968502
+        "emitted_monotonic_offset_seconds": 0.07706467699972563
       },
       {
         "call_index": 46,
@@ -1643,7 +1654,7 @@
         "latest_received_feature_frame": 751,
         "latest_audio_sample_exclusive": 120560,
         "audio_available_seconds": 7.535,
-        "emitted_monotonic_offset_seconds": 0.04132181000022683
+        "emitted_monotonic_offset_seconds": 0.0785564660000091
       },
       {
         "call_index": 47,
@@ -1657,7 +1668,7 @@
         "latest_received_feature_frame": 767,
         "latest_audio_sample_exclusive": 123120,
         "audio_available_seconds": 7.695,
-        "emitted_monotonic_offset_seconds": 0.04214549099924625
+        "emitted_monotonic_offset_seconds": 0.08001438899918867
       },
       {
         "call_index": 48,
@@ -1671,7 +1682,7 @@
         "latest_received_feature_frame": 783,
         "latest_audio_sample_exclusive": 125680,
         "audio_available_seconds": 7.855,
-        "emitted_monotonic_offset_seconds": 0.04304814900024212
+        "emitted_monotonic_offset_seconds": 0.08295503299996199
       },
       {
         "call_index": 49,
@@ -1685,7 +1696,7 @@
         "latest_received_feature_frame": 797,
         "latest_audio_sample_exclusive": 127920,
         "audio_available_seconds": 7.995,
-        "emitted_monotonic_offset_seconds": 0.04402922799999942
+        "emitted_monotonic_offset_seconds": 0.08439886199994362
       }
     ]
   },
@@ -1697,14 +1708,19 @@
     "ema_new_weight": 0.3,
     "initial_commit_seconds": null
   },
-  "cpu_rtf": 0.0056118472082715256,
-  "cpu_rtf_runs": [
-    0.0065718341274084435,
-    0.006006565459766187,
-    0.005606173729964097,
-    0.005429952140184617,
-    0.0056118472082715256
+  "offline_replay_frontend_student_wall_rtf": 0.011820324983133873,
+  "offline_replay_frontend_student_wall_rtf_runs": [
+    0.013187349894426341,
+    0.011465856876476492,
+    0.012025057980712744,
+    0.0114891196494885,
+    0.011820324983133873
   ],
+  "offline_replay_timing_scope": "whole_waveform_frontend_plus_uncached_streaming_replay",
+  "offline_replay_teacher_in_timed_region": false,
+  "offline_replay_outer_process_protocol": "opportunistic_single_process",
+  "cpu_rtf": 0.011820324983133873,
+  "cpu_rtf_field_status": "deprecated_alias_of_offline_replay_frontend_student_wall_rtf",
   "cpu_threads": 6,
   "chunk_equivalence_checked": true,
   "provisional_tail_withheld": true,

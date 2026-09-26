@@ -1,5 +1,5 @@
 {
-  "run_id": "lidrun-e7d38e659ba32df60cbd6e8e3eb5d7432a8cfaa2a3aad484a5cb99261cd6cf2b",
+  "run_id": "lidrun-bf6bd58700ea194c735fffe2387507a28742bb7bf95c33442a2b3395b2963ad2",
   "run_identity": {
     "schema_version": 4,
     "pipeline": {
@@ -68,8 +68,8 @@
       "source": {
         "schema_version": 1,
         "kind": "executed_source_snapshot",
-        "source_sha256": "c97e1b0ba0d5af84e6eb3152851bc3fc22d5bebcfe7197278ddf306b9cd5fda2",
-        "snapshot_root_sha256": "c97e1b0ba0d5af84e6eb3152851bc3fc22d5bebcfe7197278ddf306b9cd5fda2",
+        "source_sha256": "bae713add67b9b5a857d6f8493d2df08eed6944f61ace6a29f81b6c4d42efbcf",
+        "snapshot_root_sha256": "bae713add67b9b5a857d6f8493d2df08eed6944f61ace6a29f81b6c4d42efbcf",
         "snapshot_kind": "captured_worktree",
         "files": {
           "pyproject.toml": {
@@ -77,9 +77,14 @@
             "bytes": 867,
             "mode": 365
           },
+          "scripts/benchmark_throughput.py": {
+            "sha256": "a9998d196832c4312dffea365e7190890fe4fdc0e9516d51839794313dd136eb",
+            "bytes": 38960,
+            "mode": 365
+          },
           "scripts/eval.py": {
-            "sha256": "90dccaf4aca543d9b5ce1f320744cc0c31fa10a30ef757b93113cfdf18857db5",
-            "bytes": 33998,
+            "sha256": "0f952214a0f2996444fa381363f6f370715a512ebde70c4d1e63f3839f1615ca",
+            "bytes": 35009,
             "mode": 365
           },
           "scripts/prepare_data.py": {
@@ -137,6 +142,11 @@
             "bytes": 21963,
             "mode": 365
           },
+          "src/streaming_lid/throughput.py": {
+            "sha256": "1b9da5b029886b6bcd1ef321a63dae7303221e34831272c8f37b8732219e8fc1",
+            "bytes": 11525,
+            "mode": 365
+          },
           "uv.lock": {
             "sha256": "b1155aa9f13a209648856197437b8c6759098cf0a71758f761e80bd912ceeb0c",
             "bytes": 132888,
@@ -150,7 +160,7 @@
           },
           "eval": {
             "path": "scripts/eval.py",
-            "sha256": "90dccaf4aca543d9b5ce1f320744cc0c31fa10a30ef757b93113cfdf18857db5"
+            "sha256": "0f952214a0f2996444fa381363f6f370715a512ebde70c4d1e63f3839f1615ca"
           }
         },
         "local_module_origins": {
@@ -160,7 +170,8 @@
           "streaming_lid.data": "src/streaming_lid/data.py",
           "streaming_lid.loss": "src/streaming_lid/loss.py",
           "streaming_lid.model": "src/streaming_lid/model.py",
-          "streaming_lid.run_identity": "src/streaming_lid/run_identity.py"
+          "streaming_lid.run_identity": "src/streaming_lid/run_identity.py",
+          "streaming_lid.throughput": "src/streaming_lid/throughput.py"
         },
         "environment": {
           "python": {
@@ -347,9 +358,9 @@
     "model_state_sha256": "b96a856c4d77f0a70be10421fa362d838be4b7c047596fb1049b977629b42273"
   },
   "run_identity_schema_version": 4,
-  "checkpoint_sha256": "0b871e75a79d76a3bbbf24351d8b982ea4f7436276020520044b28a2f76941ba",
+  "checkpoint_sha256": "edf2288f39d422f60840329a907b87d4b33677fe50450542393223d2597c9d4c",
   "model_state_sha256": "b96a856c4d77f0a70be10421fa362d838be4b7c047596fb1049b977629b42273",
-  "pipeline_source_sha256": "c97e1b0ba0d5af84e6eb3152851bc3fc22d5bebcfe7197278ddf306b9cd5fda2",
+  "pipeline_source_sha256": "bae713add67b9b5a857d6f8493d2df08eed6944f61ace6a29f81b6c4d42efbcf",
   "executed_source_snapshot_validated": true,
   "source_snapshot_kind": "captured_worktree",
   "source_stage_verified_before_import": true,
@@ -635,7 +646,11 @@
     "monotonic_clock": "offline_feature_replay_call_completion",
     "incremental_frontend_included": false
   },
-  "cpu_rtf": 0.0056118472082715256,
+  "offline_replay_frontend_student_wall_rtf": 0.011820324983133873,
+  "offline_replay_timing_scope": "whole_waveform_frontend_plus_uncached_streaming_replay",
+  "offline_replay_teacher_in_timed_region": false,
+  "cpu_rtf": 0.011820324983133873,
+  "cpu_rtf_field_status": "deprecated_alias_of_offline_replay_frontend_student_wall_rtf",
   "losses": [
     7.407291412353516,
     7.484633922576904,

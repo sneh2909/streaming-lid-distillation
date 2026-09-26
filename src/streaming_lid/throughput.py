@@ -80,6 +80,11 @@ def summarize_process_runs(
     first_median = float(statistics.median(first_half))
     last_median = float(statistics.median(last_half))
     half_drift = abs(last_median / first_median - 1.0)
+    half_drift_passed = (
+        first_median * (1.0 - MAX_HALF_DRIFT)
+        <= last_median
+        <= first_median * (1.0 + MAX_HALF_DRIFT)
+    )
     return {
         "measured_sweeps": len(wall),
         "median_wall_rtf": float(statistics.median(wall)),
@@ -89,7 +94,7 @@ def summarize_process_runs(
         "first_half_median_wall_rtf": first_median,
         "last_half_median_wall_rtf": last_median,
         "absolute_half_drift_fraction": half_drift,
-        "half_drift_passed": half_drift <= MAX_HALF_DRIFT,
+        "half_drift_passed": half_drift_passed,
     }
 
 
@@ -145,7 +150,7 @@ def aggregate_processes(
         len(processes) == expected_processes
         and all(item["measured_sweeps"] == expected_sweeps for item in process_summaries)
     )
-    dispersion_passed = ratio <= MAX_PROCESS_MEDIAN_RATIO
+    dispersion_passed = maximum <= minimum * MAX_PROCESS_MEDIAN_RATIO
     half_drift_passed = all(item["half_drift_passed"] for item in process_summaries)
     stability_passed = protocol_compliant and dispersion_passed and half_drift_passed
     return {
@@ -156,6 +161,9 @@ def aggregate_processes(
         "expected_processes": expected_processes,
         "expected_sweeps_per_process": expected_sweeps,
         "protocol_compliant": protocol_compliant,
+        "historical_opportunistic_n": (
+            None if protocol_compliant else len(processes)
+        ),
         "identity_bindings_equal": True,
         "process_median_wall_rtfs": medians,
         "median_wall_rtf": aggregate_median,
@@ -260,7 +268,8 @@ def validate_worker_runtime(
         "mkl_num_threads": 6,
         "omp_proc_bind": "TRUE",
         "omp_places": "cores",
-        "binding_policy": "six_distinct_visible_cores_first_logical_cpu_v1",
+        "affinity_policy": "six_distinct_visible_cores_first_logical_cpu_v1",
+        "binding_policy": "OMP_PROC_BIND_TRUE_OMP_PLACES_cores",
     }
 
 
@@ -275,4 +284,3 @@ def validate_timed_scope(*, metric: str, loaded_modules: Sequence[str]) -> None:
     )
     if forbidden:
         raise RuntimeError(f"offline teacher entered the timed child: {forbidden[:3]}")
-
