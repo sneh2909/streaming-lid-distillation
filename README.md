@@ -16,46 +16,76 @@ Run on one laptop (RTX 4050 6 GB for Indic-Transcribe and all training), with th
   - It is the same as the "centred window + emit delay Δ = W/2" recipe, written down honestly (section 3).
 - **Why it matters, measured:**
   - We trained the same student on 5 target types.
-  - Future-informed targets (full clip, centred, hybrid) look **better** in the first second, but they identify the language **from pure silence** 62–73% of the time (chance 14%). They learned FLEURS recording conditions, because a target that depends on the future rewards any clue that predicts the future.
+  - Future-informed targets (full clip, centred, hybrid) look **better** in the first second, but they identify the language **from pure silence** 62–73% of the time (chance 14%). They learned recording conditions, because a target that depends on the future rewards any clue that predicts the future.
   - Every information-matched target (causal, prefix) is at chance on silence.
   - Full and prefix targets also miss 77–87% of language switches (section 3).
+- **A data bug we found and fixed** (§1): ~75% of FLEURS US-English clips are recorded ~30 dB quieter than every other language.
+  - The first model learned "quiet ⇒ English": Hindi turned down 30 dB was called English 82% of the time.
+  - We level-normalised all audio, trimmed it to speech with Silero VAD, rebuilt the switch clips as natural sentence-pause-sentence turns, added ±10 dB random gain in training, and retrained.
+  - The before/after is reported in §5.
 - **Student:** a 3.1M-parameter causal Conformer with 80 ms frames and chunked attention. Trained with random chunk sizes (80/160/320/640 ms), so one model serves 4 latencies.
   - **Real incremental streaming:** `StreamingSession.push(audio)` with a KV cache, tested equal to the batch forward.
-  - Runs at ≤ 0.006× real time on one CPU thread.
-  - Held-out: .89 accuracy at 2 s, .94 at clip end, .86 on simulated telephony, ECE .02, 88% frame agreement with the teacher.
+  - Runs at ≈0.002× real time on one CPU thread.
+  - Held-out (clean data, 320 ms chunks): .71 accuracy after 1 s of speech, .86 at 2 s, .90 at clip end, .84 on simulated telephony, ECE .03. Stable from −10 to +10 dB.
+- **In the VAD-gated turn pipeline** (DESIGN §1):
+  - the final language is right at the end of **95% of turns**
+  - an early route happens after a median **1.2 s** on 85% of turns (94% correct)
+  - only 3% of turns need a re-decode
+  - a switch between turns is followed in **0.95 s**
 - **Evidence:**
   - one real optimizer step, then 5,000 steps, all finite
-  - held-out KD loss falls (0.75 → 0.28)
+  - held-out KD loss falls (0.88 → 0.50)
   - student-teacher agreement on held-out clips
   - a 5-way target comparison plus a silence-shortcut probe
-  - switch lag split into teacher, student and commit-policy lag
+  - loudness-invariance and turn-level tests
   - a window-size (W) and turn-reset study
   - 12 unit tests (causality, streaming equivalence, commit policy)
 - **Shipped model:** `checkpoints/final/student.pt` (12 MB, in the repo). Try `python scripts/stream_demo.py some.wav`.
 
-## 1. Data (`scripts/prepare_data.py`)
+## 1. Data (`scripts/prepare_data.py`, then `scripts/clean_data.py`)
 
 | Set | Source | Size |
 |---|---|---|
-| Train, monolingual | FLEURS **dev** split, 7 languages × 200 clips | 4.2 h |
+| Train, monolingual | FLEURS **dev** split, 7 languages × 200 clips (1,399 after VAD) | ~4 h |
 | Train, Indian English | AI4Bharat **Svarah**, 200 clips, speaker keys disjoint from eval | |
-| Train, switches | 600 synthetic clips: 2–3 segments of 2.5–5 s; half hi↔en, rest random pairs | 1.4 h |
-| Eval, monolingual | FLEURS **test** split, 7 × 60; Svarah 60 (other speaker keys) | 1.3 h |
-| Eval, switches | 90 clips: ~4 s A + ~4 s B. Pairs: hi↔en (US), hi↔en-IN, and gu/mr/bn/ta/te→en | |
+| Train, switches | 600 clips of 2–3 whole sentences. Half hi↔en, rest random pairs. 70% of joins have a 0.2–0.6 s pause, 30% none (mid-sentence style) | 1.8 h |
+| Eval, monolingual | FLEURS **test** split, 7 × 60; Svarah 60 (other speaker keys) | |
+| Eval, switches | 90 clips: whole sentence A, 0.25–0.6 s pause, whole sentence B. Pairs: hi↔en (US), hi↔en-IN, gu/mr/bn/ta/te→en | |
 | Telephony | Every eval clip also scored after 300–3400 Hz band-pass, 8 kHz μ-law, 20 dB SNR noise | |
 
-**Honest caveats:**
-- **FLEURS:** train and eval use different sentences, but FLEURS publishes no speaker IDs, so speaker overlap is possible.
-- **Svarah:** it has no speaker IDs either. We split on the (native language, state, district, gender, age group) tuple.
-- **Switch clips:** they are synthetic concatenations, not real code-switching.
+### The data bug, and the fix
 
-Real code-switched data (MUCS 2021, DISPLACE) is the obvious next step.
+Listening to the first version of the switch clips turned up two problems:
+- The switches were abrupt: hard 4 s cuts, mid-word, between different speakers.
+- The English half was often almost inaudible.
+
+Measuring speech level per language:
+
+| | FLEURS en (US) | every other language |
+|---|---|---|
+| median speech level | **−56 dB** | −17 to −33 dB |
+| clips below −45 dB | **147/200 train, 42/60 eval** | 0–16 |
+
+The first final model had learned the shortcut:
+- **Hindi turned down 30 dB was called English 82% of the time** (Tamil 62%, Bengali 70%).
+- On level-normalised eval audio its accuracy fell from .94 to .64.
+
+`scripts/clean_data.py` fixes this at the data level:
+1. Silero VAD keeps only speech (0.1 s padding).
+2. Each clip's speech is normalised to −23 dBFS.
+3. Switch and training-mix clips are rebuilt from whole sentences with natural pauses, 10 ms fades and equal levels.
+
+Training adds a random ±10 dB gain so level carries no information. Every number in §5 and DESIGN is on the cleaned data. §2's five-teacher table and §3's target comparison were measured on the original data (their conclusions don't depend on loudness: see the notes there).
+
+**Other caveats:**
+- **Speaker IDs:** FLEURS publishes none, so train/eval speaker overlap is possible (the sentences are disjoint). Svarah has none either; we split on the (native language, state, district, gender, age group) tuple.
+- **Synthetic switches:** these are concatenations of different speakers' sentences, not real code-switching. Real same-speaker data (MUCS 2021, DISPLACE, or our own recordings) is the obvious next step.
 
 ## 2. Teacher bake-off (`scripts/teacher_bakeoff.py`, `results/teachers/`)
 
 Choosing the teacher was part of the task, so it is measured. Every teacher's native posterior is folded onto the routing set: Urdu merged into Hindi (they sound alike), and every other language summed into "other". It is then **restricted** (renormalised) to our 7 languages.
 
-Accuracy on held-out clips (restricted), 480 clips:
+Accuracy on held-out clips (restricted), 480 clips. This table is on the **original** data (`results/v1_data/teachers/`). The teachers were chosen here; their loudness-sensitivity is lower than a from-scratch student's (they normalise their own features), and the re-scoring on clean data below confirms the ranking.
 
 | Teacher | 1 s | 2 s | 3 s | Full | Full, telephony | Indian English (full) | Hindi @2 s | Marathi | Telugu | ECE @3 s | ms/call |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -75,6 +105,16 @@ Accuracy on held-out clips (restricted), 480 clips:
    - *w* is tuned on 25 clips per group from the **training** pool (never eval), by the mean NLL of the true language over 1/2/3 s + full, clean + telephony: **w = 0.7** (NLL 0.61 vs 1.07 for Indic-T alone; `results/teachers/ensemble_tuning.json`).
    - On held-out eval it is the best teacher on every column except Indian English at 1 s, and it's the most stable as the prefix grows (clips whose argmax flips more than once: 10% vs 32%).
    - Whisper's 131 ms/call was run on Modal L4s (`scripts/modal_whisper.py`). The Modal and laptop results agree to within 0.002.
+
+**Re-scored on the cleaned data** (`results/teachers/`; ensemble weight re-tuned on the train pool: **w = 0.65**, NLL 0.26 vs 0.74 for Indic-T alone):
+
+| Teacher (clean data) | 0.5 s | 1 s | 2 s | 3 s | Full | Full, telephony | Indian English | Hindi @2 s | ECE @3 s | argmax flips > 1 as prefix grows |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Indic-Transcribe | **.60** | .75 | .86 | .88 | .90 | .90 | .18 | .98 | .076 | .19 |
+| Whisper-turbo | .26 | .35 | .45 | .50 | .59 | .57 | **1.00** | .82 | .360 | .23 |
+| **Ensemble** | .54 | **.76** | **.93** | **.95** | **.96** | **.96** | .72 | **1.00** | **.014** | **.10** |
+
+With silence trimmed, "1 s" means 1 s of *speech*: Indic-T goes from .43 to .75 at 1 s. Much of the teachers' apparent short-audio weakness was leading silence being counted as listening time.
 
 **Also not used as teachers:**
 - **Nemotron 3.5 ASR:** among our languages it covers only hi and en, and it emits the language tag only after a finished transcript.
@@ -115,9 +155,9 @@ The leftover term is not "the student is wrong". It measures the future informat
 - **No per-frame down-weighting.** With information-matched targets, early frames already have high-entropy targets, so there's no need to hand-tune "don't trust early frames". The first target is placed after 0.4 s of audio because a 0.1 s teacher call is meaningless.
 - **Temperature T = 1.** The targets are already soft and calibrated (ECE in the bake-off). Sharpening or smoothing them would break the calibration that the Part 2 commit threshold relies on.
 
-### Measured: 5 target types, same student, teacher, data and steps
+### Measured: 5 target types, same student, teacher, data and steps (original data)
 
-Setup: Indic-T teacher, 5,000 steps, telephony augmentation on, 320 ms chunks. `checkpoints/indic-transcribe_<kind>/eval.json` and `results/ablation/`. "Hybrid" = whole-clip targets on one-language clips, causal targets on multi-language clips.
+Setup: Indic-T teacher, 5,000 steps, telephony augmentation on, 320 ms chunks, **original (un-normalised) data**: `results/v1_data/ablation/`. All five arms saw the same loudness shortcut, so the *differences* between them (switch misses, silence probe) are about the targets. The silence probe uses the raw clips' leading silence, which is where the shortcut would live anyway. "Hybrid" = whole-clip targets on one-language clips, causal targets on multi-language clips.
 
 | target | acc @1 s | ECE @1 s | acc end | telephony end | switches missed (of 90) | correct *before* the switch | raw switch lag (median) | raw flips/min |
 |---|---|---|---|---|---|---|---|---|
@@ -127,7 +167,7 @@ Setup: Indic-T teacher, 5,000 steps, telephony augmentation on, 320 ms chunks. `
 | centred | **.81** | **.034** | .85 | .75 | 42 | .71 | **1.10 s** | 47 |
 | hybrid | .75 | .047 | .88 | .74 | **38** | .68 | 2.11 s | 51 |
 
-The same students under the commit policy, compared at **equal wrong-commit rate** (sweep over θ, `results/ablation/commit_sweep_*.json`):
+The same students under the commit policy, compared at **equal wrong-commit rate** (sweep over θ, `results/v1_data/ablation/commit_sweep_*.json`):
 
 | target | θ | first correct commit | wrong first commit | committed switch lag | switches missed |
 |---|---|---|---|---|---|
@@ -155,7 +195,8 @@ The same students under the commit policy, compared at **equal wrong-commit rate
 
 | student (target type) | accuracy on silence |
 |---|---|
-| **final: ensemble teacher, causal** | **.09** |
+| **final (clean data): ensemble teacher, causal** | **.12** |
+| final on the original data | .09 |
 | Indic-T causal | .14 |
 | Indic-T prefix | .10 |
 | Indic-T full clip | .62 |
@@ -170,7 +211,7 @@ This is the leftover term of §3 in action:
 - When q_t is the teacher's answer on the heard audio, the teacher is itself uncertain on silence, so there's nothing to exploit.
 - Much of the future-informed students' "better first second" is this shortcut, which would not transfer to real calls, where the phone line doesn't reveal the language.
 
-### Final choice, on the ensemble teacher
+### Final choice, on the ensemble teacher (original data)
 
 Same student and teacher, 320 ms chunks, held-out:
 
@@ -183,7 +224,7 @@ Same student and teacher, 320 ms chunks, held-out:
 | hi↔en committed switch lag / premature switches | 2.42 s / **8%** | 1.52 s / 15% |
 | accuracy on silence (chance .14) | **.09** | .64 |
 
-**We ship causal.** Centred's speed is partly a shortcut. The honest ways to get speed back (shorter W, per-turn reset) are measured in DESIGN §4.
+**We ship causal**, retrained on the cleaned data (§5). Centred's speed is partly a shortcut. On the cleaned data the shipped causal student is still at chance on silence (.12). The honest ways to get speed back (shorter W, per-turn reset) are measured in DESIGN §4.
 
 ## 4. Student and latency budget (`slid/student.py`)
 
@@ -194,7 +235,7 @@ Same student and teacher, 320 ms chunks, held-out:
 - 6 Conformer blocks: d = 144, 4 heads, FFN 576, causal depthwise conv with kernel 15, LayerNorm instead of BatchNorm.
 - Linear head over the 7 languages. 3.06M parameters.
 - **Shipped (v1):** unlimited attention history and absolute sinusoidal positions. In streaming the KV cache grows by ≈7 kB per 80 ms frame (all layers), i.e. ~50 MB for a 10-minute call, which is fine for phone calls.
-- **Constant-memory variant (v2, in the code, not shipped):** history bounded to 64 or 128 frames (5.1 / 10.2 s) plus a learned **relative position bias** instead of absolute positions. Memory is constant forever, but on the same recipe it lost accuracy:
+- **Constant-memory variant (v2, in the code, not shipped):** history bounded to 64 or 128 frames (5.1 / 10.2 s) plus a learned **relative position bias** instead of absolute positions. Memory is constant forever, but on the same recipe (original data) it lost accuracy:
 
   | | end acc | telephony end |
   |---|---|---|
@@ -230,60 +271,87 @@ Same student and teacher, 320 ms chunks, held-out:
 - **Dynamic chunk training:** chunk size is re-drawn every batch from {1,2,4,8}. One model serves every operating point, and section 5 reports accuracy per chunk: the latency/accuracy curve comes for free.
 - **Why not a GRU or TCN:** a GRU is causal but has no bounded lookahead to trade. A TCN has lookahead that grows with depth. The chunked Conformer is the standard streaming-ASR encoder (U2/WeNet, NeMo cache-aware), so it could share a front-end with the production ASR.
 
-## 5. Sanity checks and results
+## 5. Sanity checks and results (cleaned data)
 
-The final model is the **ensemble teacher + causal targets + telephony augmentation**, v1 architecture, 5,000 steps (`checkpoints/final/`; copies of `eval.json` and `train_log.json` are in `results/final/`).
+The final model is the **ensemble teacher (w = 0.65) + causal 3 s targets + telephony augmentation + ±10 dB random gain**, v1 architecture, 5,000 steps (`checkpoints/final/`; `results/final/final_eval.json`, `final_train_log.json`).
 
 **The plumbing works:**
-- **Step 1:** loss 1.99, grad-norm 8.8, finite.
+- **Step 1:** loss 2.06, grad-norm 9.1, finite. A 2-step run with `--device cpu` also runs clean.
 - **All 5,000 steps finite:** training raises on a non-finite loss.
-- **Training KD loss:** 1.76 (first 10 steps) → 0.22 (last 10).
-- **On 570 held-out clips** (eval + switch), with the student's own target type:
+- **Training KD loss:** 1.84 (first 10 steps) → 0.14 (last 10).
+- **On 569 held-out clips** (eval + switch), with the student's own targets:
 
   | step | 1k | 2k | 3k | 4k | 5k |
   |---|---|---|---|---|---|
-  | held-out KD | 0.750 | 0.480 | 0.313 | 0.283 | **0.279** |
-  | held-out argmax agreement with teacher | .69 | .81 | .87 | .88 | **.88** |
-
-![held-out KD](results/figures/heldout_kd.png)
-
-Each curve is measured against *its own* targets, so the plateau height is the part of that target the student cannot learn. The order matches §3: the whole-clip target (needs the most future) plateaus highest, then centred, then the information-matched ones. The ensemble target is the most learnable of all.
+  | held-out KD | 0.878 | 0.616 | 0.551 | 0.501 | **0.496** |
+  | held-out argmax agreement with teacher | .66 | .77 | .81 | .83 | **.83** |
 
 - **Unit tests:**
-  - causality: `tests/test_student.py` checks that perturbing audio after a chunk ends leaves earlier outputs unchanged, for every chunk size
+  - causality: `tests/test_student.py` perturbs audio after a chunk ends and checks that earlier outputs are unchanged, for every chunk size
+  - streaming equivalence (`tests/test_streaming.py`)
   - frame and target alignment
   - commit-policy behaviour (`tests/test_commit.py`)
 
-**The student as a stream, held-out (480 monolingual clips).** Accuracy on the 7 routing languages at time t after the start (wall-clock, so chunk buffering is included):
+![held-out KD](results/figures/heldout_kd.png)
+
+This figure is from the target comparison (§3, original data). Each curve is measured against *its own* targets, so the plateau height is the part of that target the student cannot learn. The order matches §3: the whole-clip target (needs the most future) plateaus highest, then centred, then the information-matched ones.
+
+**The student as a stream** (480 monolingual held-out clips, speech-only). Accuracy on the 7 routing languages after t seconds of speech (wall-clock, so chunk buffering is included):
 
 | chunk (lookahead) | 0.5 s | 1 s | 2 s | 3 s | end | end, telephony | ECE (end) | agreement with teacher |
 |---|---|---|---|---|---|---|---|---|
-| 80 ms | .16 | .48 | .90 | .95 | .94 | .87 | .022 | .88 |
-| 160 ms | .17 | .52 | .89 | .95 | .94 | .87 | .030 | .88 |
-| **320 ms** | .20 | .58 | .89 | .95 | .94 | .86 | .022 | .88 |
-| 640 ms | .24 | .59 | .90 | .95 | .94 | .86 | .029 | .88 |
+| 80 ms | .29 | .68 | .84 | .89 | .91 | .84 | .032 | .83 |
+| 160 ms | .30 | .70 | .84 | .89 | .90 | .84 | .033 | .83 |
+| **320 ms** | .35 | .71 | .86 | .89 | .90 | .84 | .034 | .83 |
+| 640 ms | .36 | .72 | .85 | .88 | .90 | .83 | .037 | .83 |
 
 **Reading it:**
-- **Longer chunks only help in the first second.** From 2 s on, the 80 ms setting is as good as 640 ms. So the latency knob can sit at 80–320 ms at almost no cost, and the time to a decision is set by *evidence* (≈1.5–2 s of speech), not by lookahead.
-- **At 1–2 s the student beats its teacher.** Teacher run on a 1 s prefix: .44, vs .58 for the student at 1 s. The student has seen thousands of in-domain windows; the teacher has only the clip.
-- **Telephony augmentation** (half the training clips degraded, target = teacher on the *clean* audio) is what makes the telephony column possible. Without it the same recipe scored **.14** on telephony (.89 clean). With it: .86 telephony, .94 clean.
-- **Indian English at 2 s:** .72 (clean) with the ensemble teacher vs .15 with Indic-T alone. The student inherits its teacher's blind spots, which is why the teacher was chosen by measurement.
+- **Longer chunks only help in the first second.** From 2 s on, 80 ms is as good as 640 ms, so the lookahead can sit at 80–320 ms at almost no cost.
+- **Telephony augmentation** (half the training clips degraded, target = teacher on the *clean* audio) is what makes the telephony column possible. The same recipe without it scored .14 on telephony.
+- **Weakest groups at 2 s:** Indian English .62 and Hindi .77. The others are .87–.95.
 
-**Switch detection, Hindi → English** (10 held-out clips, 320 ms chunks, medians). Each row is one of the three lags, measured from the true switch:
+**Before/after the data fix, on the *same* cleaned eval audio:**
+
+| | old final model (trained on un-normalised data) | **new final model** |
+|---|---|---|
+| accuracy at clip end, normal level | .64 | **.90** |
+| **turned down 30 dB:** accuracy / non-English called English | .31 / **45%** | .53 / 16% |
+| turned down 20 dB | .34 / 10% | .79 / 5% |
+| turned down 10 dB | .67 / 6% | .88 / 1% |
+| turned up 10 dB | .39 / 26% | .90 / 1% |
+| VAD-turn final LID (below) | .72 | **.95** |
+
+(`scripts/level_test.py`, `results/final/level_test.json`, `results/v1_data/final/level_test_v1model.json`.)
+
+- **Level-invariant from −10 to +10 dB.** It degrades at −20/−30 dB, where speech approaches the feature floor and training only varied level by ±10 dB. Phone lines apply AGC; widening the training range is the fix.
+- **Silence probe:** the new model is still at chance on pure silence (.12; `results/final/silence_test.json`).
+
+**The VAD-gated turn pipeline** (DESIGN §1; `scripts/turn_eval.py`, `results/final/turn_eval.json`). Silero VAD cuts the 90 switch clips into 200 turns (≥ 300 ms of silence ends a turn), and each turn gets a fresh student stream:
+
+| | value |
+|---|---|
+| **final LID at the endpoint** (what the bot acts on) | **.945** (.947 on turns ≥ 1.5 s) |
+| turns with an early route (first commit, θ 0.8) | 85% |
+| early route, median time from turn start | **1.23 s** |
+| early route accuracy | .94 |
+| turns needing a re-decode (early ≠ final) | 3% |
+
+**Switch detection inside a clip, Hindi → English** (10 clips, 320 ms chunks, medians, no per-turn reset):
 
 | | lag |
 |---|---|
-| teacher (causal 3 s window) | 2.46 s |
-| student, raw argmax | 2.26 s |
-| student, committed (θ 0.7, dwell 240 ms) | 2.83 s |
+| teacher (causal 3 s window) | 1.90 s |
+| student, raw argmax | 1.56 s |
+| student, committed (θ 0.7, dwell 240 ms) | 2.28 s |
 
-- **Flip-flops:** the raw argmax makes 17 extra label changes per minute; the committed label makes 1.9.
-- **Where the lag comes from:** mostly the target. A 3 s causal teacher window only says "English" once most of the window is English (≈1.5–2.5 s). The student is on average slightly *faster* than its own target, and the commit policy adds ≈0.5 s. See `results/figures/switch_trace.png`.
-- **Hindi → Indian English is the weak spot:** 7/10 committed switches missed, because the teacher itself is only .63 on Indian English.
+- **Misses and flip-flops:** 0/10 missed. The raw argmax makes 18.5 extra label changes per minute; the committed label makes 0.
+- **Where the lag comes from:** mostly the target. A 3 s causal teacher window says "English" only once most of the window is English. The student is *faster* than its own target, and the commit policy adds ≈0.7 s.
+- **With a fresh stream per VAD turn** (DESIGN §4), switch lag across all pairs drops to **0.95 s** (16/90 missed).
+- **Weak spot:** Hindi → Indian English, where 9/10 committed switches are missed within the clip. The teacher is .72 on Indian English, and Indian English after Hindi from different speakers is the hardest case for it.
 
 ![switch](results/figures/switch_trace.png)
 
-**Compute:** 3.06M parameters. On one CPU thread a 10 s clip takes 17–55 ms (RTF 0.0017–0.0055, depending on machine load; `eval.json`), i.e. well under 1 ms of compute per 80 ms frame.
+**Compute:** 3.06M parameters, RTF ≈0.0015–0.005 on one CPU thread depending on load (`eval.json`), i.e. well under 1 ms of compute per 80 ms frame.
 
 ## 6. Reproduce
 
@@ -297,7 +365,8 @@ python scripts/stream_demo.py your.wav                      # 16 kHz mono wav; p
 pytest -q                                                   # 12 tests
 
 # full pipeline
-python scripts/prepare_data.py                              # FLEURS + Svarah, manifests, switch + mix clips
+python scripts/prepare_data.py                              # FLEURS + Svarah selection and manifests
+python scripts/clean_data.py                                # VAD-trim, level-normalise, rebuild switch + mix clips
 for t in ecapa ambernet xlsr-voxlingua whisper-turbo indic-transcribe; do
   python scripts/teacher_bakeoff.py --teacher $t; done      # Whisper: `modal run scripts/modal_whisper.py::main` instead
 python scripts/teacher_bakeoff.py --teacher indic-transcribe --manifest train --max-per-lang 25 --no-switch
@@ -305,9 +374,11 @@ python scripts/ensemble.py tune && python scripts/ensemble.py score           # 
 python scripts/build_targets.py --teacher indic-transcribe --kinds causal     # + prefix centered full for the ablation
 modal run scripts/modal_whisper.py::main --targets-only                       # Whisper causal targets on L4s
 python scripts/ensemble.py targets --kind causal
-python scripts/train.py --teacher ensemble --kind causal --left-frames -1 --rel-pos 0 --out checkpoints/final
+python scripts/train.py --teacher ensemble --kind causal --out checkpoints/final
 python scripts/eval_student.py --ckpt checkpoints/final/student.pt --teacher ensemble
 python scripts/commit_sweep.py && python scripts/turn_reset.py && python scripts/silence_test.py
+python scripts/level_test.py && python scripts/turn_eval.py
+python scripts/eval_recordings.py                          # your own wavs in data/user_recordings/ (kept private)
 python scripts/figures.py
 ```
 
@@ -319,13 +390,15 @@ python scripts/figures.py
 - the ensemble
 - 5 target types
 - the student
-- training with a NaN guard and telephony augmentation
+- data cleaning (Silero VAD, level normalisation, conversational switch clips) after finding a loudness shortcut
+- training with a NaN guard, telephony augmentation and random gain
 - **incremental streaming inference with a KV cache** (tested equal to the batch forward)
 - streaming evaluation with a runnable, swept commit policy
+- loudness-invariance, silence-shortcut and VAD turn-level evaluations
 - unit tests (12)
 
 **Stubbed or not done:**
-- **Real code-switched evaluation data:** switches are synthetic concatenations.
+- **Real code-switched evaluation data:** switches are synthetic concatenations of different speakers. `scripts/eval_recordings.py` is ready for same-speaker recordings.
 - **Training to convergence** on hundreds of hours.
 - **A per-call language cache** (Sortformer-style) in the student; see DESIGN §7.
 - **Export** (ONNX/TorchScript) of the streaming session.

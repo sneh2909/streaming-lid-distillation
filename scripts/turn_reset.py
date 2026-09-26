@@ -1,7 +1,7 @@
 """Does resetting at turn boundaries cut switch lag? (Part 2, code-switch section)
 
-Builds a paused copy of every switch clip (same two segments, 0.5 s of low noise between them,
-like a sentence/turn boundary), detects the pause with a simple energy VAD, and compares:
+Uses the cleaned switch clips (two whole sentences with a natural 0.25-0.6 s pause, like a
+sentence/turn boundary), detects the pause with a simple energy VAD, and compares:
   none    commit policy as is
   policy  at the end of a pause, reset the EMA and let the new turn commit at theta_commit
   state   additionally start a fresh student stream for the new turn (the previous language
@@ -72,7 +72,7 @@ def main():
     n_detected = 0
     for line in open(ROOT / "data/manifests/switch.jsonl"):
         sw = json.loads(line)
-        x, switch_s = paused_clip(sw, rng)
+        x, switch_s = load_wav(sw["path"]), sw["switch_s"]          # clean switch clips already have a pause
         new, old = LANGS.index(sw["segments"][1][0]), LANGS.index(sw["segments"][0][0])
         p = post(x)
         T = len(p)

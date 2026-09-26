@@ -54,7 +54,7 @@ def switch_trace():
     ax.text(t[-1] + 0.05, p[-1, hi], "student hi", color=INK, fontsize=9, va="center")
     ax.plot([], [], color=MUTED, ls="--", lw=1.5, label="teacher (causal 3 s window)")
     ax.plot([], [], color=MUTED, label="student (320 ms chunks)")
-    ax.legend(loc="center left", frameon=False, fontsize=9)
+    ax.legend(loc="center right", frameon=False, fontsize=9)
     ax.set_ylim(-0.25, 1.08)
     ax.set_xlabel("time (s)")
     ax.set_ylabel("posterior")
@@ -64,7 +64,7 @@ def switch_trace():
 
 
 def agreement_curves():
-    runs = [("final", "final: ensemble teacher, causal", BLUE),
+    runs = [("final_v1data", "ensemble teacher, causal", BLUE),
             ("indic-transcribe_causal", "Indic-T, causal", AQUA),
             ("indic-transcribe_prefix", "Indic-T, prefix", YELLOW),
             ("indic-transcribe_centered", "Indic-T, centred", ORANGE),
@@ -78,12 +78,12 @@ def agreement_curves():
         s = [e["step"] for e in ev]
         a = [e["heldout_kd"] for e in ev]
         ax.plot(s, a, color=color, marker="o", ms=4)
-        nudge = {"indic-transcribe_centered": 0.014, "indic-transcribe_prefix": 0.004, "indic-transcribe_causal": -0.012, "final": -0.012}.get(name, 0)
+        nudge = {"indic-transcribe_centered": 0.014, "indic-transcribe_prefix": 0.004, "indic-transcribe_causal": -0.012, "final_v1data": -0.012}.get(name, 0)
         ax.text(s[-1] + 80, a[-1] + nudge, label, color=INK, fontsize=8, va="center")
     ax.set_xlim(0, 6400)
     ax.set_xlabel("optimizer step")
     ax.set_ylabel("held-out KD loss (own targets)")
-    ax.set_title("Held-out KD loss: future-informed targets plateau higher", loc="left", color=INK, fontsize=11)
+    ax.set_title("Held-out KD loss by target type (original data)", loc="left", color=INK, fontsize=11)
     fig.tight_layout()
     fig.savefig(OUT / "heldout_kd.png", dpi=150)
 

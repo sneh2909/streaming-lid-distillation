@@ -16,7 +16,7 @@ REPO = "/mnt/d/Work/Projects/asr-navana"
 DATA = f"{REPO}/data"
 MODEL = "openai/whisper-large-v3-turbo"
 
-vol = modal.Volume.from_name("slid-audio")
+vol = modal.Volume.from_name("slid-audio-v2", create_if_missing=True)
 
 
 def _download():
