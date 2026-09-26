@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code-switch Recorder</title>
+<style>
+  :root { --bg:#fcfcfb; --card:#ffffff; --ink:#1f1f1e; --muted:#6b6a64; --line:#e6e5df;
+          --hi:#2a78d6; --en:#eb6834; --mix:#1baf7a; --rec:#d23b3b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.5 system-ui, -apple-system, "Segoe UI", "Noto Sans", "Noto Sans Devanagari", sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .layout { display:grid; grid-template-columns: 240px 1fr; gap: 20px; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+  .list { display:flex; flex-direction:column; gap:8px; }
+  .item { text-align:left; border:1px solid var(--line); background:var(--card); border-radius:10px;
+          padding:10px 12px; cursor:pointer; font:inherit; color:inherit; }
+  .item.active { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink) inset; }
+  .item .t { font-weight:600; }
+  .item .s { color:var(--muted); font-size:13px; }
+  .done { color: var(--mix); font-size: 13px; font-weight: 600; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .fname { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; color: var(--muted); }
+  .hint { color: var(--muted); font-size: 14px; margin: 6px 0 16px; }
+  .sent { display:flex; gap:12px; align-items:flex-start; padding:12px; border-radius:10px;
+          border:1px solid transparent; margin-bottom:8px; }
+  .sent.cur { background:#f4f3ee; border-color: var(--line); }
+  .sent.cur .txt { font-size: 22px; }
+  .sent.past { opacity: .45; }
+  .chip { flex: 0 0 auto; font-size: 12px; font-weight:700; color:#fff; border-radius: 999px;
+          padding: 2px 9px; margin-top: 4px; letter-spacing:.02em; }
+  .chip.hi { background: var(--hi); } .chip.en { background: var(--en); } .chip.mix { background: var(--mix); }
+  .txt { font-size: 18px; }
+  .rom { color: var(--muted); font-size: 14px; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top: 16px; }
+  button.b { font:inherit; font-weight:600; border-radius:10px; padding:10px 16px; cursor:pointer;
+             border:1px solid var(--line); background:#fff; color:var(--ink); }
+  button.b.primary { background: var(--ink); color:#fff; border-color: var(--ink); }
+  button.b.rec { background: var(--rec); color:#fff; border-color: var(--rec); }
+  button.b:disabled { opacity:.4; cursor:not-allowed; }
+  .meter { flex: 1 1 160px; height: 10px; background: var(--line); border-radius: 999px; overflow:hidden; min-width:120px; }
+  .meter > div { height: 100%; width: 0%; background: var(--mix); transition: width .05s linear; }
+  .status { font-size: 14px; color: var(--muted); min-height: 21px; margin-top: 10px; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; background: var(--rec);
+         margin-right:6px; animation: blink 1s infinite; vertical-align: middle; }
+  @keyframes blink { 50% { opacity: .2; } }
+  audio { width: 100%; margin-top: 12px; }
+  kbd { font-family: ui-monospace, monospace; font-size: 12px; border:1px solid var(--line);
+        border-bottom-width:2px; border-radius:5px; padding: 0 5px; background:#fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Code-switch recorder</h1>
+  <p class="sub">Read each sentence aloud. Press <kbd>Space</kbd> (or <b>Next</b>) when you <b>start</b> the next sentence. Leave about a 1 s pause between sentences unless the script says otherwise. Files save to <span class="fname">data/user_recordings/</span>.</p>
+  <div class="layout">
+    <div class="list" id="list"></div>
+    <div class="card">
+      <div class="fname" id="fname"></div>
+      <h2 id="title" style="margin:4px 0 0;font-size:20px"></h2>
+      <div class="hint" id="hint"></div>
+      <div id="sents"></div>
+      <div class="controls">
+        <button class="b rec" id="btnRec">● Start recording</button>
+        <button class="b" id="btnNext" disabled>Next sentence ▸</button>
+        <button class="b primary" id="btnStop" disabled>■ Stop &amp; save</button>
+        <div class="meter" title="input level"><div id="lvl"></div></div>
+      </div>
+      <div class="status" id="status"></div>
+      <audio id="player" controls hidden></audio>
+    </div>
+  </div>
+</div>
+<script>
+const SCRIPTS = [
+  { id: "R1", title: "Switch between sentences (call)", hint: "One sentence per turn, ~1 s pause between.", sents: [
+    ["hi", "मुझे अपने खाते का बैलेंस जानना है।", "Mujhe apne khaate ka balance jaanna hai."],
+    ["en", "Actually, can you also tell me when my last payment was made?"],
+    ["hi", "पिछले महीने मैंने दो बार पैसे भेजे थे।", "Pichhle mahine maine do baar paise bheje the."],
+    ["en", "Please send the statement to my registered email address."]]},
+  { id: "R2", title: "Starts in English, then switches", hint: "~1 s pause between sentences.", sents: [
+    ["en", "Hi, I am calling about my internet connection, it has been down since morning."],
+    ["hi", "मैंने राउटर दो बार रीस्टार्ट किया लेकिन कुछ नहीं हुआ।", "Maine router do baar restart kiya lekin kuch nahi hua."],
+    ["en", "Can you send a technician tomorrow before twelve?"],
+    ["hi", "ठीक है, मैं घर पर ही रहूँगा।", "Theek hai, main ghar par hi rahunga."]]},
+  { id: "R3", title: "Hinglish inside sentences", hint: "Speak naturally, as you would on a call. ~1 s pause between sentences.", sents: [
+    ["mix", "Mera order abhi tak deliver nahi hua, can you check the status?"],
+    ["mix", "Maine payment UPI se kiya tha but amount do baar kat gaya."],
+    ["mix", "Ek kaam karo, refund process kar do aur mujhe SMS bhej do."],
+    ["mix", "Mujhe new SIM card chahiye kyunki purana wala damage ho gaya."]]},
+  { id: "R4", title: "Short back-and-forth answers", hint: "Very short turns, ~1 s pause between.", sents: [
+    ["hi", "हाँ, बोलिए।", "Haan, boliye."],
+    ["en", "Yes, that's correct."],
+    ["hi", "नहीं, वो मेरा नंबर नहीं है।", "Nahi, woh mera number nahi hai."],
+    ["en", "My number ends with four five six seven."],
+    ["hi", "ठीक है, धन्यवाद।", "Theek hai, dhanyavaad."],
+    ["en", "Okay, thank you, bye."]]},
+  { id: "R5", title: "Longer monolingual controls", hint: "About 15 s each, ~1 s pause between.", sents: [
+    ["hi", "मैं पिछले तीन साल से इस बैंक का ग्राहक हूँ और आज तक मुझे कभी कोई परेशानी नहीं हुई, लेकिन इस बार मेरा क्रेडिट कार्ड बिना बताए ब्लॉक कर दिया गया है।",
+           "Main pichhle teen saal se is bank ka grahak hoon aur aaj tak mujhe kabhi koi pareshani nahi hui, lekin is baar mera credit card bina bataye block kar diya gaya hai."],
+    ["en", "I have been a customer of this bank for three years and I never had any problem, but this time my credit card was blocked without any notice, and I would like to understand why."]]},
+  { id: "R6", title: "Switch mid-thought, NO pause", hint: "Say both parts in one breath. Still press Space exactly when you switch to English.", nopause: true, sents: [
+    ["hi", "मुझे कल की फ़्लाइट कैंसल करनी है —", "Mujhe kal ki flight cancel karni hai —"],
+    ["en", "and I also need a refund to the original card."]]},
+];
+const fileName = s => `${s.id}_${s.sents.map(x => x[0]).join("-")}${s.nopause ? "_nopause" : ""}`;
+
+let cur = 0, idx = -1, ctx, src, proc, stream, chunks = [], t0 = 0, marks = [], recording = false, saved = new Set();
+const $ = id => document.getElementById(id);
+
+function renderList() {
+  $("list").innerHTML = "";
+  SCRIPTS.forEach((s, i) => {
+    const b = document.createElement("button");
+    b.className = "item" + (i === cur ? " active" : "");
+    b.innerHTML = `<div class="t">${s.id} · ${s.title}</div><div class="s">${s.sents.map(x => x[0]).join(" → ")}</div>` +
+                  (saved.has(fileName(s)) ? `<div class="done">✓ saved</div>` : "");
+    b.onclick = () => { if (!recording) { cur = i; idx = -1; render(); } };
+    $("list").appendChild(b);
+  });
+}
+function render() {
+  const s = SCRIPTS[cur];
+  $("fname").textContent = fileName(s) + ".wav";
+  $("title").textContent = `${s.id}: ${s.title}`;
+  $("hint").textContent = s.hint;
+  $("sents").innerHTML = s.sents.map((x, i) => {
+    const cls = "sent" + (i === idx ? " cur" : "") + (i < idx ? " past" : "");
+    const rom = x[2] ? `<div class="rom">${x[2]}</div>` : "";
+    return `<div class="${cls}"><span class="chip ${x[0]}">${x[0].toUpperCase()}</span><div><div class="txt">${x[1]}</div>${rom}</div></div>`;
+  }).join("");
+  renderList();
+}
+
+async function start() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false,
+                                                                    noiseSuppression: false, autoGainControl: false } });
+  } catch (e) { $("status").textContent = "Microphone permission denied: " + e.message; return; }
+  ctx = new AudioContext({ sampleRate: 16000 });
+  src = ctx.createMediaStreamSource(stream);
+  proc = ctx.createScriptProcessor(4096, 1, 1);
+  chunks = [];
+  proc.onaudioprocess = e => {
+    const d = e.inputBuffer.getChannelData(0);
+    chunks.push(new Float32Array(d));
+    let m = 0; for (let i = 0; i < d.length; i++) m = Math.max(m, Math.abs(d[i]));
+    $("lvl").style.width = Math.min(100, m * 140) + "%";
+  };
+  src.connect(proc); proc.connect(ctx.destination);
+  t0 = ctx.currentTime; recording = true; idx = 0; marks = [{ idx: 0, lang: SCRIPTS[cur].sents[0][0], t: 0 }];
+  $("btnRec").disabled = true; $("btnNext").disabled = SCRIPTS[cur].sents.length < 2; $("btnStop").disabled = false;
+  $("player").hidden = true;
+  $("status").innerHTML = `<span class="dot"></span>Recording… read sentence 1, press Space when you start the next one.`;
+  render();
+}
+function next() {
+  if (!recording) return;
+  const s = SCRIPTS[cur];
+  if (idx < s.sents.length - 1) {
+    idx++; marks.push({ idx, lang: s.sents[idx][0], t: +(ctx.currentTime - t0).toFixed(3) });
+    if (idx === s.sents.length - 1) $("btnNext").disabled = true;
+    render();
+  }
+}
+function wav(samples, rate) {
+  const buf = new ArrayBuffer(44 + samples.length * 2), v = new DataView(buf);
+  const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); w(8, "WAVE"); w(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true);
+  v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data");
+  v.setUint32(40, samples.length * 2, true);
+  for (let i = 0; i < samples.length; i++) {
+    const x = Math.max(-1, Math.min(1, samples[i])); v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true);
+  }
+  return new Blob([buf], { type: "audio/wav" });
+}
+async function stop() {
+  if (!recording) return;
+  recording = false; proc.disconnect(); src.disconnect(); stream.getTracks().forEach(t => t.stop());
+  const rate = ctx.sampleRate; await ctx.close(); $("lvl").style.width = "0%";
+  const n = chunks.reduce((a, c) => a + c.length, 0), all = new Float32Array(n);
+  let o = 0; for (const c of chunks) { all.set(c, o); o += c.length; }
+  const s = SCRIPTS[cur], name = fileName(s), blob = wav(all, rate);
+  const meta = { name, sample_rate: rate, duration_s: +(n / rate).toFixed(3), script: s.id, nopause: !!s.nopause,
+                 sentences: s.sents.map(x => ({ lang: x[0], text: x[1], roman: x[2] || null })), marks };
+  $("status").textContent = "Saving…";
+  try {
+    const r1 = await fetch(`/save_wav?name=${name}`, { method: "POST", body: blob });
+    const r2 = await fetch(`/save_json?name=${name}`, { method: "POST", body: JSON.stringify(meta, null, 1) });
+    if (!r1.ok || !r2.ok) throw new Error(await r1.text());
+    saved.add(name);
+    $("status").textContent = `Saved ${name}.wav (${meta.duration_s.toFixed(1)} s). Listen below; record again to overwrite.`;
+  } catch (e) { $("status").textContent = "Save failed: " + e.message; }
+  $("player").src = URL.createObjectURL(blob); $("player").hidden = false;
+  $("btnRec").disabled = false; $("btnNext").disabled = true; $("btnStop").disabled = true;
+  $("btnRec").textContent = "● Record again"; idx = -1; render();
+}
+$("btnRec").onclick = start; $("btnNext").onclick = next; $("btnStop").onclick = stop;
+document.addEventListener("keydown", e => {
+  if (e.code === "Space" && recording) { e.preventDefault(); next(); }
+});
+fetch("/list").then(r => r.json()).then(files => { files.forEach(f => saved.add(f.replace(/\.wav$/, ""))); render(); });
+render();
+</script>
+</body>
+</html>
