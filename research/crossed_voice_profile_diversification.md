@@ -16,7 +16,7 @@ H(language | voice_id)  = 0
 I(language; voice_id)   = 2.807354922 bits
 ```
 
-This is the maximum possible exact voice-ID association with language. The correct intervention is a **crossed voice × language corpus** in which every retained voice family speaks every label. A fully balanced crossed pool has `I(language; voice_family)=0`; adding 56 such rows uniformly to the current 70 reduces the manifest-level association only to 1.5596 bits (44.44%), while a 50:50 sampler gives 1.4037 bits. These are design arithmetic, not acoustic-independence guarantees.
+This is the maximum possible exact voice-ID association with language. The correct intervention is a **crossed voice × language corpus** in which every retained voice family speaks every label. A fully balanced crossed pool has `I(language; voice_family)=0`. Under the stated disjoint-voice construction—eight new voices, each represented once in all seven languages—appending 56 crossed rows to the current 70 lowers the manifest-level association to `1.559641623` bits: a **44.44% reduction, with 55.56% of the original association remaining**. Giving the original and crossed pools equal sampling mass instead gives `1.403677461` bits, or 50% remaining. These are design arithmetic under explicit contingency-table assumptions, not acoustic-independence guarantees; the derivation and reporting guard are audited in [`voice_language_mutual_information_audit.md`](voice_language_mutual_information_audit.md).
 
 The best first route is an eight-voice, seven-language matched `label-confounded vs fully crossed` experiment using one generator and identical voice, language, intent, duration, training, and evaluation marginals. The current Microsoft Edge endpoint exposes enough `MultilingualNeural` names to preflight this design, but language quality, same-persona preservation, service revision, and output rights are **not yet verified** for the proposed corpus. Use the paid Azure TTS endpoint if distributable/commercial-use rights matter; Microsoft's current product terms grant output use rights for prebuilt neural voices specifically to paid-tier TTS customers.
 
@@ -28,7 +28,7 @@ This audit is bound to:
 
 - [`experiments/voice-text-factorial/results.json`](../experiments/voice-text-factorial/results.json), SHA-256 `f12b5045dfc3816affcf837f9948cdab8321d953b68d6b1d301f8cfb89daaccb`;
 - [`experiments/voice-text-factorial/REPORT.md`](../experiments/voice-text-factorial/REPORT.md), SHA-256 `55bac1bb5261c23d7134dcb9eae935fb66ce0b8c59fca84dc92029512c685c54`;
-- `data/generated/manifest.jsonl`, SHA-256 `7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314`.
+- `data/generated/manifest.jsonl`, SHA-256 `7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c`.
 
 | Observation | Supported conclusion | Unsupported conclusion |
 |---|---|---|

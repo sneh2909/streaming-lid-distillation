@@ -1,7 +1,7 @@
 {
-  "run_id": "lidrun-ee92beb26f08a819782219d413112227c88d6e1ec370c854a1536a4a41ece4a5",
+  "run_id": "lidrun-b0dbf74ab00b2d0e9dd83a928e35c26591ac737344f17223bc9aa07a6706b15f",
   "run_identity": {
-    "schema_version": 2,
+    "schema_version": 3,
     "pipeline": {
       "language_codes": [
         "en",
@@ -66,41 +66,136 @@
         "provisional_tail_withheld": true
       },
       "source": {
-        "source_sha256": "3827bebf1d58dd52df2ccb6a732a807a2d9bd3d1a50763758e9af227a9f698a7",
+        "schema_version": 1,
+        "kind": "executed_source_snapshot",
+        "source_sha256": "99d4728a95af7097d1ac4f9977dd8488aef8e707296e43eefc4454e04588a6ee",
+        "snapshot_root_sha256": "99d4728a95af7097d1ac4f9977dd8488aef8e707296e43eefc4454e04588a6ee",
+        "snapshot_kind": "captured_worktree",
         "files": {
-          "scripts/train.py": {
-            "sha256": "efbd805dbd85729d8bec4e3c1fdc7d31899ae811cf0dd0f671ce21339968fe87",
-            "bytes": 17256
+          "pyproject.toml": {
+            "sha256": "d203d7630f07dd36b62beb845855e2eab4d4993595953437be6c751b06cfce67",
+            "bytes": 867,
+            "mode": 365
           },
           "scripts/eval.py": {
-            "sha256": "c62d3f50538e62d4e193559ea145c40596a91999a6d3af2dd369466d96fe8763",
-            "bytes": 29959
+            "sha256": "147b88195c0f8aa19539844f67e5d01f559ee772101410954af64e7f0c3d7715",
+            "bytes": 31608,
+            "mode": 365
+          },
+          "scripts/prepare_data.py": {
+            "sha256": "2ebba5f625e827fb9d7d68b3aa345454be851d209c38a82a63975f8c9d78ab93",
+            "bytes": 38336,
+            "mode": 365
+          },
+          "scripts/source_stage.py": {
+            "sha256": "721cedf7bdfb604b398d82a0deba85ecbff6a40c4109c50e1be51f3dd5b960c1",
+            "bytes": 20438,
+            "mode": 365
+          },
+          "scripts/teacher_targets.py": {
+            "sha256": "fd76748c701446856be5b7947771bf995d1a850c9f025950f7b13d080a711f40",
+            "bytes": 17075,
+            "mode": 365
+          },
+          "scripts/train.py": {
+            "sha256": "e9362e413fc4c3734ef1f4ee59df3d699e9dc06e6a34ca64b24ef9c3dc7a85bd",
+            "bytes": 18444,
+            "mode": 365
+          },
+          "src/streaming_lid/__init__.py": {
+            "sha256": "86291e2217654d75f83aece033713de7117969f3b883646ebb4830c8e404e100",
+            "bytes": 150,
+            "mode": 365
           },
           "src/streaming_lid/audio.py": {
             "sha256": "4cce5b81f784526f92d61fce0dbd65f3a3a90069134717da4f7d54a2736260cd",
-            "bytes": 2032
+            "bytes": 2032,
+            "mode": 365
           },
           "src/streaming_lid/config.py": {
             "sha256": "8976b7f9f5ef498fa296acb7963154c1adf3efb78db2afe5e4df9e98e0716b8c",
-            "bytes": 2571
+            "bytes": 2571,
+            "mode": 365
           },
           "src/streaming_lid/data.py": {
             "sha256": "0a7b5906e044d871f3474dc7b3881e8424b94e767a1ee4c85ef8a8f1efa6b1c9",
-            "bytes": 40307
+            "bytes": 40307,
+            "mode": 365
           },
           "src/streaming_lid/loss.py": {
             "sha256": "53a53c54ac5bce5869dc393303d0733f78557780520914399c735adf88a37d5f",
-            "bytes": 3066
+            "bytes": 3066,
+            "mode": 365
           },
           "src/streaming_lid/model.py": {
             "sha256": "bf0b73f22cc5584dd41228ba37cf3ab101447fdae1d48b17bc0ab3b10f9b2e68",
-            "bytes": 16837
+            "bytes": 16837,
+            "mode": 365
           },
           "src/streaming_lid/run_identity.py": {
-            "sha256": "2a9721992abe8faea4a321110aaef7b01513aec03a699ec8a6fa7c277c591139",
-            "bytes": 16000
+            "sha256": "69e7cb2d8a50ec6035dbdfd87fc0ae45093bdfde5926d8b1aa2c4603023bdda0",
+            "bytes": 17999,
+            "mode": 365
+          },
+          "uv.lock": {
+            "sha256": "b1155aa9f13a209648856197437b8c6759098cf0a71758f761e80bd912ceeb0c",
+            "bytes": 132888,
+            "mode": 365
           }
-        }
+        },
+        "entrypoints": {
+          "train": {
+            "path": "scripts/train.py",
+            "sha256": "e9362e413fc4c3734ef1f4ee59df3d699e9dc06e6a34ca64b24ef9c3dc7a85bd"
+          },
+          "eval": {
+            "path": "scripts/eval.py",
+            "sha256": "147b88195c0f8aa19539844f67e5d01f559ee772101410954af64e7f0c3d7715"
+          }
+        },
+        "local_module_origins": {
+          "streaming_lid": "src/streaming_lid/__init__.py",
+          "streaming_lid.audio": "src/streaming_lid/audio.py",
+          "streaming_lid.config": "src/streaming_lid/config.py",
+          "streaming_lid.data": "src/streaming_lid/data.py",
+          "streaming_lid.loss": "src/streaming_lid/loss.py",
+          "streaming_lid.model": "src/streaming_lid/model.py",
+          "streaming_lid.run_identity": "src/streaming_lid/run_identity.py"
+        },
+        "environment": {
+          "python": {
+            "implementation": "CPython",
+            "version": "3.10.12",
+            "cache_tag": "cpython-310"
+          },
+          "distributions": {
+            "numpy": "2.2.6",
+            "torch": "2.6.0+cpu",
+            "torchaudio": "2.6.0+cpu",
+            "soundfile": "0.13.1",
+            "speechbrain": "1.0.3",
+            "huggingface-hub": "0.24.7"
+          },
+          "project_files": {
+            "pyproject.toml": {
+              "sha256": "d203d7630f07dd36b62beb845855e2eab4d4993595953437be6c751b06cfce67",
+              "bytes": 867
+            },
+            "uv.lock": {
+              "sha256": "b1155aa9f13a209648856197437b8c6759098cf0a71758f761e80bd912ceeb0c",
+              "bytes": 132888
+            }
+          }
+        },
+        "site_path_policy": {
+          "name": "stage_src_first_remove_live_project_paths_v1",
+          "stage_src_first": true,
+          "live_workspace_project_paths_removed": true,
+          "preloaded_local_modules_rejected": true,
+          "bytecode_writes_disabled": true
+        },
+        "stage_verified_before_import": true,
+        "workspace_escape_checked": true
       }
     },
     "corpus": {
@@ -231,7 +326,7 @@
     },
     "model_state_sha256": "b96a856c4d77f0a70be10421fa362d838be4b7c047596fb1049b977629b42273"
   },
-  "checkpoint_sha256": "1e677e1c805073f5475264939e2c9f5d39211c7e0ea3d75d0c896ba13e86ae3f",
+  "checkpoint_sha256": "68571781da37ba9ab61fb0f21a52ad21c87b14927430f53f1a5fa9c25ff5840e",
   "optimizer_steps": 1600,
   "requested_optimizer_steps": 1600,
   "successful_optimizer_steps": 1600,
@@ -3521,5 +3616,10 @@
   "real_audio_optimizer_step": true,
   "launch_dependency_snapshot_captured_before_preload": true,
   "dependency_snapshot_validation_checks": 3,
-  "dependency_snapshot_unchanged_at_publication": true
+  "dependency_snapshot_unchanged_at_publication": true,
+  "executed_source_snapshot_validated": true,
+  "source_stage_verified_before_import": true,
+  "source_stage_verified_before_publication": true,
+  "source_stage_verification_checks": 5,
+  "training_child_entrypoint": "scripts/train.py"
 }

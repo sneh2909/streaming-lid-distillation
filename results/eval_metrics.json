@@ -1,7 +1,7 @@
 {
-  "run_id": "lidrun-ee92beb26f08a819782219d413112227c88d6e1ec370c854a1536a4a41ece4a5",
+  "run_id": "lidrun-b0dbf74ab00b2d0e9dd83a928e35c26591ac737344f17223bc9aa07a6706b15f",
   "run_identity": {
-    "schema_version": 2,
+    "schema_version": 3,
     "pipeline": {
       "language_codes": [
         "en",
@@ -66,41 +66,136 @@
         "provisional_tail_withheld": true
       },
       "source": {
-        "source_sha256": "3827bebf1d58dd52df2ccb6a732a807a2d9bd3d1a50763758e9af227a9f698a7",
+        "schema_version": 1,
+        "kind": "executed_source_snapshot",
+        "source_sha256": "99d4728a95af7097d1ac4f9977dd8488aef8e707296e43eefc4454e04588a6ee",
+        "snapshot_root_sha256": "99d4728a95af7097d1ac4f9977dd8488aef8e707296e43eefc4454e04588a6ee",
+        "snapshot_kind": "captured_worktree",
         "files": {
-          "scripts/train.py": {
-            "sha256": "efbd805dbd85729d8bec4e3c1fdc7d31899ae811cf0dd0f671ce21339968fe87",
-            "bytes": 17256
+          "pyproject.toml": {
+            "sha256": "d203d7630f07dd36b62beb845855e2eab4d4993595953437be6c751b06cfce67",
+            "bytes": 867,
+            "mode": 365
           },
           "scripts/eval.py": {
-            "sha256": "c62d3f50538e62d4e193559ea145c40596a91999a6d3af2dd369466d96fe8763",
-            "bytes": 29959
+            "sha256": "147b88195c0f8aa19539844f67e5d01f559ee772101410954af64e7f0c3d7715",
+            "bytes": 31608,
+            "mode": 365
+          },
+          "scripts/prepare_data.py": {
+            "sha256": "2ebba5f625e827fb9d7d68b3aa345454be851d209c38a82a63975f8c9d78ab93",
+            "bytes": 38336,
+            "mode": 365
+          },
+          "scripts/source_stage.py": {
+            "sha256": "721cedf7bdfb604b398d82a0deba85ecbff6a40c4109c50e1be51f3dd5b960c1",
+            "bytes": 20438,
+            "mode": 365
+          },
+          "scripts/teacher_targets.py": {
+            "sha256": "fd76748c701446856be5b7947771bf995d1a850c9f025950f7b13d080a711f40",
+            "bytes": 17075,
+            "mode": 365
+          },
+          "scripts/train.py": {
+            "sha256": "e9362e413fc4c3734ef1f4ee59df3d699e9dc06e6a34ca64b24ef9c3dc7a85bd",
+            "bytes": 18444,
+            "mode": 365
+          },
+          "src/streaming_lid/__init__.py": {
+            "sha256": "86291e2217654d75f83aece033713de7117969f3b883646ebb4830c8e404e100",
+            "bytes": 150,
+            "mode": 365
           },
           "src/streaming_lid/audio.py": {
             "sha256": "4cce5b81f784526f92d61fce0dbd65f3a3a90069134717da4f7d54a2736260cd",
-            "bytes": 2032
+            "bytes": 2032,
+            "mode": 365
           },
           "src/streaming_lid/config.py": {
             "sha256": "8976b7f9f5ef498fa296acb7963154c1adf3efb78db2afe5e4df9e98e0716b8c",
-            "bytes": 2571
+            "bytes": 2571,
+            "mode": 365
           },
           "src/streaming_lid/data.py": {
             "sha256": "0a7b5906e044d871f3474dc7b3881e8424b94e767a1ee4c85ef8a8f1efa6b1c9",
-            "bytes": 40307
+            "bytes": 40307,
+            "mode": 365
           },
           "src/streaming_lid/loss.py": {
             "sha256": "53a53c54ac5bce5869dc393303d0733f78557780520914399c735adf88a37d5f",
-            "bytes": 3066
+            "bytes": 3066,
+            "mode": 365
           },
           "src/streaming_lid/model.py": {
             "sha256": "bf0b73f22cc5584dd41228ba37cf3ab101447fdae1d48b17bc0ab3b10f9b2e68",
-            "bytes": 16837
+            "bytes": 16837,
+            "mode": 365
           },
           "src/streaming_lid/run_identity.py": {
-            "sha256": "2a9721992abe8faea4a321110aaef7b01513aec03a699ec8a6fa7c277c591139",
-            "bytes": 16000
+            "sha256": "69e7cb2d8a50ec6035dbdfd87fc0ae45093bdfde5926d8b1aa2c4603023bdda0",
+            "bytes": 17999,
+            "mode": 365
+          },
+          "uv.lock": {
+            "sha256": "b1155aa9f13a209648856197437b8c6759098cf0a71758f761e80bd912ceeb0c",
+            "bytes": 132888,
+            "mode": 365
           }
-        }
+        },
+        "entrypoints": {
+          "train": {
+            "path": "scripts/train.py",
+            "sha256": "e9362e413fc4c3734ef1f4ee59df3d699e9dc06e6a34ca64b24ef9c3dc7a85bd"
+          },
+          "eval": {
+            "path": "scripts/eval.py",
+            "sha256": "147b88195c0f8aa19539844f67e5d01f559ee772101410954af64e7f0c3d7715"
+          }
+        },
+        "local_module_origins": {
+          "streaming_lid": "src/streaming_lid/__init__.py",
+          "streaming_lid.audio": "src/streaming_lid/audio.py",
+          "streaming_lid.config": "src/streaming_lid/config.py",
+          "streaming_lid.data": "src/streaming_lid/data.py",
+          "streaming_lid.loss": "src/streaming_lid/loss.py",
+          "streaming_lid.model": "src/streaming_lid/model.py",
+          "streaming_lid.run_identity": "src/streaming_lid/run_identity.py"
+        },
+        "environment": {
+          "python": {
+            "implementation": "CPython",
+            "version": "3.10.12",
+            "cache_tag": "cpython-310"
+          },
+          "distributions": {
+            "numpy": "2.2.6",
+            "torch": "2.6.0+cpu",
+            "torchaudio": "2.6.0+cpu",
+            "soundfile": "0.13.1",
+            "speechbrain": "1.0.3",
+            "huggingface-hub": "0.24.7"
+          },
+          "project_files": {
+            "pyproject.toml": {
+              "sha256": "d203d7630f07dd36b62beb845855e2eab4d4993595953437be6c751b06cfce67",
+              "bytes": 867
+            },
+            "uv.lock": {
+              "sha256": "b1155aa9f13a209648856197437b8c6759098cf0a71758f761e80bd912ceeb0c",
+              "bytes": 132888
+            }
+          }
+        },
+        "site_path_policy": {
+          "name": "stage_src_first_remove_live_project_paths_v1",
+          "stage_src_first": true,
+          "live_workspace_project_paths_removed": true,
+          "preloaded_local_modules_rejected": true,
+          "bytecode_writes_disabled": true
+        },
+        "stage_verified_before_import": true,
+        "workspace_escape_checked": true
       }
     },
     "corpus": {
@@ -231,11 +326,15 @@
     },
     "model_state_sha256": "b96a856c4d77f0a70be10421fa362d838be4b7c047596fb1049b977629b42273"
   },
-  "checkpoint_sha256": "1e677e1c805073f5475264939e2c9f5d39211c7e0ea3d75d0c896ba13e86ae3f",
+  "checkpoint_sha256": "68571781da37ba9ab61fb0f21a52ad21c87b14927430f53f1a5fa9c25ff5840e",
   "evaluation_run_identity_validated": true,
   "launch_dependency_snapshot_captured_before_preload": true,
   "dependency_snapshot_validation_checks": 3,
   "dependency_snapshot_unchanged_at_publication": true,
+  "executed_source_snapshot_validated": true,
+  "evaluation_source_stage_verified_before_import": true,
+  "evaluation_source_stage_verification_checks": 2,
+  "evaluation_child_entrypoint": "scripts/eval.py",
   "heldout_teacher_agreement_micro": 0.18226466575716235,
   "heldout_teacher_agreement_macro": 0.18466751691967093,
   "heldout_student_label_accuracy_micro": 0.18226466575716235,
@@ -661,7 +760,7 @@
         "latest_received_feature_frame": 31,
         "latest_audio_sample_exclusive": 5360,
         "audio_available_seconds": 0.335,
-        "emitted_monotonic_offset_seconds": 0.003164180000567285
+        "emitted_monotonic_offset_seconds": 0.006785948999095126
       },
       {
         "call_index": 2,
@@ -675,7 +774,7 @@
         "latest_received_feature_frame": 47,
         "latest_audio_sample_exclusive": 7920,
         "audio_available_seconds": 0.495,
-        "emitted_monotonic_offset_seconds": 0.01610359400001471
+        "emitted_monotonic_offset_seconds": 0.01349342399953457
       },
       {
         "call_index": 3,
@@ -689,7 +788,7 @@
         "latest_received_feature_frame": 63,
         "latest_audio_sample_exclusive": 10480,
         "audio_available_seconds": 0.655,
-        "emitted_monotonic_offset_seconds": 0.01843051000014384
+        "emitted_monotonic_offset_seconds": 0.019566421999115846
       },
       {
         "call_index": 4,
@@ -703,7 +802,7 @@
         "latest_received_feature_frame": 79,
         "latest_audio_sample_exclusive": 13040,
         "audio_available_seconds": 0.815,
-        "emitted_monotonic_offset_seconds": 0.026409539000269433
+        "emitted_monotonic_offset_seconds": 0.022350749999532127
       },
       {
         "call_index": 5,
@@ -717,7 +816,7 @@
         "latest_received_feature_frame": 95,
         "latest_audio_sample_exclusive": 15600,
         "audio_available_seconds": 0.975,
-        "emitted_monotonic_offset_seconds": 0.06735747099992295
+        "emitted_monotonic_offset_seconds": 0.02650991900009103
       },
       {
         "call_index": 6,
@@ -731,7 +830,7 @@
         "latest_received_feature_frame": 111,
         "latest_audio_sample_exclusive": 18160,
         "audio_available_seconds": 1.135,
-        "emitted_monotonic_offset_seconds": 0.06912743200064142
+        "emitted_monotonic_offset_seconds": 0.028307046999543672
       },
       {
         "call_index": 7,
@@ -745,7 +844,7 @@
         "latest_received_feature_frame": 127,
         "latest_audio_sample_exclusive": 20720,
         "audio_available_seconds": 1.295,
-        "emitted_monotonic_offset_seconds": 0.07046656000056828
+        "emitted_monotonic_offset_seconds": 0.03020501999890257
       },
       {
         "call_index": 8,
@@ -759,7 +858,7 @@
         "latest_received_feature_frame": 143,
         "latest_audio_sample_exclusive": 23280,
         "audio_available_seconds": 1.455,
-        "emitted_monotonic_offset_seconds": 0.2398290030005228
+        "emitted_monotonic_offset_seconds": 0.03142979199947149
       },
       {
         "call_index": 9,
@@ -773,7 +872,7 @@
         "latest_received_feature_frame": 159,
         "latest_audio_sample_exclusive": 25840,
         "audio_available_seconds": 1.615,
-        "emitted_monotonic_offset_seconds": 0.24295735600026092
+        "emitted_monotonic_offset_seconds": 0.033084764998420724
       },
       {
         "call_index": 10,
@@ -787,7 +886,7 @@
         "latest_received_feature_frame": 175,
         "latest_audio_sample_exclusive": 28400,
         "audio_available_seconds": 1.775,
-        "emitted_monotonic_offset_seconds": 0.24843253800008824
+        "emitted_monotonic_offset_seconds": 0.037327534999349155
       },
       {
         "call_index": 11,
@@ -801,7 +900,7 @@
         "latest_received_feature_frame": 191,
         "latest_audio_sample_exclusive": 30960,
         "audio_available_seconds": 1.935,
-        "emitted_monotonic_offset_seconds": 0.25689883199993346
+        "emitted_monotonic_offset_seconds": 0.044314443999610376
       },
       {
         "call_index": 12,
@@ -815,7 +914,7 @@
         "latest_received_feature_frame": 207,
         "latest_audio_sample_exclusive": 33520,
         "audio_available_seconds": 2.095,
-        "emitted_monotonic_offset_seconds": 0.2599747470003422
+        "emitted_monotonic_offset_seconds": 0.051675015998625895
       },
       {
         "call_index": 13,
@@ -829,7 +928,7 @@
         "latest_received_feature_frame": 223,
         "latest_audio_sample_exclusive": 36080,
         "audio_available_seconds": 2.255,
-        "emitted_monotonic_offset_seconds": 0.2627688910006327
+        "emitted_monotonic_offset_seconds": 0.05923850299950573
       },
       {
         "call_index": 14,
@@ -843,7 +942,7 @@
         "latest_received_feature_frame": 239,
         "latest_audio_sample_exclusive": 38640,
         "audio_available_seconds": 2.415,
-        "emitted_monotonic_offset_seconds": 0.26647929400041903
+        "emitted_monotonic_offset_seconds": 0.06465385599949514
       },
       {
         "call_index": 15,
@@ -857,7 +956,7 @@
         "latest_received_feature_frame": 255,
         "latest_audio_sample_exclusive": 41200,
         "audio_available_seconds": 2.575,
-        "emitted_monotonic_offset_seconds": 0.26967279100063024
+        "emitted_monotonic_offset_seconds": 0.06814035099887406
       },
       {
         "call_index": 16,
@@ -871,7 +970,7 @@
         "latest_received_feature_frame": 271,
         "latest_audio_sample_exclusive": 43760,
         "audio_available_seconds": 2.735,
-        "emitted_monotonic_offset_seconds": 0.27325133300018933
+        "emitted_monotonic_offset_seconds": 0.07124999799998477
       },
       {
         "call_index": 17,
@@ -885,7 +984,7 @@
         "latest_received_feature_frame": 287,
         "latest_audio_sample_exclusive": 46320,
         "audio_available_seconds": 2.895,
-        "emitted_monotonic_offset_seconds": 0.2750151680002091
+        "emitted_monotonic_offset_seconds": 0.07490363899887598
       },
       {
         "call_index": 18,
@@ -899,7 +998,7 @@
         "latest_received_feature_frame": 303,
         "latest_audio_sample_exclusive": 48880,
         "audio_available_seconds": 3.055,
-        "emitted_monotonic_offset_seconds": 0.2763910060002672
+        "emitted_monotonic_offset_seconds": 0.07746019599835563
       },
       {
         "call_index": 19,
@@ -913,7 +1012,7 @@
         "latest_received_feature_frame": 319,
         "latest_audio_sample_exclusive": 51440,
         "audio_available_seconds": 3.215,
-        "emitted_monotonic_offset_seconds": 0.27770296600010624
+        "emitted_monotonic_offset_seconds": 0.07953441399877192
       },
       {
         "call_index": 20,
@@ -927,7 +1026,7 @@
         "latest_received_feature_frame": 335,
         "latest_audio_sample_exclusive": 54000,
         "audio_available_seconds": 3.375,
-        "emitted_monotonic_offset_seconds": 0.2794797770002333
+        "emitted_monotonic_offset_seconds": 0.08269623999876785
       },
       {
         "call_index": 21,
@@ -941,7 +1040,7 @@
         "latest_received_feature_frame": 351,
         "latest_audio_sample_exclusive": 56560,
         "audio_available_seconds": 3.535,
-        "emitted_monotonic_offset_seconds": 0.2811886460003734
+        "emitted_monotonic_offset_seconds": 0.08518670899866265
       },
       {
         "call_index": 22,
@@ -955,7 +1054,7 @@
         "latest_received_feature_frame": 367,
         "latest_audio_sample_exclusive": 59120,
         "audio_available_seconds": 3.695,
-        "emitted_monotonic_offset_seconds": 0.28285148200029653
+        "emitted_monotonic_offset_seconds": 0.08794901100009156
       },
       {
         "call_index": 23,
@@ -969,7 +1068,7 @@
         "latest_received_feature_frame": 383,
         "latest_audio_sample_exclusive": 61680,
         "audio_available_seconds": 3.855,
-        "emitted_monotonic_offset_seconds": 0.28633560000071157
+        "emitted_monotonic_offset_seconds": 0.09033424199878937
       },
       {
         "call_index": 24,
@@ -983,7 +1082,7 @@
         "latest_received_feature_frame": 399,
         "latest_audio_sample_exclusive": 64240,
         "audio_available_seconds": 4.015,
-        "emitted_monotonic_offset_seconds": 0.29188395100027265
+        "emitted_monotonic_offset_seconds": 0.09163897500002349
       },
       {
         "call_index": 25,
@@ -997,7 +1096,7 @@
         "latest_received_feature_frame": 415,
         "latest_audio_sample_exclusive": 66800,
         "audio_available_seconds": 4.175,
-        "emitted_monotonic_offset_seconds": 0.2932173260005584
+        "emitted_monotonic_offset_seconds": 0.09318845099915052
       },
       {
         "call_index": 26,
@@ -1011,7 +1110,7 @@
         "latest_received_feature_frame": 431,
         "latest_audio_sample_exclusive": 69360,
         "audio_available_seconds": 4.335,
-        "emitted_monotonic_offset_seconds": 0.2943543920000593
+        "emitted_monotonic_offset_seconds": 0.09462753899970267
       },
       {
         "call_index": 27,
@@ -1025,7 +1124,7 @@
         "latest_received_feature_frame": 447,
         "latest_audio_sample_exclusive": 71920,
         "audio_available_seconds": 4.495,
-        "emitted_monotonic_offset_seconds": 0.30036135600039415
+        "emitted_monotonic_offset_seconds": 0.09596574599891028
       },
       {
         "call_index": 28,
@@ -1039,7 +1138,7 @@
         "latest_received_feature_frame": 463,
         "latest_audio_sample_exclusive": 74480,
         "audio_available_seconds": 4.655,
-        "emitted_monotonic_offset_seconds": 0.3033339829999022
+        "emitted_monotonic_offset_seconds": 0.09732572899883962
       },
       {
         "call_index": 29,
@@ -1053,7 +1152,7 @@
         "latest_received_feature_frame": 479,
         "latest_audio_sample_exclusive": 77040,
         "audio_available_seconds": 4.815,
-        "emitted_monotonic_offset_seconds": 0.30912712100052886
+        "emitted_monotonic_offset_seconds": 0.09857056699911482
       },
       {
         "call_index": 30,
@@ -1067,7 +1166,7 @@
         "latest_received_feature_frame": 495,
         "latest_audio_sample_exclusive": 79600,
         "audio_available_seconds": 4.975,
-        "emitted_monotonic_offset_seconds": 0.3152770149999924
+        "emitted_monotonic_offset_seconds": 0.10159490299884055
       },
       {
         "call_index": 31,
@@ -1081,7 +1180,7 @@
         "latest_received_feature_frame": 511,
         "latest_audio_sample_exclusive": 82160,
         "audio_available_seconds": 5.135,
-        "emitted_monotonic_offset_seconds": 0.3188171580004564
+        "emitted_monotonic_offset_seconds": 0.1033751349987142
       },
       {
         "call_index": 32,
@@ -1095,7 +1194,7 @@
         "latest_received_feature_frame": 527,
         "latest_audio_sample_exclusive": 84720,
         "audio_available_seconds": 5.295,
-        "emitted_monotonic_offset_seconds": 0.3259622790001231
+        "emitted_monotonic_offset_seconds": 0.10516306899990013
       },
       {
         "call_index": 33,
@@ -1109,7 +1208,7 @@
         "latest_received_feature_frame": 543,
         "latest_audio_sample_exclusive": 87280,
         "audio_available_seconds": 5.455,
-        "emitted_monotonic_offset_seconds": 0.3327903420004077
+        "emitted_monotonic_offset_seconds": 0.106735266999749
       },
       {
         "call_index": 34,
@@ -1123,7 +1222,7 @@
         "latest_received_feature_frame": 559,
         "latest_audio_sample_exclusive": 89840,
         "audio_available_seconds": 5.615,
-        "emitted_monotonic_offset_seconds": 0.3349123210000471
+        "emitted_monotonic_offset_seconds": 0.10799027099892555
       },
       {
         "call_index": 35,
@@ -1137,7 +1236,7 @@
         "latest_received_feature_frame": 575,
         "latest_audio_sample_exclusive": 92400,
         "audio_available_seconds": 5.775,
-        "emitted_monotonic_offset_seconds": 0.3406004970001959
+        "emitted_monotonic_offset_seconds": 0.10971732999860251
       },
       {
         "call_index": 36,
@@ -1151,7 +1250,7 @@
         "latest_received_feature_frame": 591,
         "latest_audio_sample_exclusive": 94960,
         "audio_available_seconds": 5.935,
-        "emitted_monotonic_offset_seconds": 0.34177476100012427
+        "emitted_monotonic_offset_seconds": 0.11091202499846986
       },
       {
         "call_index": 37,
@@ -1165,7 +1264,7 @@
         "latest_received_feature_frame": 607,
         "latest_audio_sample_exclusive": 97520,
         "audio_available_seconds": 6.095,
-        "emitted_monotonic_offset_seconds": 0.34310123100021883
+        "emitted_monotonic_offset_seconds": 0.11215953099963372
       },
       {
         "call_index": 38,
@@ -1179,7 +1278,7 @@
         "latest_received_feature_frame": 623,
         "latest_audio_sample_exclusive": 100080,
         "audio_available_seconds": 6.255,
-        "emitted_monotonic_offset_seconds": 0.369337849000658
+        "emitted_monotonic_offset_seconds": 0.1134511719992588
       },
       {
         "call_index": 39,
@@ -1193,7 +1292,7 @@
         "latest_received_feature_frame": 639,
         "latest_audio_sample_exclusive": 102640,
         "audio_available_seconds": 6.415,
-        "emitted_monotonic_offset_seconds": 0.37104722900039633
+        "emitted_monotonic_offset_seconds": 0.11464586699912616
       },
       {
         "call_index": 40,
@@ -1207,7 +1306,7 @@
         "latest_received_feature_frame": 655,
         "latest_audio_sample_exclusive": 105200,
         "audio_available_seconds": 6.575,
-        "emitted_monotonic_offset_seconds": 0.3769440320002104
+        "emitted_monotonic_offset_seconds": 0.11703761699936877
       },
       {
         "call_index": 41,
@@ -1221,7 +1320,7 @@
         "latest_received_feature_frame": 671,
         "latest_audio_sample_exclusive": 107760,
         "audio_available_seconds": 6.735,
-        "emitted_monotonic_offset_seconds": 0.3834908870003346
+        "emitted_monotonic_offset_seconds": 0.1193533909990947
       },
       {
         "call_index": 42,
@@ -1235,7 +1334,7 @@
         "latest_received_feature_frame": 687,
         "latest_audio_sample_exclusive": 110320,
         "audio_available_seconds": 6.895,
-        "emitted_monotonic_offset_seconds": 0.391642886000227
+        "emitted_monotonic_offset_seconds": 0.1209391409993259
       },
       {
         "call_index": 43,
@@ -1249,7 +1348,7 @@
         "latest_received_feature_frame": 703,
         "latest_audio_sample_exclusive": 112880,
         "audio_available_seconds": 7.055,
-        "emitted_monotonic_offset_seconds": 0.39472014000057243
+        "emitted_monotonic_offset_seconds": 0.12573606299883977
       },
       {
         "call_index": 44,
@@ -1263,7 +1362,7 @@
         "latest_received_feature_frame": 719,
         "latest_audio_sample_exclusive": 115440,
         "audio_available_seconds": 7.215,
-        "emitted_monotonic_offset_seconds": 0.408998824000264
+        "emitted_monotonic_offset_seconds": 0.1281472959999519
       },
       {
         "call_index": 45,
@@ -1277,7 +1376,7 @@
         "latest_received_feature_frame": 735,
         "latest_audio_sample_exclusive": 118000,
         "audio_available_seconds": 7.375,
-        "emitted_monotonic_offset_seconds": 0.4168238990005193
+        "emitted_monotonic_offset_seconds": 0.13024556399977882
       },
       {
         "call_index": 46,
@@ -1291,7 +1390,7 @@
         "latest_received_feature_frame": 751,
         "latest_audio_sample_exclusive": 120560,
         "audio_available_seconds": 7.535,
-        "emitted_monotonic_offset_seconds": 0.41926863200023945
+        "emitted_monotonic_offset_seconds": 0.13304814000002807
       },
       {
         "call_index": 47,
@@ -1305,7 +1404,7 @@
         "latest_received_feature_frame": 767,
         "latest_audio_sample_exclusive": 123120,
         "audio_available_seconds": 7.695,
-        "emitted_monotonic_offset_seconds": 0.4320912399998633
+        "emitted_monotonic_offset_seconds": 0.13451632499891275
       },
       {
         "call_index": 48,
@@ -1319,7 +1418,7 @@
         "latest_received_feature_frame": 783,
         "latest_audio_sample_exclusive": 125680,
         "audio_available_seconds": 7.855,
-        "emitted_monotonic_offset_seconds": 0.4419529920005516
+        "emitted_monotonic_offset_seconds": 0.13567795400012983
       },
       {
         "call_index": 49,
@@ -1333,7 +1432,7 @@
         "latest_received_feature_frame": 797,
         "latest_audio_sample_exclusive": 127920,
         "audio_available_seconds": 7.995,
-        "emitted_monotonic_offset_seconds": 0.45044420000067475
+        "emitted_monotonic_offset_seconds": 0.13733059599871922
       }
     ]
   },
@@ -1345,13 +1444,13 @@
     "ema_new_weight": 0.3,
     "initial_commit_seconds": null
   },
-  "cpu_rtf": 0.0883287678461161,
+  "cpu_rtf": 0.017143463658780684,
   "cpu_rtf_runs": [
-    0.0883287678461161,
-    0.0694472225300043,
-    0.11559731178512843,
-    0.13977796826019248,
-    0.08693260867225455
+    0.02358572007813417,
+    0.017835946790080565,
+    0.017143463658780684,
+    0.012416768327314604,
+    0.014229427018405095
   ],
   "cpu_threads": 6,
   "chunk_equivalence_checked": true,
