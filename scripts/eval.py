@@ -481,6 +481,15 @@ def main() -> None:
         "run_identity": run_identity,
         "checkpoint_sha256": checkpoint_sha256,
         "evaluation_run_identity_validated": True,
+        "launch_dependency_snapshot_captured_before_preload": train_metrics[
+            "launch_dependency_snapshot_captured_before_preload"
+        ],
+        "dependency_snapshot_validation_checks": train_metrics[
+            "dependency_snapshot_validation_checks"
+        ],
+        "dependency_snapshot_unchanged_at_publication": train_metrics[
+            "dependency_snapshot_unchanged_at_publication"
+        ],
         "heldout_teacher_agreement_micro": heldout_teacher_agreement,
         "heldout_teacher_agreement_macro": heldout_teacher_agreement_macro,
         "heldout_student_label_accuracy_micro": heldout_student_label_accuracy,
@@ -522,6 +531,15 @@ def main() -> None:
             "metadata_sha256"
         ],
         "evaluation_run_identity_validated": True,
+        "launch_dependency_snapshot_captured_before_preload": train_metrics[
+            "launch_dependency_snapshot_captured_before_preload"
+        ],
+        "dependency_snapshot_validation_checks": train_metrics[
+            "dependency_snapshot_validation_checks"
+        ],
+        "dependency_snapshot_unchanged_at_publication": train_metrics[
+            "dependency_snapshot_unchanged_at_publication"
+        ],
         "teacher_name": pipeline["teacher"]["model_id"],
         "languages": list(language_codes),
         "n_train_clips": len(train_records),

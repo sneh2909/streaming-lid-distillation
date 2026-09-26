@@ -72,13 +72,13 @@ def configured_model_kwargs() -> dict[str, Any]:
 def pipeline_source_identity() -> dict[str, Any]:
     """Fingerprint source that defines training and evaluation semantics."""
     repository_root = Path(__file__).resolve().parents[2]
-    files = {
-        relative_path: {
-            "sha256": file_sha256(repository_root / relative_path),
-            "bytes": (repository_root / relative_path).stat().st_size,
+    files = {}
+    for relative_path in PIPELINE_SOURCE_FILES:
+        payload = (repository_root / relative_path).read_bytes()
+        files[relative_path] = {
+            "sha256": hashlib.sha256(payload).hexdigest(),
+            "bytes": len(payload),
         }
-        for relative_path in PIPELINE_SOURCE_FILES
-    }
     return {
         "source_sha256": canonical_json_sha256(files),
         "files": files,
@@ -133,8 +133,23 @@ def pipeline_configuration() -> dict[str, Any]:
     }
 
 
+def _manifest_file_snapshot(manifest_path: str | Path) -> tuple[list[dict], str]:
+    """Parse records and hash the exact same manifest byte snapshot."""
+    path = Path(manifest_path)
+    payload = path.read_bytes()
+    try:
+        text = payload.decode("utf-8")
+        records = [json.loads(line) for line in text.splitlines() if line.strip()]
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"cannot parse manifest snapshot {path}: {error}") from error
+    return records, hashlib.sha256(payload).hexdigest()
+
+
 def corpus_identity(records: list[dict], manifest_path: str | Path) -> dict[str, Any]:
-    """Bind a manifest to the exact bytes of every referenced audio file."""
+    """Bind one coherent manifest byte snapshot to every referenced audio file."""
+    live_records, manifest_file_sha256 = _manifest_file_snapshot(manifest_path)
+    if records != live_records:
+        raise RuntimeError("manifest records changed while capturing run dependencies")
     ids = [item.get("id") for item in records]
     if any(not isinstance(clip_id, str) for clip_id in ids):
         raise ValueError("every manifest record must have a string clip ID")
@@ -146,20 +161,55 @@ def corpus_identity(records: list[dict], manifest_path: str | Path) -> dict[str,
     }
     return {
         "n_records": len(records),
-        "manifest_file_sha256": file_sha256(manifest_path),
+        "manifest_file_sha256": manifest_file_sha256,
         "manifest_records_sha256": manifest_records_sha256(records),
         "audio_files_sha256": canonical_json_sha256(audio_sha256_by_clip),
         "audio_sha256_by_clip": audio_sha256_by_clip,
     }
 
 
+def _target_identity_from_metadata(
+    metadata: Mapping[str, Any], metadata_path: Path
+) -> dict[str, Any]:
+    """Read the run-level target identity from one parsed metadata snapshot."""
+    try:
+        teacher_identity = metadata["teacher_identity"]
+        target_generator = metadata["target_generator"]
+        return {
+            "schema_version": metadata["schema_version"],
+            "target_configuration_sha256": metadata[
+                "target_configuration_sha256"
+            ],
+            "manifest_records_sha256": metadata["manifest_records_sha256"],
+            "target_files_sha256": metadata["target_files_sha256"],
+            "teacher_revision": teacher_identity["revision"],
+            "teacher_artifact_sha256": teacher_identity["artifact_sha256"],
+            "target_generator_source_sha256": target_generator["source_sha256"],
+        }
+    except (KeyError, TypeError) as error:
+        raise ValueError(
+            f"target metadata {metadata_path} is missing run-identity fields"
+        ) from error
+
+
 def target_cache_run_identity(
     target_cache_identity: Mapping[str, Any], metadata_path: str | Path
 ) -> dict[str, Any]:
-    """Bind the semantic target identity and its exact directory index."""
+    """Bind a semantic target identity to the same metadata bytes that declare it."""
+    path = Path(metadata_path)
+    payload = path.read_bytes()
+    try:
+        metadata = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"cannot parse target metadata snapshot {path}: {error}") from error
+    declared_identity = _target_identity_from_metadata(metadata, path)
+    if dict(target_cache_identity) != declared_identity:
+        raise RuntimeError(
+            "target cache identity changed while capturing run dependencies"
+        )
     return {
-        "identity": dict(target_cache_identity),
-        "metadata_sha256": file_sha256(metadata_path),
+        "identity": declared_identity,
+        "metadata_sha256": hashlib.sha256(payload).hexdigest(),
     }
 
 

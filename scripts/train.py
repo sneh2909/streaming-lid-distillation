@@ -233,11 +233,21 @@ def main() -> None:
     # The run identity names the complete target release, so validate every
     # target/audio file at launch even though optimization consumes only train.
     target_cache.validate_all()
+    assert_run_dependency_snapshot_unchanged(
+        launch_dependency_snapshot,
+        records=records,
+        manifest_path=args.manifest,
+        target_cache_identity=target_cache.identity,
+        target_metadata_path=target_cache.targets_dir / "metadata.json",
+        training=training_settings,
+        stage="dataset preload",
+    )
     dataset = DistillationDataset(
         args.manifest,
         args.targets_dir,
         splits=("train",),
         target_cache=target_cache,
+        records=records,
     )
     assert_run_dependency_snapshot_unchanged(
         launch_dependency_snapshot,
@@ -396,7 +406,7 @@ def main() -> None:
             "real_audio_optimizer_step"
         ],
         "launch_dependency_snapshot_captured_before_preload": True,
-        "dependency_snapshot_validation_checks": 2,
+        "dependency_snapshot_validation_checks": 3,
         "dependency_snapshot_unchanged_at_publication": True,
     }
     # Reopen every indexed target and rehash all live source/data metadata at

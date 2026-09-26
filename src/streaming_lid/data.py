@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import importlib.metadata
 import json
@@ -491,11 +492,17 @@ class DistillationDataset(Dataset):
         splits: Iterable[str],
         *,
         target_cache: TeacherTargetCache | None = None,
+        records: Iterable[dict] | None = None,
     ) -> None:
         self.manifest_path = Path(manifest_path)
         wanted = set(splits)
+        source_records = (
+            read_manifest(manifest_path)
+            if records is None
+            else copy.deepcopy(list(records))
+        )
         self.items = [
-            item for item in read_manifest(manifest_path) if item["split"] in wanted
+            item for item in source_records if item["split"] in wanted
         ]
         if not self.items:
             raise ValueError(f"no manifest items for splits {sorted(wanted)}")

@@ -8,7 +8,9 @@ import torch
 from streaming_lid.config import LANGUAGE_CODES, TEACHER_NAME
 from streaming_lid.run_identity import (
     CHECKPOINT_SCHEMA_VERSION,
+    assert_run_dependency_snapshot_unchanged,
     build_run_identity,
+    capture_run_dependency_snapshot,
     configured_model_kwargs,
     run_id_for_identity,
     training_configuration,
@@ -17,6 +19,7 @@ from streaming_lid.run_identity import (
 
 
 def _valid_contract(tmp_path: Path) -> dict:
+    tmp_path.mkdir(parents=True, exist_ok=True)
     item = {
         "id": "clip",
         "audio_path": "clip.wav",
@@ -30,8 +33,33 @@ def _valid_contract(tmp_path: Path) -> dict:
     audio_path = tmp_path / "clip.wav"
     audio_path.write_bytes(b"audio-one")
     metadata_path = tmp_path / "metadata.json"
-    metadata_path.write_text('{"target_cache": "one"}\n', encoding="utf-8")
-    target_identity = {"schema_version": 2, "target_files_sha256": "targets-one"}
+    target_identity = {
+        "schema_version": 2,
+        "target_configuration_sha256": "configuration-one",
+        "manifest_records_sha256": "manifest-one",
+        "target_files_sha256": "targets-one",
+        "teacher_revision": "teacher-revision-one",
+        "teacher_artifact_sha256": "teacher-artifact-one",
+        "target_generator_source_sha256": "generator-one",
+    }
+    target_metadata = {
+        "schema_version": target_identity["schema_version"],
+        "target_configuration_sha256": target_identity[
+            "target_configuration_sha256"
+        ],
+        "manifest_records_sha256": target_identity["manifest_records_sha256"],
+        "target_files_sha256": target_identity["target_files_sha256"],
+        "teacher_identity": {
+            "revision": target_identity["teacher_revision"],
+            "artifact_sha256": target_identity["teacher_artifact_sha256"],
+        },
+        "target_generator": {
+            "source_sha256": target_identity["target_generator_source_sha256"]
+        },
+    }
+    metadata_path.write_text(
+        json.dumps(target_metadata) + "\n", encoding="utf-8"
+    )
     model_state = {"weight": torch.tensor([[1.0, 2.0]])}
     training = training_configuration(
         steps=1,
@@ -40,12 +68,15 @@ def _valid_contract(tmp_path: Path) -> dict:
         threads=6,
         seed=7,
     )
-    run_identity = build_run_identity(
+    dependency_snapshot = capture_run_dependency_snapshot(
         records=[item],
         manifest_path=manifest_path,
         target_cache_identity=target_identity,
         target_metadata_path=metadata_path,
         training=training,
+    )
+    run_identity = build_run_identity(
+        dependency_snapshot=dependency_snapshot,
         model_state=model_state,
     )
     run_id = run_id_for_identity(run_identity)
@@ -70,6 +101,7 @@ def _valid_contract(tmp_path: Path) -> dict:
         "checkpoint_schema_version": CHECKPOINT_SCHEMA_VERSION,
         "run_id": run_id,
         "run_identity": run_identity,
+        "launch_dependency_snapshot": dependency_snapshot,
         "model_state": model_state,
         "languages": list(LANGUAGE_CODES),
         "teacher": TEACHER_NAME,
@@ -94,6 +126,10 @@ def _valid_contract(tmp_path: Path) -> dict:
         "manifest_path": manifest_path,
         "target_cache_identity": target_identity,
         "target_metadata_path": metadata_path,
+        "target_metadata": target_metadata,
+        "target_identity": target_identity,
+        "training": training,
+        "dependency_snapshot": dependency_snapshot,
         "audio_path": audio_path,
     }
 
@@ -119,6 +155,69 @@ def test_complete_run_identity_contract_accepts_one_bound_run(tmp_path: Path) ->
     assert validated["corpus"]["audio_sha256_by_clip"].keys() == {"clip"}
 
 
+def test_launch_snapshot_is_immutable_and_recheck_detects_changed_audio(
+    tmp_path: Path,
+) -> None:
+    contract = _valid_contract(tmp_path)
+    launch_snapshot = copy.deepcopy(contract["dependency_snapshot"])
+    contract["training"]["requested_steps"] = 99
+    contract["audio_path"].write_bytes(b"audio-two")
+
+    assert contract["dependency_snapshot"] == launch_snapshot
+    run_identity = build_run_identity(
+        dependency_snapshot=contract["dependency_snapshot"],
+        model_state=contract["checkpoint"]["model_state"],
+    )
+    assert run_identity["training"]["requested_steps"] == 1
+    with pytest.raises(RuntimeError, match="corpus"):
+        assert_run_dependency_snapshot_unchanged(
+            contract["dependency_snapshot"],
+            records=contract["records"],
+            manifest_path=contract["manifest_path"],
+            target_cache_identity=contract["target_identity"],
+            target_metadata_path=contract["target_metadata_path"],
+            training=launch_snapshot["training"],
+            stage="checkpoint publication",
+        )
+
+
+def test_dependency_recheck_rejects_stale_manifest_and_target_metadata(
+    tmp_path: Path,
+) -> None:
+    manifest_contract = _valid_contract(tmp_path / "manifest-change")
+    changed_item = {**manifest_contract["records"][0], "text": "changed"}
+    manifest_contract["manifest_path"].write_text(
+        json.dumps(changed_item) + "\n", encoding="utf-8"
+    )
+    with pytest.raises(RuntimeError, match="manifest records changed"):
+        assert_run_dependency_snapshot_unchanged(
+            manifest_contract["dependency_snapshot"],
+            records=manifest_contract["records"],
+            manifest_path=manifest_contract["manifest_path"],
+            target_cache_identity=manifest_contract["target_identity"],
+            target_metadata_path=manifest_contract["target_metadata_path"],
+            training=manifest_contract["training"],
+            stage="optimization",
+        )
+
+    target_contract = _valid_contract(tmp_path / "target-change")
+    changed_metadata = copy.deepcopy(target_contract["target_metadata"])
+    changed_metadata["target_generator"]["source_sha256"] = "generator-two"
+    target_contract["target_metadata_path"].write_text(
+        json.dumps(changed_metadata) + "\n", encoding="utf-8"
+    )
+    with pytest.raises(RuntimeError, match="target cache identity changed"):
+        assert_run_dependency_snapshot_unchanged(
+            target_contract["dependency_snapshot"],
+            records=target_contract["records"],
+            manifest_path=target_contract["manifest_path"],
+            target_cache_identity=target_contract["target_identity"],
+            target_metadata_path=target_contract["target_metadata_path"],
+            training=target_contract["training"],
+            stage="checkpoint publication",
+        )
+
+
 def test_run_identity_rejects_changed_audio_bytes(tmp_path: Path) -> None:
     contract = _valid_contract(tmp_path)
     contract["audio_path"].write_bytes(b"audio-two")
@@ -135,6 +234,9 @@ def test_run_identity_rejects_changed_timing_even_if_ids_are_recomputed(
     checkpoint["run_identity"]["pipeline"]["distillation"][
         "label_delay_frames"
     ] += 1
+    checkpoint["launch_dependency_snapshot"]["pipeline"] = copy.deepcopy(
+        checkpoint["run_identity"]["pipeline"]
+    )
     checkpoint["run_id"] = run_id_for_identity(checkpoint["run_identity"])
     contract["checkpoint"] = checkpoint
     contract["train_metrics"] = {
@@ -151,9 +253,16 @@ def test_run_identity_rejects_changed_timing_even_if_ids_are_recomputed(
 def test_run_identity_rejects_different_target_cache(tmp_path: Path) -> None:
     contract = _valid_contract(tmp_path)
     contract["target_cache_identity"] = {
-        "schema_version": 2,
+        **contract["target_cache_identity"],
         "target_files_sha256": "targets-two",
     }
+    changed_metadata = {
+        **contract["target_metadata"],
+        "target_files_sha256": "targets-two",
+    }
+    contract["target_metadata_path"].write_text(
+        json.dumps(changed_metadata) + "\n", encoding="utf-8"
+    )
 
     with pytest.raises(ValueError, match="target cache differs"):
         _validate(contract)

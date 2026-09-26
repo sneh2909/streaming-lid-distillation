@@ -1,7 +1,7 @@
 {
-  "run_id": "lidrun-cc5e6cf760a60953e4ed5bcc42952994c5c8b4f8ca7252a9cda7c37517ffd504",
+  "run_id": "lidrun-c01a7e2c10d5171279df2397a9c54045ba9e590cf46e352f6008c2d6a4d46224",
   "run_identity": {
-    "schema_version": 1,
+    "schema_version": 2,
     "pipeline": {
       "language_codes": [
         "en",
@@ -64,15 +64,15 @@
         "provisional_tail_withheld": true
       },
       "source": {
-        "source_sha256": "3ca11a33e5e8c50a901321d65c4a627608e13ec36fd78ec874c80272e0773523",
+        "source_sha256": "69a3c65edae0b80193e03cc52f108dcf886071429ed711fbbb8a3c5e70a0fc5f",
         "files": {
           "scripts/train.py": {
-            "sha256": "005da340a493027d519b41ebc3c2c64ba9b5794c3039337a94087f629e7dc7a7",
-            "bytes": 15268
+            "sha256": "efbd805dbd85729d8bec4e3c1fdc7d31899ae811cf0dd0f671ce21339968fe87",
+            "bytes": 17256
           },
           "scripts/eval.py": {
-            "sha256": "dbf985e9ee29ed747e99e71f50eef1bb80a660b3ac6daf9f0c5d99fb8b6357c0",
-            "bytes": 24682
+            "sha256": "415dbdef88fdf2e8d39104e2119733ced79df512ed75b5af9c2214df582e3fb7",
+            "bytes": 25524
           },
           "src/streaming_lid/audio.py": {
             "sha256": "4cce5b81f784526f92d61fce0dbd65f3a3a90069134717da4f7d54a2736260cd",
@@ -83,8 +83,8 @@
             "bytes": 2539
           },
           "src/streaming_lid/data.py": {
-            "sha256": "db354712097122f7374d664202842dba8ef2891324fe4e3d643cc0cc9ddd954d",
-            "bytes": 22078
+            "sha256": "56fcf949fb56ac2972fb7f34757b1d20b1f3ab67627c73d1bb373b0a6ae66169",
+            "bytes": 22278
           },
           "src/streaming_lid/loss.py": {
             "sha256": "53a53c54ac5bce5869dc393303d0733f78557780520914399c735adf88a37d5f",
@@ -95,8 +95,8 @@
             "bytes": 8049
           },
           "src/streaming_lid/run_identity.py": {
-            "sha256": "0043d661b329f4fc279185e698623677c5284352cc41513226e97b3e1f40d937",
-            "bytes": 11665
+            "sha256": "4f4a4ef7759da207ac3fe4ae4d7d52074f3fae7a15ffd17c35121ac531b7ada7",
+            "bytes": 15840
           }
         }
       }
@@ -206,14 +206,14 @@
     "target_cache": {
       "identity": {
         "schema_version": 2,
-        "target_configuration_sha256": "74455af59c641d6e66f78596cf9b5cf01d539f80e8c3b1edb5f69760a4df2803",
+        "target_configuration_sha256": "df5723cb71afd2a8befe5ad20465c297d9306dd4a02806911c226e157d5b540d",
         "manifest_records_sha256": "d47a8b62af8d878867cc9ef2d0b6488f3a45a2706ce4e29ea62840b9030ecc01",
-        "target_files_sha256": "d135e7726949098812b0a4114f07d60cb151beb7b3a9e301b8ee2820c5d09e61",
+        "target_files_sha256": "343dc2b50edb5bf382bb466dbb11d910483691d4bd5e8b03350d415b329f9c17",
         "teacher_revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
         "teacher_artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
-        "target_generator_source_sha256": "1dc0c8609a02174384e09585afaaa0e15346dbb48feb56f8e51939403cb88ff7"
+        "target_generator_source_sha256": "bffb56ee3b6e29009efc1d78ca74df9e4984215ee6e436a364df4749e0899d6b"
       },
-      "metadata_sha256": "da5c5bac9d05b9367fc28e5db90d30e41ecdb05f4c3e247c179bb185299726a1"
+      "metadata_sha256": "e8e01e1be8bc95693075fc4c87bf4787174e53c4f2efc2bdbdf0bd475bcd66be"
     },
     "training": {
       "requested_steps": 1600,
@@ -229,13 +229,16 @@
     },
     "model_state_sha256": "89bf3f703b0c9313e842d5192aa60aaeb1d3148981d976f7e82520ea56be75f8"
   },
-  "run_identity_schema_version": 1,
-  "checkpoint_sha256": "bb2a7e2aee1796845c1880f618b0b465e025ace3912d860e02b2a63ac6c962e8",
+  "run_identity_schema_version": 2,
+  "checkpoint_sha256": "6df692976e5ee5705d933e9645d7c381f89b4ce11faa302908ca60e7e7feb800",
   "model_state_sha256": "89bf3f703b0c9313e842d5192aa60aaeb1d3148981d976f7e82520ea56be75f8",
-  "pipeline_source_sha256": "3ca11a33e5e8c50a901321d65c4a627608e13ec36fd78ec874c80272e0773523",
+  "pipeline_source_sha256": "69a3c65edae0b80193e03cc52f108dcf886071429ed711fbbb8a3c5e70a0fc5f",
   "audio_files_sha256": "f0946a4583cd81007fe7a30c66012d92e4c285c9a77841e10dfb70fc2e589a67",
-  "target_metadata_sha256": "da5c5bac9d05b9367fc28e5db90d30e41ecdb05f4c3e247c179bb185299726a1",
+  "target_metadata_sha256": "e8e01e1be8bc95693075fc4c87bf4787174e53c4f2efc2bdbdf0bd475bcd66be",
   "evaluation_run_identity_validated": true,
+  "launch_dependency_snapshot_captured_before_preload": true,
+  "dependency_snapshot_validation_checks": 3,
+  "dependency_snapshot_unchanged_at_publication": true,
   "teacher_name": "speechbrain/lang-id-voxlingua107-ecapa",
   "languages": [
     "en",
@@ -256,17 +259,17 @@
   "speaker_disjoint": true,
   "target_cache_provenance_validated": true,
   "target_cache_schema_version": 2,
-  "target_configuration_sha256": "74455af59c641d6e66f78596cf9b5cf01d539f80e8c3b1edb5f69760a4df2803",
+  "target_configuration_sha256": "df5723cb71afd2a8befe5ad20465c297d9306dd4a02806911c226e157d5b540d",
   "manifest_records_sha256": "d47a8b62af8d878867cc9ef2d0b6488f3a45a2706ce4e29ea62840b9030ecc01",
-  "target_files_sha256": "d135e7726949098812b0a4114f07d60cb151beb7b3a9e301b8ee2820c5d09e61",
+  "target_files_sha256": "343dc2b50edb5bf382bb466dbb11d910483691d4bd5e8b03350d415b329f9c17",
   "teacher_revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
   "teacher_artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
-  "target_generator_source_sha256": "1dc0c8609a02174384e09585afaaa0e15346dbb48feb56f8e51939403cb88ff7",
+  "target_generator_source_sha256": "bffb56ee3b6e29009efc1d78ca74df9e4984215ee6e436a364df4749e0899d6b",
   "student_params": 42567,
   "algorithmic_latency_ms": 435.0,
   "provisional_tail_withheld": true,
   "withheld_tail_frames": 4,
-  "cpu_rtf": 0.008673736578020425,
+  "cpu_rtf": 0.007087820615993979,
   "losses": [
     7.407291412353516,
     7.484633922576904,

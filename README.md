@@ -54,7 +54,7 @@ This mixed strategy is intentional: a converged target is useful only under the 
 
 Target caches are fail-closed rather than trusted by filename. Every `.npz` records the exact ordered language codes, clip/target kind, frame count, pinned teacher revision/artifact hash, target-generator source hash, canonical manifest-record hash, source-WAV SHA-256, and complete target-configuration hash. The generator identity covers its four source files and exact Python/library versions; the directory index additionally hashes the complete manifest and target-file set. Target generation reopens and validates all 94 files; training validates its 71 clips, and evaluation revalidates all 94 as a release gate. Probability shape, finiteness, non-negativity, normalization, and hard/soft frame counts are checked before use.
 
-The student checkpoint is also the authoritative run bundle. Its content-derived run ID binds the final model-state hash, all 94 current audio hashes, exact manifest and target index, teacher, complete frontend/model/loss/timing configuration, pipeline source, and training settings. `train_metrics.json` is copied into the checkpoint as immutable training evidence, then published with the checkpoint file hash. Evaluation refuses to score unless the current corpus/targets/source still match and the external training metrics equal that checkpoint-bound payload exactly. The submitted run is `lidrun-cc5e6cf7…ffd504`; `results/summary.json` records the full identities and `evaluation_run_identity_validated=true`.
+The student checkpoint is also the authoritative run bundle. Before any feature/target tensor is preloaded, training captures one immutable dependency snapshot over the exact manifest bytes and all 94 audio hashes, target metadata/index, teacher, complete frontend/model/loss/timing configuration, pipeline source, and training settings. The dataset then consumes that captured manifest record set rather than reopening a mutable selection. Training rehashes and equality-checks the live dependencies before preload, before optimization, and immediately before publication; a concurrent source, manifest/audio, target-metadata, or settings change aborts instead of being attributed to the run. The final content-derived run ID adds the model-state hash, and `train_metrics.json` is copied into the checkpoint as immutable training evidence before publication with the checkpoint hash. Evaluation refuses to score unless current dependencies and the external metrics equal that checkpoint-bound payload exactly. The submitted schema-2 run is `lidrun-c01a7e2c…d46224`; `results/summary.json` records all three snapshot checks and `evaluation_run_identity_validated=true`.
 
 ## Future-information asymmetry and objective
 
@@ -96,7 +96,7 @@ The conservative worst-case algorithmic model latency is **435 ms**:
 25 ms analysis frame + (210 ms label delay + 40 ms lookahead) + 160 ms chunk = 435 ms.
 ```
 
-Past context adds compute but no algorithmic latency. On six Torch CPU threads, including log-mel extraction and the deliberately uncached overlap, measured median replay RTF is **0.0087** (about 115× real time). Routing policy smoothing/dwell is separate from model latency.
+Past context adds compute but no algorithmic latency. On six Torch CPU threads, including log-mel extraction and the deliberately uncached overlap, measured median replay RTF is **0.0071** (about 141× real time). Routing policy smoothing/dwell is separate from model latency.
 
 ## Submitted sanity results
 
@@ -107,7 +107,8 @@ These values are from the included `results/` artifacts, not aspirational number
 | Monolingual train / held-out clips | 70 / 21 |
 | Train / held-out synthetic voice IDs | 14 / 7 (no overlap) |
 | Provenance-validated target cache | 94/94 files; schema 2 |
-| Checkpoint/corpus/target/config/training identity validated | yes; schema 1 |
+| Launch dependency snapshot / equality checks | before preload; 3/3 passed |
+| Checkpoint/corpus/target/config/training identity validated | yes; schema 2 |
 | Requested / successful / post-update-checked steps | 1,600 / 1,600 / 1,600 |
 | Effective epochs | 157.7465 |
 | First 10-step mean KD loss | 6.8697 |
@@ -120,7 +121,7 @@ These values are from the included `results/` artifacts, not aspirational number
 | Hindi→English switch outcome | missed; lag `null` |
 | Student parameters | 42,567 |
 | Provisional end-tail outputs withheld | 4 frames |
-| Six-thread CPU replay RTF | 0.0087 |
+| Six-thread CPU replay RTF | 0.0071 |
 
 Agreement is not called accuracy: `eval_metrics.json` reports both student↔teacher agreement and student/teacher accuracy against the known synthesis language. The frozen teacher is correct on all 21 held-out monolingual clips, while the student generalises poorly to their unseen voices. On the held-out Hindi→English switch, the illustrative policy never establishes even its initial Hindi commit, so no English commit exists and lag is `null`; a miss is not assigned a flattering latency. The policy averages each 160 ms chunk, applies an EMA with new weight 0.30, and requires posterior ≥0.60, a 0.10 margin, and three consecutive chunks. This operating point is not calibrated on the tiny dataset; `DESIGN.md` describes how to set it properly.
 
@@ -132,14 +133,14 @@ Agreement is not called accuracy: `eval_metrics.json` reports both student↔tea
 - `tests/test_corpus_publication.py` checks recipe invalidation, byte-addressed cache reuse, checksum validation, and failure before the final atomic manifest swap.
 - `tests/test_target_cache.py` rejects reordered class columns, changed waveform/manifest/config content, and modified target files while accepting a fully content-bound cache.
 - `tests/test_training_contract.py` rejects zero/non-finite run settings and an empty full-batch loader, injects model/optimizer corruption after an update, and proves success flags require completed checked work.
-- `tests/test_run_identity.py` rejects changed audio, timing, target identity, model state, and unrelated training metrics while accepting one fully bound run.
+- `tests/test_run_identity.py` proves launch snapshots are copied by value, rejects live audio/manifest/target-metadata changes before publication, and rejects changed timing, target identity, model state, or unrelated training metrics at evaluation while accepting one fully bound run.
 - `scripts/prepare_data.py`, `teacher_targets.py`, `train.py`, and `eval.py` are the single entry points for each stage.
 - `src/streaming_lid/` holds configuration, frontend, model, loss, and dataset code.
 - `DESIGN.md` is the Part 2 live-ASR design.
 
 ## Implemented versus intentionally out of scope
 
-Implemented: reproducible multi-voice audio acquisition with retry-safe, recipe- and byte-addressed caching plus staged atomic manifest publication; enforced voice-disjoint train/evaluation manifests; pinned and artifact-hashed frozen teacher inference; content-bound target caches with generator-source, ordered-class, and probability validation; a checkpoint-bound run identity over model/data/targets/config/source/training evidence; soft temporal targets; special handling of switch clips; streaming-safe features; bounded-lookahead causal model with stable stateful emissions; delayed KL with an explicit no-valid-frame guard; real backward/optimizer steps with finite model and optimizer state checked after every update; separate agreement and known-label metrics; stable chunk-equivalence and causality tests; RTF; hysteretic switch measurement; and the requested plot/JSON outputs.
+Implemented: reproducible multi-voice audio acquisition with retry-safe, recipe- and byte-addressed caching plus staged atomic manifest publication; enforced voice-disjoint train/evaluation manifests; pinned and artifact-hashed frozen teacher inference; content-bound target caches with generator-source, ordered-class, and probability validation; an immutable launch dependency snapshot with three live equality gates and a checkpoint-bound run identity over model/data/targets/config/source/training evidence; soft temporal targets; special handling of switch clips; streaming-safe features; bounded-lookahead causal model with stable stateful emissions; delayed KL with an explicit no-valid-frame guard; real backward/optimizer steps with finite model and optimizer state checked after every update; separate agreement and known-label metrics; stable chunk-equivalence and causality tests; RTF; hysteretic switch measurement; and the requested plot/JSON outputs.
 
 Intentionally not implemented: a real telephony/VAD frontend, an ASR server/router, probability calibration on representative calls, an unknown-language head, checkpoint export/quantization, or convergence training. With more compute/data I would train on speaker-disjoint FLEURS/Common Voice plus anonymized 8 kHz call audio, add codec/noise/reverb augmentation and an `other` class, tune thresholds on a cost-weighted dev set, and report confidence intervals, false switches/hour, miss rate, and lag percentiles.
 
