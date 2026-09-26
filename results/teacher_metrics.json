@@ -24,12 +24,12 @@
     }
   },
   "target_generator": {
-    "source_sha256": "a10ddf9728a562ff54144b64733ea7858a496f40b46a4aa52d11cd9f0b32f75f",
-    "identity_sha256": "73d37606709e6ab6ab4f755991c082668aba976efe0f5e8ea6a825fc741f5cad",
+    "source_sha256": "44f64417d17bc388e2b7c4583b212da091def9c8667004b7a32de2ecc5220aad",
+    "identity_sha256": "5b549d1aef6cc51892755c39876ead9f3bef890f7094c754f5c0cc0c0a975974",
     "files": {
       "scripts/teacher_targets.py": {
-        "sha256": "fd76748c701446856be5b7947771bf995d1a850c9f025950f7b13d080a711f40",
-        "bytes": 17075
+        "sha256": "dde201c03bfff8c0e591478f5cea27a2c249f9a38875560ea75da06c7ac65e94",
+        "bytes": 17450
       },
       "src/streaming_lid/audio.py": {
         "sha256": "4cce5b81f784526f92d61fce0dbd65f3a3a90069134717da4f7d54a2736260cd",
@@ -40,8 +40,8 @@
         "bytes": 2571
       },
       "src/streaming_lid/data.py": {
-        "sha256": "0a7b5906e044d871f3474dc7b3881e8424b94e767a1ee4c85ef8a8f1efa6b1c9",
-        "bytes": 40307
+        "sha256": "da09298571c92fc0d144af586571688502ac2736a39adb17ee30c9e947c6aa7d",
+        "bytes": 45245
       }
     },
     "dependencies": {
@@ -112,13 +112,20 @@
     "speaker_disjoint": true
   },
   "target_cache": {
-    "schema_version": 4,
-    "target_configuration_sha256": "db50c03d511324461eefa0ebef7ddb78002e7afff097915a9e264685a9864fa5",
+    "schema_version": 5,
+    "target_configuration_sha256": "bd2e98c590ace6222f134c52bebf67135c587cb00b69559096cb5932e6634c26",
+    "manifest_snapshot": {
+      "schema_version": 1,
+      "manifest_file_sha256": "7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c",
+      "manifest_records_sha256": "d47a8b62af8d878867cc9ef2d0b6488f3a45a2706ce4e29ea62840b9030ecc01",
+      "n_records": 94
+    },
+    "manifest_file_sha256": "7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c",
     "manifest_records_sha256": "d47a8b62af8d878867cc9ef2d0b6488f3a45a2706ce4e29ea62840b9030ecc01",
-    "target_files_sha256": "f33f011d328bd6c7956a9992cc8b6093d674d8e90b4ed98b1a85167157b0665f",
+    "target_files_sha256": "0dc5a6e88c52606af18c4b204bddff5c908ef7caa54b6eba94fa808704855553",
     "teacher_revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
     "teacher_artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
-    "target_generator_source_sha256": "a10ddf9728a562ff54144b64733ea7858a496f40b46a4aa52d11cd9f0b32f75f",
+    "target_generator_source_sha256": "44f64417d17bc388e2b7c4583b212da091def9c8667004b7a32de2ecc5220aad",
     "target_expansion": "previous_anchor_hold",
     "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
     "availability_checked_frames": 2394,
