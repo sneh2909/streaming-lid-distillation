@@ -28,8 +28,8 @@ The LID runs only on the caller's inbound track (never the bot's own TTS or echo
 The student emits a posterior every 80 ms frame. Raw argmax is jittery, so routing reads a small state machine (`slid/commit.py`, tested in `tests/test_commit.py`):
 
 - **Smoothing:** s_t = (1 − α) s_{t−1} + α p_t, with α = 0.3 (≈ 0.25 s time constant).
-- **First commit:** when max_k s_tk ≥ θ_commit (0.7). Until then the call is *uncommitted* and routes to the prior (section 5).
-- **Switch:** a different language must reach θ_switch (0.8 > θ_commit) for `dwell` consecutive frames (3 = 240 ms), and the router only acts on it at the next pause or endpoint.
+- **First commit:** when max_k s_tk ≥ θ_commit (0.8, chosen from the sweep below; the code default and the README evaluation tables use 0.7). Until then the call is *uncommitted* and routes to the prior (section 5).
+- **Switch:** a different language must reach θ_switch = θ_commit + 0.1 for `dwell` consecutive frames (3 = 240 ms), and the router only acts on it at the next pause or endpoint.
 
 **Why these three knobs:**
 - A threshold alone flip-flops near 0.5.
@@ -46,7 +46,7 @@ The procedure, on a labelled dev set of real calls:
 2. Plot time-to-first-correct-commit against wrong-first-commit rate.
 3. Pick the knee under a product constraint, e.g. wrong-first-commit ≤ 2%, then minimise the median commit time.
 
-The student is trained on information-matched targets, so its early posteriors are honestly uncertain. That makes a probability threshold meaningful. A student distilled from full-utterance targets is overconfident early, and no threshold would be safe.
+The student is trained on information-matched targets, so its early posteriors are honestly uncertain, and a probability threshold means what it says. A student distilled from future-informed targets can be *confident for the wrong reason*: our centred-target student names the language from pure silence 64% of the time (README §3). A threshold would happily pass that shortcut confidence, and on real phone lines it would not hold.
 
 **Measured** (final student, 320 ms chunks, 480 held-out clips, `scripts/commit_sweep.py` → `results/final/commit_sweep_final.json`; dwell 3 frames, θ_switch = θ_commit + 0.1):
 
@@ -170,8 +170,11 @@ The teacher's blind spots bound what this loop can fix. Anything it mislabels is
 
 ## 7. What we would build next (not implemented)
 
-- **Bounded-memory student:** a FIFO of recent frames plus a per-call cache of high-confidence frames per language (Streaming-Sortformer-style). This adapts to *this* caller's accented English, and per-chunk cost stays constant on long calls.
-- **Several lookaheads in one exported graph:** chunk-size switchable at runtime. It is already trained that way (dynamic chunk), so it only needs a cached-state streaming export.
+- **Constant memory without the accuracy loss:**
+  - The bounded-history student (v2, implemented) costs 7 points.
+  - Next: a "time since stream start" input, plus a per-call cache of high-confidence frames per language (Streaming-Sortformer-style), so the model adapts to *this* caller's accented English.
+- **Two-timescale student:** a short window for switch detection (W = 1.5 s halves lag) plus a long window for stability (W = 3 s keeps accuracy). This gets both sides of the measured trade-off.
+- **Export:** the streaming session (KV cache, chunk size switchable at run time) exists in PyTorch. ONNX/TorchScript export with the cache as explicit inputs/outputs is the remaining step.
 - **Real telephony data and real code-switch labels** (MUCS 2021, IndicVoices, DISPLACE) instead of FLEURS + Svarah + synthetic concatenation.
 - **Licence review:**
   - Indic-Transcribe's licence is share-alike, requires sign-off for hosting as a service, and explicitly bans use for robocalls and auto-dialers.
