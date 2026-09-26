@@ -24,12 +24,12 @@
     }
   },
   "target_generator": {
-    "source_sha256": "4186f0e5df2b3d70ef458678caee2e8b579c62e1a33d8297290532c399fa66a4",
-    "identity_sha256": "e3e6c8f6980b5df020340eb8a3dbe47f8b6c81aa4414fc3617932a414774e5df",
+    "source_sha256": "a10ddf9728a562ff54144b64733ea7858a496f40b46a4aa52d11cd9f0b32f75f",
+    "identity_sha256": "73d37606709e6ab6ab4f755991c082668aba976efe0f5e8ea6a825fc741f5cad",
     "files": {
       "scripts/teacher_targets.py": {
-        "sha256": "2e56bfb27da716bfffd8413b5032db09ab6ca9b693bfbb7314debf70a0074797",
-        "bytes": 16090
+        "sha256": "fd76748c701446856be5b7947771bf995d1a850c9f025950f7b13d080a711f40",
+        "bytes": 17075
       },
       "src/streaming_lid/audio.py": {
         "sha256": "4cce5b81f784526f92d61fce0dbd65f3a3a90069134717da4f7d54a2736260cd",
@@ -40,8 +40,8 @@
         "bytes": 2571
       },
       "src/streaming_lid/data.py": {
-        "sha256": "17045f389ce43902e30248fe36b6a5f50369adf25d4f14dc2537ec268b014012",
-        "bytes": 33109
+        "sha256": "0a7b5906e044d871f3474dc7b3881e8424b94e767a1ee4c85ef8a8f1efa6b1c9",
+        "bytes": 40307
       }
     },
     "dependencies": {
@@ -74,6 +74,10 @@
   "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
   "availability_checked_frames": 2394,
   "availability_contract_valid": true,
+  "dense_target_checked_frames": 41195,
+  "dense_target_expansion_valid": true,
+  "dense_target_validation_rtol": 1e-06,
+  "dense_target_validation_atol": 2e-07,
   "speaker_split": {
     "train_speaker_ids": [
       "bn-IN-BashkarNeural",
@@ -108,17 +112,21 @@
     "speaker_disjoint": true
   },
   "target_cache": {
-    "schema_version": 3,
-    "target_configuration_sha256": "1053c9dc7fbe745b1bca3e3e10e5aa1ab16cb1b2d36fc8e8b21d3f24b366edff",
+    "schema_version": 4,
+    "target_configuration_sha256": "db50c03d511324461eefa0ebef7ddb78002e7afff097915a9e264685a9864fa5",
     "manifest_records_sha256": "d47a8b62af8d878867cc9ef2d0b6488f3a45a2706ce4e29ea62840b9030ecc01",
-    "target_files_sha256": "b1e051c192d276aea96729bcde6505bd72d34d0e10e350f77f083767f2045a2f",
+    "target_files_sha256": "f33f011d328bd6c7956a9992cc8b6093d674d8e90b4ed98b1a85167157b0665f",
     "teacher_revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
     "teacher_artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
-    "target_generator_source_sha256": "4186f0e5df2b3d70ef458678caee2e8b579c62e1a33d8297290532c399fa66a4",
+    "target_generator_source_sha256": "a10ddf9728a562ff54144b64733ea7858a496f40b46a4aa52d11cd9f0b32f75f",
     "target_expansion": "previous_anchor_hold",
     "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
     "availability_checked_frames": 2394,
     "availability_contract_valid": true,
+    "dense_target_checked_frames": 41195,
+    "dense_target_expansion_valid": true,
+    "dense_target_validation_rtol": 1e-06,
+    "dense_target_validation_atol": 2e-07,
     "provenance_validated": true,
     "validated_clips": 94,
     "indexed_clips": 94

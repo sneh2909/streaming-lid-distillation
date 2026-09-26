@@ -46,11 +46,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 # Import the model, frontend, data, loss, timing, streaming scheduler, and
 # training-safety contracts from the main pipeline.  This driver never edits
 # those sources.
-from scripts.eval import (  # noqa: E402
-    chunk_availability_times,
-    chunk_posteriors,
-    smooth_posteriors,
-)
+from scripts.eval import smooth_posteriors  # noqa: E402
 from scripts.train import (  # noqa: E402
     assert_finite_post_update_state,
     build_training_contract,
@@ -538,22 +534,33 @@ def policy_switch_event(
 def chunk_trace(
     logits: torch.Tensor, length: int
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return real streaming-call groups, their clocks, and stable frame posteriors.
+
+    The first 16-frame input call emits 12 outputs because four frames remain
+    pending; later full calls emit 16.  Group the stable full-pass logits by
+    those actual output ranges rather than concatenating and reslicing them in
+    artificial 16-output groups.
+    """
     stable_stop = length - MODEL_LOOKAHEAD_FRAMES
     if stable_stop <= LABEL_DELAY_FRAMES:
         raise ValueError("trace has no delay-aligned stable outputs")
     probabilities = torch.softmax(logits[:stable_stop], dim=-1).cpu().numpy()
-    availability = chunk_availability_times(
-        len(probabilities),
-        chunk_frames=CHUNK_FRAMES,
-        lookahead_frames=MODEL_LOOKAHEAD_FRAMES,
-        hop_length=HOP_LENGTH,
-        win_length=WIN_LENGTH,
-        sample_rate=SAMPLE_RATE,
-    )
-    chunks, times = chunk_posteriors(
-        probabilities, availability, min_frame=LABEL_DELAY_FRAMES
-    )
-    return chunks, times, probabilities
+    groups: list[np.ndarray] = []
+    times: list[float] = []
+    next_output = 0
+    for input_start in range(0, length, CHUNK_FRAMES):
+        input_stop = min(input_start + CHUNK_FRAMES, length)
+        emitted_stop = max(0, input_stop - MODEL_LOOKAHEAD_FRAMES)
+        selected_start = max(next_output, LABEL_DELAY_FRAMES)
+        if emitted_stop > selected_start:
+            groups.append(probabilities[selected_start:emitted_stop].mean(axis=0))
+            times.append(
+                ((input_stop - 1) * HOP_LENGTH + WIN_LENGTH) / SAMPLE_RATE
+            )
+        next_output = emitted_stop
+    if next_output != stable_stop or not groups:
+        raise AssertionError("streaming emission schedule did not close exactly")
+    return np.stack(groups), np.asarray(times, dtype=np.float64), probabilities
 
 
 def monolingual_stability(
@@ -1500,6 +1507,10 @@ def main() -> None:
             "dwell_chunks": POLICY_DWELL_CHUNKS,
             "ema_new_weight": EMA_NEW_WEIGHT,
         },
+        "streaming_grouping": (
+            "actual input-call output ranges (12, then 16 for full calls at "
+            "chunk=16/lookahead=4), filtered at label-delay frame 21"
+        ),
         "raw_stability_seconds": RAW_STABILITY_SECONDS,
         "switch_deadlines_seconds": list(SWITCH_DEADLINES_SECONDS),
         "switch_collar_seconds": SWITCH_COLLAR_SECONDS,
