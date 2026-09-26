@@ -96,9 +96,17 @@ def label_indices(teacher: EncoderClassifier) -> list[int]:
         index_to_label.get(index) for index in range(TEACHER_OUTPUT_CLASSES)
     )
     if len(index_to_label) != TEACHER_OUTPUT_CLASSES or actual_labels != TEACHER_LABELS:
+        mismatches = [
+            (index, actual, expected)
+            for index, (actual, expected) in enumerate(
+                zip(actual_labels, TEACHER_LABELS, strict=True)
+            )
+            if actual != expected
+        ]
         raise ValueError(
             "pinned teacher's complete output label map differs from the "
-            "configured 107-class map"
+            f"configured 107-class map: size={len(index_to_label)}, "
+            f"first mismatches={mismatches[:3]}"
         )
     result = []
     for code in LANGUAGE_CODES:

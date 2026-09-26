@@ -62,7 +62,7 @@ TEACHER_ARTIFACT_FILES = OrderedDict(
 )
 TEACHER_LANGUAGE_INDICES = (20, 35, 63, 9, 91, 92, 31)
 TEACHER_LABELS = (
-    "starting_index",
+    "ab: Abkhazian",
     "af: Afrikaans",
     "am: Amharic",
     "ar: Arabic",
@@ -171,6 +171,12 @@ TEACHER_LABELS = (
     "zh: Chinese",
 )
 TEACHER_OUTPUT_CLASSES = len(TEACHER_LABELS)
+assert TEACHER_OUTPUT_CLASSES == 107
+assert len(set(TEACHER_LABELS)) == TEACHER_OUTPUT_CLASSES
+assert tuple(
+    TEACHER_LABELS[index].split(":", maxsplit=1)[0]
+    for index in TEACHER_LANGUAGE_INDICES
+) == LANGUAGE_CODES
 TEACHER_TEMPERATURE = 2.0
 TEACHER_PAST_MS = 1_750
 TEACHER_FUTURE_MS = 250

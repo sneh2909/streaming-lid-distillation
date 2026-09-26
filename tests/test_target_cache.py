@@ -297,6 +297,21 @@ def _write_valid_local_cache(
     return manifest_path, targets_dir, item
 
 
+def _rewrite_single_target_and_rebind_metadata(
+    targets_dir: Path, item: dict, payload: dict[str, np.ndarray]
+) -> None:
+    target_path = targets_dir / f"{item['id']}.npz"
+    np.savez_compressed(target_path, **payload)
+    metadata_path = targets_dir / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    target_hash = file_sha256(target_path)
+    metadata["clips"][0]["target_file_sha256"] = target_hash
+    metadata["target_files_sha256"] = canonical_json_sha256(
+        {item["id"]: target_hash}
+    )
+    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+
+
 def test_basic_loader_rejects_reordered_target_columns(tmp_path: Path) -> None:
     target_path = tmp_path / "reordered.npz"
     item = {"id": "clip"}
@@ -452,6 +467,37 @@ def test_strict_cache_rejects_soft_anchors_not_derived_at_temperature(
         cache.load(item, "teacher_soft_targets", expected_frames=3)
 
 
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    (
+        ("outside_index", "pinned 107-class teacher output space"),
+        ("wrong_label", "does not match pinned teacher index"),
+        ("impossible_probability", "below 1/107"),
+    ),
+)
+def test_strict_cache_rejects_impossible_native_teacher_summary(
+    tmp_path: Path, mutation: str, message: str
+) -> None:
+    manifest_path, targets_dir, item = _write_valid_cache(tmp_path)
+    target_path = targets_dir / "clip.npz"
+    with np.load(target_path, allow_pickle=False) as target_file:
+        payload = {key: np.asarray(target_file[key]) for key in target_file.files}
+    if mutation == "outside_index":
+        payload["full_top1_indices"] = np.asarray([999], dtype=np.int64)
+    elif mutation == "wrong_label":
+        payload["full_top1_labels"] = np.asarray(["hi: Hindi"])
+    elif mutation == "impossible_probability":
+        payload["in_set_mass"] = np.asarray([1e-6], dtype=np.float32)
+        payload["full_top1_probabilities"] = np.asarray([1e-6], dtype=np.float32)
+    else:  # pragma: no cover - the parameter table is exhaustive
+        raise AssertionError(mutation)
+    _rewrite_single_target_and_rebind_metadata(targets_dir, item, payload)
+    cache = TeacherTargetCache(manifest_path, targets_dir)
+
+    with pytest.raises(ValueError, match=message):
+        cache.load(item, "teacher_soft_targets", expected_frames=3)
+
+
 def test_strict_cache_rejects_changed_audio(tmp_path: Path) -> None:
     manifest_path, targets_dir, item = _write_valid_cache(tmp_path)
     (tmp_path / "clip.wav").write_bytes(b"audio-version-two")
@@ -557,6 +603,9 @@ def test_training_target_audit_exposes_skew_despite_equal_clip_counts(
                 "unused",
                 num_frames=26,
                 anchor_probs=probabilities,
+                in_set_mass=(1e-6 if language == "gu" else 0.75),
+                full_top1_index=(0 if language == "gu" else None),
+                full_top1_probability=(0.9 if language == "gu" else None),
             )
 
     audit = build_training_target_audit(records, targets_dir)
@@ -570,6 +619,8 @@ def test_training_target_audit_exposes_skew_despite_equal_clip_counts(
     )
     assert audit["per_language"]["en"]["teacher_selected_top1_correct"] == 6
     assert audit["per_language"]["en"]["teacher_native_top1_correct"] == 6
+    assert audit["per_language"]["gu"]["teacher_selected_top1_correct"] == 10
+    assert audit["per_language"]["gu"]["teacher_native_top1_correct"] == 0
     assert all(
         audit["per_language"][language]["monolingual_clips"] == 10
         for language in LANGUAGE_CODES
@@ -579,7 +630,8 @@ def test_training_target_audit_exposes_skew_despite_equal_clip_counts(
     ] == ["en"]
     assert audit["quality_floor"][
         "failed_teacher_native_correctness_languages"
-    ] == ["en"]
+    ] == ["en", "gu"]
+    assert audit["quality_floor"]["failed_retained_mass_languages"] == ["gu"]
     assert audit["quality_floor"]["passed"] is False
     assert (
         audit["aggregate"]["full_corpus_target_mass_t2"]["en"]

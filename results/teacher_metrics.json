@@ -24,24 +24,24 @@
     }
   },
   "target_generator": {
-    "source_sha256": "9cf8a34dc2436507d89390f98ef8d772efa8d9724cc405a5df847969b7597ac2",
-    "identity_sha256": "352601b1bbf53cd078504a591f8fb51eba908263017690450e25275d1e00f725",
+    "source_sha256": "b099aef444d03585fe9eb0d43cd42c36a8f7184d14054e4a34962fed735a3b78",
+    "identity_sha256": "74c53e5f7f6dc1d1b9bb8859cd1c40f35456b4516733b144cfbac6420b1f7e66",
     "files": {
       "scripts/teacher_targets.py": {
-        "sha256": "367357496c5fda95d6ef8569a25e805e7fb6089a35988ede1120db849c577b8c",
-        "bytes": 18659
+        "sha256": "adb078fc563c103034fd87e73b0d7f2ab167016825f468342312838c5c517c2e",
+        "bytes": 19375
       },
       "src/streaming_lid/audio.py": {
         "sha256": "4cce5b81f784526f92d61fce0dbd65f3a3a90069134717da4f7d54a2736260cd",
         "bytes": 2032
       },
       "src/streaming_lid/config.py": {
-        "sha256": "6caba12ebb5de3e481eeef68486c3f6165bd34f042d897bd4b7a1f31933e0072",
-        "bytes": 2969
+        "sha256": "e154429a9b621247a22bc36e7eb509f20e1ea531b4751866065a7464e46dafdb",
+        "bytes": 5482
       },
       "src/streaming_lid/data.py": {
-        "sha256": "b0bc262100adf3766d390b18d06ed3e661150e7fdb0af608fe850b3847e4d298",
-        "bytes": 70045
+        "sha256": "df84a9eebdf8432c1276b2440431f28a5fcb696e4a8c1d40e67041a347d32c3c",
+        "bytes": 74739
       }
     },
     "dependencies": {
@@ -79,9 +79,9 @@
   "dense_target_validation_rtol": 1e-06,
   "dense_target_validation_atol": 2e-07,
   "training_target_audit": {
-    "schema_version": 1,
+    "schema_version": 2,
     "contract": {
-      "schema_version": 1,
+      "schema_version": 2,
       "split": "train",
       "known_monolingual_languages": [
         "en",
@@ -94,19 +94,24 @@
       ],
       "expected_monolingual_clips_per_language": 10,
       "minimum_teacher_selected_top1_correct_per_language": 8,
+      "minimum_teacher_native_top1_correct_per_language": 8,
+      "minimum_clip_mean_selected_language_retained_mass": 0.5,
+      "minimum_clip_mean_manifest_probability_t1": 0.5,
       "label_delay_frames": 21,
       "model_lookahead_frames": 4,
       "early_ramp_frames": 100,
       "aggregate_target_mass_includes_mixed_training_clips": true,
+      "aggregate_semantics": "one_pass_full_corpus_frame_ramp_surrogate_not_realized_minibatch_exposure",
       "quality_floor_is_diagnostic": true
     },
     "contract_valid": true,
     "checked_train_clips": 71,
     "checked_monolingual_train_clips": 70,
     "checked_mixed_train_clips": 1,
-    "total_valid_ramp_weight": 26454.5,
+    "full_corpus_valid_ramp_weight": 26454.5,
     "aggregate": {
-      "source_frame_loss_weight_share": {
+      "semantics": "one_pass_full_corpus_frame_ramp_surrogate_not_realized_minibatch_exposure",
+      "source_full_corpus_frame_ramp_share": {
         "en": 0.12496928688880908,
         "hi": 0.1462511103970969,
         "mr": 0.13914456897692265,
@@ -116,7 +121,7 @@
         "gu": 0.14950197508930427,
         "mixed": 0.027348844242000417
       },
-      "target_mass_t1": {
+      "full_corpus_target_mass_t1": {
         "en": 0.07581010906884529,
         "hi": 0.20089240975503303,
         "mr": 0.13423965681121797,
@@ -125,7 +130,7 @@
         "te": 0.14952501529033713,
         "gu": 0.17284053908305594
       },
-      "target_mass_t2": {
+      "full_corpus_target_mass_t2": {
         "en": 0.06528961215091453,
         "hi": 0.20648867808587154,
         "mr": 0.12911984837481708,
@@ -135,15 +140,29 @@
         "gu": 0.1778062105006482
       },
       "equal_monolingual_clip_counts": true,
-      "equal_clip_counts_do_not_imply_equal_t2_target_mass": true
+      "equal_clip_counts_do_not_imply_equal_full_corpus_t2_target_mass": true
     },
     "quality_floor": {
       "expected_monolingual_clips_per_language": 10,
       "minimum_teacher_selected_top1_correct_per_language": 8,
+      "minimum_teacher_native_top1_correct_per_language": 8,
+      "minimum_clip_mean_selected_language_retained_mass": 0.5,
+      "minimum_clip_mean_manifest_probability_t1": 0.5,
       "exact_clip_count_passed": true,
-      "teacher_correctness_floor_passed": false,
+      "teacher_selected_correctness_floor_passed": false,
+      "teacher_native_correctness_floor_passed": false,
+      "retained_mass_floor_passed": true,
+      "manifest_probability_floor_passed": true,
       "failed_clip_count_languages": [],
-      "failed_teacher_correctness_languages": [
+      "failed_teacher_selected_correctness_languages": [
+        "en"
+      ],
+      "failed_teacher_native_correctness_languages": [
+        "en"
+      ],
+      "failed_retained_mass_languages": [],
+      "failed_manifest_probability_languages": [],
+      "failed_languages": [
         "en"
       ],
       "passed": false,
@@ -153,6 +172,7 @@
       "en": {
         "monolingual_clips": 10,
         "teacher_selected_top1_correct": 6,
+        "teacher_native_top1_correct": 1,
         "teacher_selected_top1_counts": {
           "en": 6,
           "hi": 3,
@@ -173,12 +193,12 @@
         "clip_mean_manifest_probability_t1": 0.5192705099412706,
         "clip_mean_manifest_probability_t2": 0.45025978703051805,
         "clip_mean_selected_language_retained_mass": 0.5127590410411358,
-        "loss_weighted_mean_manifest_probability_t1": 0.5560845358564446,
-        "loss_weighted_mean_manifest_probability_t2": 0.4800207613921159,
-        "loss_weighted_mean_selected_language_retained_mass": 0.49322420970862985,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t1": 0.5560845358564446,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t2": 0.4800207613921159,
+        "full_corpus_frame_ramp_weighted_mean_selected_language_retained_mass": 0.49322420970862985,
         "valid_ramp_weight": 3306.0,
-        "frame_loss_weight_share": 0.12496928688880908,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.12496928688880908,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 0.06949348789587427,
           "hi": 0.03756505629454021,
           "mr": 0.0006963496598577877,
@@ -187,7 +207,7 @@
           "te": 0.00026446521285994004,
           "gu": 0.015688285257593946
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.0599878522429959,
           "hi": 0.035914347454763004,
           "mr": 0.0038698712496000867,
@@ -208,6 +228,7 @@
       "hi": {
         "monolingual_clips": 10,
         "teacher_selected_top1_correct": 10,
+        "teacher_native_top1_correct": 10,
         "teacher_selected_top1_counts": {
           "en": 0,
           "hi": 10,
@@ -223,12 +244,12 @@
         "clip_mean_manifest_probability_t1": 0.9776908814907074,
         "clip_mean_manifest_probability_t2": 0.9544685244560241,
         "clip_mean_selected_language_retained_mass": 0.9821062088012695,
-        "loss_weighted_mean_manifest_probability_t1": 0.9828427356245845,
-        "loss_weighted_mean_manifest_probability_t2": 0.9637126526372874,
-        "loss_weighted_mean_selected_language_retained_mass": 0.9798635018059806,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t1": 0.9828427356245845,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t2": 0.9637126526372874,
+        "full_corpus_frame_ramp_weighted_mean_selected_language_retained_mass": 0.9798635018059806,
         "valid_ramp_weight": 3869.0,
-        "frame_loss_weight_share": 0.1462511103970969,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.1462511103970969,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.790795163570912e-10,
           "hi": 0.14374184143081584,
           "mr": 5.891330656837714e-06,
@@ -237,7 +258,7 @@
           "te": 4.6313343779470325e-09,
           "gu": 0.0025033261726416056
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.616287111749832e-06,
           "hi": 0.14094404555193504,
           "mr": 0.00040715647105493626,
@@ -258,6 +279,7 @@
       "mr": {
         "monolingual_clips": 10,
         "teacher_selected_top1_correct": 10,
+        "teacher_native_top1_correct": 10,
         "teacher_selected_top1_counts": {
           "en": 0,
           "hi": 0,
@@ -273,12 +295,12 @@
         "clip_mean_manifest_probability_t1": 0.9395978927612305,
         "clip_mean_manifest_probability_t2": 0.8644317477941513,
         "clip_mean_selected_language_retained_mass": 0.9830537915229798,
-        "loss_weighted_mean_manifest_probability_t1": 0.9469611349555339,
-        "loss_weighted_mean_manifest_probability_t2": 0.8777318771273764,
-        "loss_weighted_mean_selected_language_retained_mass": 0.9839533097521826,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t1": 0.9469611349555339,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t2": 0.8777318771273764,
+        "full_corpus_frame_ramp_weighted_mean_selected_language_retained_mass": 0.9839533097521826,
         "valid_ramp_weight": 3681.0,
-        "frame_loss_weight_share": 0.13914456897692265,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.13914456897692265,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 7.389074617881223e-13,
           "hi": 0.002107963609025023,
           "mr": 0.13176449896128525,
@@ -287,7 +309,7 @@
           "te": 3.1524395898373084e-05,
           "gu": 0.00524040396864737
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.561741313626936e-07,
           "hi": 0.006571451623067653,
           "mr": 0.12213162372019401,
@@ -308,6 +330,7 @@
       "bn": {
         "monolingual_clips": 10,
         "teacher_selected_top1_correct": 10,
+        "teacher_native_top1_correct": 10,
         "teacher_selected_top1_counts": {
           "en": 0,
           "hi": 0,
@@ -323,12 +346,12 @@
         "clip_mean_manifest_probability_t1": 0.9980711042881012,
         "clip_mean_manifest_probability_t2": 0.9696239709854126,
         "clip_mean_selected_language_retained_mass": 0.9986144125461578,
-        "loss_weighted_mean_manifest_probability_t1": 0.997979105836358,
-        "loss_weighted_mean_manifest_probability_t2": 0.9672506834447332,
-        "loss_weighted_mean_selected_language_retained_mass": 0.9985766651846707,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t1": 0.997979105836358,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t2": 0.9672506834447332,
+        "full_corpus_frame_ramp_weighted_mean_selected_language_retained_mass": 0.9985766651846707,
         "valid_ramp_weight": 3461.0,
-        "frame_loss_weight_share": 0.13082840348522937,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.13082840348522937,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 4.9198996482457594e-12,
           "hi": 9.42073177979887e-05,
           "mr": 4.4576281762413e-06,
@@ -337,7 +360,7 @@
           "te": 5.894716469013048e-07,
           "gu": 0.0001651265870414079
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 5.304766516321144e-07,
           "hi": 0.00122752872577214,
           "mr": 0.0004030465979883873,
@@ -358,6 +381,7 @@
       "ta": {
         "monolingual_clips": 10,
         "teacher_selected_top1_correct": 10,
+        "teacher_native_top1_correct": 10,
         "teacher_selected_top1_counts": {
           "en": 0,
           "hi": 0,
@@ -373,12 +397,12 @@
         "clip_mean_manifest_probability_t1": 0.9998901546001434,
         "clip_mean_manifest_probability_t2": 0.9927905082702637,
         "clip_mean_selected_language_retained_mass": 0.9996042013168335,
-        "loss_weighted_mean_manifest_probability_t1": 0.9999048004100021,
-        "loss_weighted_mean_manifest_probability_t2": 0.9936891803942935,
-        "loss_weighted_mean_selected_language_retained_mass": 0.9996748887485182,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t1": 0.9999048004100021,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t2": 0.9936891803942935,
+        "full_corpus_frame_ramp_weighted_mean_selected_language_retained_mass": 0.9996748887485182,
         "valid_ramp_weight": 3550.0,
-        "frame_loss_weight_share": 0.13419267043414165,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.13419267043414165,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.394138169636552e-10,
           "hi": 1.8572670113061757e-08,
           "mr": 1.131838064482296e-09,
@@ -387,7 +411,7 @@
           "te": 1.2753684871482656e-05,
           "gu": 2.6047262069869213e-10
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.3163484007336097e-06,
           "hi": 3.031777693000275e-05,
           "mr": 5.572571858435385e-06,
@@ -408,6 +432,7 @@
       "te": {
         "monolingual_clips": 10,
         "teacher_selected_top1_correct": 10,
+        "teacher_native_top1_correct": 10,
         "teacher_selected_top1_counts": {
           "en": 0,
           "hi": 0,
@@ -423,12 +448,12 @@
         "clip_mean_manifest_probability_t1": 0.9998120307922364,
         "clip_mean_manifest_probability_t2": 0.9888057470321655,
         "clip_mean_selected_language_retained_mass": 0.9997979938983917,
-        "loss_weighted_mean_manifest_probability_t1": 0.9998802989911899,
-        "loss_weighted_mean_manifest_probability_t2": 0.99096437937221,
-        "loss_weighted_mean_selected_language_retained_mass": 0.9998083756338394,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t1": 0.9998802989911899,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t2": 0.99096437937221,
+        "full_corpus_frame_ramp_weighted_mean_selected_language_retained_mass": 0.9998083756338394,
         "valid_ramp_weight": 3909.0,
-        "frame_loss_weight_share": 0.1477631404864957,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.1477631404864957,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 6.518868418656995e-13,
           "hi": 1.2659063837974603e-05,
           "mr": 5.421917698853551e-07,
@@ -437,7 +462,7 @@
           "te": 0.1477454530895145,
           "gu": 2.987493310053094e-06
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.5131144022082144e-07,
           "hi": 0.0004992276481781101,
           "mr": 0.00012476124911518416,
@@ -458,6 +483,7 @@
       "gu": {
         "monolingual_clips": 10,
         "teacher_selected_top1_correct": 10,
+        "teacher_native_top1_correct": 10,
         "teacher_selected_top1_counts": {
           "en": 0,
           "hi": 0,
@@ -473,12 +499,12 @@
         "clip_mean_manifest_probability_t1": 0.9955563068389892,
         "clip_mean_manifest_probability_t2": 0.9497141718864441,
         "clip_mean_selected_language_retained_mass": 0.9982529282569885,
-        "loss_weighted_mean_manifest_probability_t1": 0.9963856392202124,
-        "loss_weighted_mean_manifest_probability_t2": 0.9550460130013949,
-        "loss_weighted_mean_selected_language_retained_mass": 0.998385683640216,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t1": 0.9963856392202124,
+        "full_corpus_frame_ramp_weighted_mean_manifest_probability_t2": 0.9550460130013949,
+        "full_corpus_frame_ramp_weighted_mean_selected_language_retained_mass": 0.998385683640216,
         "valid_ramp_weight": 3955.0,
-        "frame_loss_weight_share": 0.14950197508930427,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.14950197508930427,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.79075966927851e-10,
           "hi": 0.000517324447992946,
           "mr": 5.948081338518923e-06,
@@ -487,7 +513,7 @@
           "te": 8.133479121393901e-06,
           "gu": 0.1489616210140407
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.9203451173764834e-06,
           "hi": 0.005120038968787433,
           "mr": 0.0005184217833846675,
@@ -519,12 +545,13 @@
         "teacher_full_top1_index": 9,
         "teacher_full_top1_label": "bn: Bengali",
         "teacher_full_top1_supported_language": "bn",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999761581420898,
         "manifest_probability_t1": 0.9999836683273315,
         "manifest_probability_t2": 0.9929524064064026,
         "selected_language_retained_mass": 0.9999924898147583,
-        "frame_loss_weight_share": 0.01914608100701204,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01914608100701204,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.514338220544464e-12,
           "hi": 5.880669650290862e-08,
           "mr": 4.0598900721599444e-08,
@@ -533,7 +560,7 @@
           "te": 1.0939561778615739e-09,
           "gu": 2.0982808470274666e-07
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.1786315456486316e-07,
           "hi": 3.3318491215682464e-05,
           "mr": 2.768401299317263e-05,
@@ -555,12 +582,13 @@
         "teacher_full_top1_index": 9,
         "teacher_full_top1_label": "bn: Bengali",
         "teacher_full_top1_supported_language": "bn",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.999743640422821,
         "manifest_probability_t1": 0.9998875856399536,
         "manifest_probability_t2": 0.9853002429008484,
         "selected_language_retained_mass": 0.9998559951782227,
-        "frame_loss_weight_share": 0.01691583662514884,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01691583662514884,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 8.037552943816536e-15,
           "hi": 1.3777017826557128e-07,
           "mr": 5.281313348322951e-08,
@@ -569,7 +597,7 @@
           "te": 5.073567494085351e-10,
           "gu": 1.7093948612060325e-06
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.1489514354361418e-08,
           "hi": 4.7568269815726066e-05,
           "mr": 2.945172376986337e-05,
@@ -591,12 +619,13 @@
         "teacher_full_top1_index": 9,
         "teacher_full_top1_label": "bn: Bengali",
         "teacher_full_top1_supported_language": "bn",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9979798197746277,
         "manifest_probability_t1": 0.9979971051216125,
         "manifest_probability_t2": 0.9440606832504272,
         "selected_language_retained_mass": 0.9999827146530151,
-        "frame_loss_weight_share": 0.01612202082821448,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01612202082821448,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.545169473440393e-13,
           "hi": 5.952149605342363e-07,
           "mr": 2.3669964291638514e-07,
@@ -605,7 +634,7 @@
           "te": 3.614977499574633e-07,
           "gu": 3.1090951442911994e-05
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 6.053455676427437e-08,
           "hi": 9.257248513827658e-05,
           "mr": 5.8377275944890256e-05,
@@ -627,12 +656,13 @@
         "teacher_full_top1_index": 9,
         "teacher_full_top1_label": "bn: Bengali",
         "teacher_full_top1_supported_language": "bn",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9974772334098816,
         "manifest_probability_t1": 0.9974790215492249,
         "manifest_probability_t2": 0.9344406127929688,
         "selected_language_retained_mass": 0.9999982118606567,
-        "frame_loss_weight_share": 0.013438167419531648,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.013438167419531648,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.8635267059703554e-16,
           "hi": 6.561737768945759e-07,
           "mr": 3.32548366625268e-06,
@@ -641,7 +671,7 @@
           "te": 3.8849672417817217e-10,
           "gu": 2.9895181619553954e-05
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.8353566276821606e-09,
           "hi": 8.785758661708757e-05,
           "mr": 0.00019778678819522237,
@@ -663,12 +693,13 @@
         "teacher_full_top1_index": 9,
         "teacher_full_top1_label": "bn: Bengali",
         "teacher_full_top1_supported_language": "bn",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9719173312187195,
         "manifest_probability_t1": 0.9853883385658264,
         "manifest_probability_t2": 0.8467050790786743,
         "selected_language_retained_mass": 0.9863292574882507,
-        "frame_loss_weight_share": 0.013400366667296678,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.013400366667296678,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.2188731291113686e-12,
           "hi": 9.275379490937636e-05,
           "mr": 8.019771992428923e-07,
@@ -677,7 +708,7 @@
           "te": 2.564560218831263e-08,
           "gu": 0.0001022203602445252
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.0900993420721993e-07,
           "hi": 0.0009509389426708266,
           "mr": 8.842352470804976e-05,
@@ -699,12 +730,13 @@
         "teacher_full_top1_index": 9,
         "teacher_full_top1_label": "bn: Bengali",
         "teacher_full_top1_supported_language": "bn",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 1.0,
         "manifest_probability_t1": 1.0,
         "manifest_probability_t2": 0.999734103679657,
         "selected_language_retained_mass": 1.0,
-        "frame_loss_weight_share": 0.012039539586837778,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.012039539586837778,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.0844259352518971e-16,
           "hi": 2.7282366737077567e-10,
           "mr": 4.941510483147268e-13,
@@ -713,7 +745,7 @@
           "te": 2.875093271332354e-13,
           "gu": 1.2825312282706044e-10
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.1423241857873181e-09,
           "hi": 1.8118842640571062e-06,
           "mr": 7.711152670867979e-08,
@@ -735,12 +767,13 @@
         "teacher_full_top1_index": 9,
         "teacher_full_top1_label": "bn: Bengali",
         "teacher_full_top1_supported_language": "bn",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999985694885254,
         "manifest_probability_t1": 0.9999998807907104,
         "manifest_probability_t2": 0.999582827091217,
         "selected_language_retained_mass": 0.9999986290931702,
-        "frame_loss_weight_share": 0.012077340339072748,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.012077340339072748,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 7.005414189776774e-15,
           "hi": 7.430834247268138e-10,
           "mr": 1.7170895259412573e-13,
@@ -749,7 +782,7 @@
           "te": 4.75453355388367e-15,
           "gu": 3.2553187966597766e-10
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 9.194357524818195e-09,
           "hi": 2.9944928357059997e-06,
           "mr": 4.551986288646177e-08,
@@ -771,12 +804,13 @@
         "teacher_full_top1_index": 9,
         "teacher_full_top1_label": "bn: Bengali",
         "teacher_full_top1_supported_language": "bn",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999700784683228,
         "manifest_probability_t1": 0.9999756813049316,
         "manifest_probability_t2": 0.9943563342094421,
         "selected_language_retained_mass": 0.9999943971633911,
-        "frame_loss_weight_share": 0.00833506586781077,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.00833506586781077,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 7.572023981764201e-13,
           "hi": 1.8807680366516604e-09,
           "mr": 9.605922683758239e-12,
@@ -785,7 +819,7 @@
           "te": 2.0033488511822648e-07,
           "gu": 3.646967026317256e-10
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 7.899650059831595e-08,
           "hi": 3.937036725526021e-06,
           "mr": 2.8136583286613805e-07,
@@ -807,12 +841,13 @@
         "teacher_full_top1_index": 9,
         "teacher_full_top1_label": "bn: Bengali",
         "teacher_full_top1_supported_language": "bn",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999996423721313,
         "manifest_probability_t1": 0.9999997615814209,
         "manifest_probability_t2": 0.999394416809082,
         "selected_language_retained_mass": 0.9999998807907104,
-        "frame_loss_weight_share": 0.009582490691564763,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.009582490691564763,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 9.461609540419471e-17,
           "hi": 2.323852248270425e-09,
           "mr": 1.3953813836315286e-11,
@@ -821,7 +856,7 @@
           "te": 1.075936379384975e-13,
           "gu": 4.876671113273445e-11
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 9.516093048536253e-10,
           "hi": 4.716072090562747e-06,
           "mr": 3.654455393189292e-07,
@@ -843,12 +878,13 @@
         "teacher_full_top1_index": 9,
         "teacher_full_top1_label": "bn: Bengali",
         "teacher_full_top1_supported_language": "bn",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999924898147583,
         "manifest_probability_t1": 1.0,
         "manifest_probability_t2": 0.9997130036354065,
         "selected_language_retained_mass": 0.9999925494194031,
-        "frame_loss_weight_share": 0.00977149445273961,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.00977149445273961,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.5943657457634675e-13,
           "hi": 3.3674903804094226e-10,
           "mr": 3.140802799251773e-11,
@@ -857,7 +893,7 @@
           "te": 3.200128355452291e-12,
           "gu": 3.5400917068547127e-12
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 3.945934349993818e-08,
           "hi": 1.8134643986887923e-06,
           "mr": 5.538296154087482e-07,
@@ -879,12 +915,13 @@
         "teacher_full_top1_index": 79,
         "teacher_full_top1_label": "sco: Scots",
         "teacher_full_top1_supported_language": null,
+        "teacher_full_top1_correct": false,
         "teacher_full_top1_probability": 0.6025820970535278,
         "manifest_probability_t1": 0.9778659343719482,
         "manifest_probability_t2": 0.8411640524864197,
         "selected_language_retained_mass": 0.3405129909515381,
-        "frame_loss_weight_share": 0.013929577198586252,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.013929577198586252,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 0.013621259022701731,
           "hi": 0.0002996175432851164,
           "mr": 1.284163421301639e-08,
@@ -893,7 +930,7 @@
           "te": 6.711974908535649e-06,
           "gu": 1.382235380908319e-07
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.011717059605785242,
           "hi": 0.0017377753061022002,
           "mr": 1.1376801240225619e-05,
@@ -915,12 +952,13 @@
         "teacher_full_top1_index": 72,
         "teacher_full_top1_label": "pa: Panjabi",
         "teacher_full_top1_supported_language": null,
+        "teacher_full_top1_correct": false,
         "teacher_full_top1_probability": 0.5096623301506042,
         "manifest_probability_t1": 0.6736931800842285,
         "manifest_probability_t2": 0.43574240803718567,
         "selected_language_retained_mass": 0.3252428472042084,
-        "frame_loss_weight_share": 0.011963938082367839,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.011963938082367839,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 0.008060023493041196,
           "hi": 0.0027169404515231615,
           "mr": 0.00011231192142809432,
@@ -929,7 +967,7 @@
           "te": 4.73823634557563e-05,
           "gu": 0.00018940956282978186
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.005213195189618752,
           "hi": 0.003026745374297043,
           "mr": 0.0006153876324050444,
@@ -951,12 +989,13 @@
         "teacher_full_top1_index": 16,
         "teacher_full_top1_label": "cy: Welsh",
         "teacher_full_top1_supported_language": null,
+        "teacher_full_top1_correct": false,
         "teacher_full_top1_probability": 0.9317678213119507,
         "manifest_probability_t1": 0.9995707869529724,
         "manifest_probability_t2": 0.9699767231941223,
         "selected_language_retained_mass": 0.054506443440914154,
-        "frame_loss_weight_share": 0.014194182464231039,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.014194182464231039,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 0.0141880901359255,
           "hi": 5.202812683955525e-06,
           "mr": 1.6156125158256025e-09,
@@ -965,7 +1004,7 @@
           "te": 4.456676037273857e-08,
           "gu": 6.977030634089059e-10
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.013768026595074295,
           "hi": 0.00026365064182258107,
           "mr": 4.645990825374072e-06,
@@ -987,12 +1026,13 @@
         "teacher_full_top1_index": 79,
         "teacher_full_top1_label": "sco: Scots",
         "teacher_full_top1_supported_language": null,
+        "teacher_full_top1_correct": false,
         "teacher_full_top1_probability": 0.48234984278678894,
         "manifest_probability_t1": 0.9890803694725037,
         "manifest_probability_t2": 0.8811143040657043,
         "selected_language_retained_mass": 0.4295399785041809,
-        "frame_loss_weight_share": 0.011661532064488084,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.011661532064488084,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 0.011534192442959322,
           "hi": 0.00012412303425162532,
           "mr": 4.365059382710196e-08,
@@ -1001,7 +1041,7 @@
           "te": 2.243640362560906e-06,
           "gu": 2.4841430927516643e-07
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.010275142709341314,
           "hi": 0.0010659098766001881,
           "mr": 1.99889195897949e-05,
@@ -1023,12 +1063,13 @@
         "teacher_full_top1_index": 20,
         "teacher_full_top1_label": "en: English",
         "teacher_full_top1_supported_language": "en",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.298639178276062,
         "manifest_probability_t1": 0.8416516184806824,
         "manifest_probability_t2": 0.6203415989875793,
         "selected_language_retained_mass": 0.3548251986503601,
-        "frame_loss_weight_share": 0.014307584720935946,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.014307584720935946,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 0.012042001836925222,
           "hi": 0.0021394264823864223,
           "mr": 2.3069090664957205e-06,
@@ -1037,7 +1078,7 @@
           "te": 3.7709933731204126e-05,
           "gu": 1.358031483805067e-05
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.008875589983435664,
           "hi": 0.0037410765219952316,
           "mr": 0.00012284658402703013,
@@ -1059,12 +1100,13 @@
         "teacher_full_top1_index": 72,
         "teacher_full_top1_label": "pa: Panjabi",
         "teacher_full_top1_supported_language": null,
+        "teacher_full_top1_correct": false,
         "teacher_full_top1_probability": 0.4013809859752655,
         "manifest_probability_t1": 0.5199195146560669,
         "manifest_probability_t2": 0.3984399139881134,
         "selected_language_retained_mass": 0.5759875774383545,
-        "frame_loss_weight_share": 0.014912396756695458,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.014912396756695458,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 0.007753246084099809,
           "hi": 0.004166627959791049,
           "mr": 0.00016898533083674078,
@@ -1073,7 +1115,7 @@
           "te": 2.8005232138246043e-06,
           "gu": 0.0028205372696032444
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.0059416940810943595,
           "hi": 0.00435572906222615,
           "mr": 0.000877188646330804,
@@ -1095,12 +1137,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": false,
         "teacher_full_top1_probability": 0.5450388789176941,
         "manifest_probability_t1": 0.002894729608669877,
         "manifest_probability_t2": 0.03374706208705902,
         "selected_language_retained_mass": 0.8944453001022339,
-        "frame_loss_weight_share": 0.012228543348012625,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.012228543348012625,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 3.539832650039522e-05,
           "hi": 0.00745158055217574,
           "mr": 1.14020795768236e-05,
@@ -1109,7 +1152,7 @@
           "te": 4.253165850264498e-07,
           "gu": 0.004586392545198083
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.00041267741159967467,
           "hi": 0.005987472415801792,
           "mr": 0.00023421320925738514,
@@ -1131,12 +1174,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": false,
         "teacher_full_top1_probability": 0.5132947564125061,
         "manifest_probability_t1": 0.18533049523830414,
         "manifest_probability_t2": 0.2739778757095337,
         "selected_language_retained_mass": 0.660489559173584,
-        "frame_loss_weight_share": 0.012039539586837778,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.012039539586837778,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 0.002231293834069813,
           "hi": 0.009356442496647207,
           "mr": 4.863990846929176e-05,
@@ -1145,7 +1189,7 @@
           "te": 1.0167726443327824e-08,
           "gu": 0.00040226592839402947
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.0032985674805226513,
           "hi": 0.006754642289128571,
           "mr": 0.00048701614172444365,
@@ -1167,12 +1211,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": false,
         "teacher_full_top1_probability": 0.6769256591796875,
         "manifest_probability_t1": 0.0018860717536881566,
         "manifest_probability_t2": 0.028550008311867714,
         "selected_language_retained_mass": 0.7240888476371765,
-        "frame_loss_weight_share": 0.01113232153319851,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01113232153319851,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.0996357196740143e-05,
           "hi": 0.010407222391118914,
           "mr": 0.0003410847987323787,
@@ -1181,7 +1226,7 @@
           "te": 0.00016612503981071043,
           "gu": 6.502957168251383e-05
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.0003178278723032014,
           "hi": 0.007075993207769547,
           "mr": 0.0012810060292497585,
@@ -1203,12 +1248,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": false,
         "teacher_full_top1_probability": 0.6796348690986633,
         "manifest_probability_t1": 0.0008123987936414778,
         "manifest_probability_t2": 0.019543923437595367,
         "selected_language_retained_mass": 0.7679516673088074,
-        "frame_loss_weight_share": 0.008599671133455555,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.008599671133455555,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 6.986362454532734e-06,
           "hi": 0.0008978725706770103,
           "mr": 1.1560603907406915e-05,
@@ -1217,7 +1263,7 @@
           "te": 1.0116863055055052e-06,
           "gu": 0.007610682729497814
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.00016807131422075437,
           "hi": 0.001905352759019697,
           "mr": 0.00021620129495022683,
@@ -1239,12 +1285,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9998342990875244,
         "manifest_probability_t1": 0.9999620914459229,
         "manifest_probability_t2": 0.9897446036338806,
         "selected_language_retained_mass": 0.9998722076416016,
-        "frame_loss_weight_share": 0.01914608100701204,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01914608100701204,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.711686191596787e-14,
           "hi": 5.626394360695338e-07,
           "mr": 9.132708563391357e-08,
@@ -1253,7 +1300,7 @@
           "te": 2.9472254150742605e-09,
           "gu": 0.01914535520676482
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.7917746387208013e-08,
           "hi": 0.00010272742825425243,
           "mr": 4.138768298614844e-05,
@@ -1275,12 +1322,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9964536428451538,
         "manifest_probability_t1": 0.9968145489692688,
         "manifest_probability_t2": 0.9402209520339966,
         "selected_language_retained_mass": 0.9996379613876343,
-        "frame_loss_weight_share": 0.017293844147498537,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.017293844147498537,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.0557818673519346e-13,
           "hi": 5.4842982305895263e-05,
           "mr": 6.060759409737183e-08,
@@ -1289,7 +1337,7 @@
           "te": 4.7541332551062624e-08,
           "gu": 0.01723875545383358
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 4.023978204407222e-08,
           "hi": 0.0009171261054272576,
           "mr": 3.04882163849558e-05,
@@ -1311,12 +1359,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999866485595703,
         "manifest_probability_t1": 0.9999977350234985,
         "manifest_probability_t2": 0.9971107244491577,
         "selected_language_retained_mass": 0.9999889731407166,
-        "frame_loss_weight_share": 0.015970817819274605,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.015970817819274605,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.1167558176125152e-13,
           "hi": 4.55001354772709e-09,
           "mr": 2.531120350380893e-08,
@@ -1325,7 +1374,7 @@
           "te": 3.393610606343888e-09,
           "gu": 0.015970781645747535
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 4.2110127390685e-08,
           "hi": 8.499900366779762e-06,
           "mr": 2.0047667669163154e-05,
@@ -1347,12 +1396,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9997480511665344,
         "manifest_probability_t1": 0.9999682903289795,
         "manifest_probability_t2": 0.9906439781188965,
         "selected_language_retained_mass": 0.9997797012329102,
-        "frame_loss_weight_share": 0.015403806535750061,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.015403806535750061,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 3.1066739849593445e-14,
           "hi": 1.7272518192256401e-07,
           "mr": 1.7709623023652164e-08,
@@ -1361,7 +1411,7 @@
           "te": 2.923848325394019e-07,
           "gu": 0.015403318086112349
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.1671369767756174e-08,
           "hi": 5.109946341298791e-05,
           "mr": 1.6362255905765268e-05,
@@ -1383,12 +1433,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.990253746509552,
         "manifest_probability_t1": 0.9988677501678467,
         "manifest_probability_t2": 0.9368575811386108,
         "selected_language_retained_mass": 0.9913762807846069,
-        "frame_loss_weight_share": 0.015781814058099756,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.015781814058099756,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.7524003588855985e-10,
           "hi": 5.843003933851152e-06,
           "mr": 2.1019742782124808e-06,
@@ -1397,7 +1448,7 @@
           "te": 7.665138934554127e-06,
           "gu": 0.015763945101781397
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.558887193483727e-06,
           "hi": 0.00028465321022527046,
           "mr": 0.00017073075028729606,
@@ -1419,12 +1470,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9994878768920898,
         "manifest_probability_t1": 0.9994940757751465,
         "manifest_probability_t2": 0.9771289229393005,
         "selected_language_retained_mass": 0.9999936819076538,
-        "frame_loss_weight_share": 0.017218242643028597,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.017218242643028597,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.1649272297205527e-15,
           "hi": 8.697075749264957e-06,
           "mr": 1.2699594961138768e-08,
@@ -1433,7 +1485,7 @@
           "te": 5.571947232004294e-12,
           "gu": 0.01720953151696608
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 5.9672995181717735e-09,
           "hi": 0.0003782185332296873,
           "mr": 1.44527701852117e-05,
@@ -1455,12 +1507,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9992305040359497,
         "manifest_probability_t1": 0.9992722868919373,
         "manifest_probability_t2": 0.9730762243270874,
         "selected_language_retained_mass": 0.9999582171440125,
-        "frame_loss_weight_share": 0.01476119374775558,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01476119374775558,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 6.944846112922213e-16,
           "hi": 1.0739816838153752e-05,
           "mr": 1.5929770822702378e-09,
@@ -1469,7 +1522,7 @@
           "te": 6.132600921797371e-10,
           "gu": 0.014750451833574684
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 3.116714392757953e-09,
           "hi": 0.00038758247739260356,
           "mr": 4.7203091316937044e-06,
@@ -1491,12 +1544,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9976750016212463,
         "manifest_probability_t1": 0.9990524649620056,
         "manifest_probability_t2": 0.9571626782417297,
         "selected_language_retained_mass": 0.9986212253570557,
-        "frame_loss_weight_share": 0.010943317772023663,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.010943317772023663,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 8.506587492783952e-14,
           "hi": 6.790600142254278e-06,
           "mr": 3.5568037782551317e-06,
@@ -1505,7 +1559,7 @@
           "te": 2.0294176895766772e-08,
           "gu": 0.010932948595002764
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.9217550732898093e-08,
           "hi": 0.00026104790029280573,
           "mr": 0.00018892789576359996,
@@ -1527,12 +1581,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9828997254371643,
         "manifest_probability_t1": 0.9855540990829468,
         "manifest_probability_t2": 0.8706228733062744,
         "selected_language_retained_mass": 0.9973067045211792,
-        "frame_loss_weight_share": 0.011359126046608327,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.011359126046608327,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 3.3866727240818987e-12,
           "hi": 0.00015744997361691204,
           "mr": 7.676938435595917e-08,
@@ -1541,7 +1596,7 @@
           "te": 9.909809583934698e-08,
           "gu": 0.011195033237234706
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.7200809909410055e-07,
           "hi": 0.0011728260052936614,
           "mr": 2.589740716197634e-05,
@@ -1563,12 +1618,13 @@
         "teacher_full_top1_index": 31,
         "teacher_full_top1_label": "gu: Gujarati",
         "teacher_full_top1_supported_language": "gu",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9726678133010864,
         "manifest_probability_t1": 0.9765797257423401,
         "manifest_probability_t2": 0.8645731806755066,
         "selected_language_retained_mass": 0.9959943294525146,
-        "frame_loss_weight_share": 0.011623731312253114,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.011623731312253114,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 9.589565817840761e-14,
           "hi": 0.00027222108077507473,
           "mr": 3.2858193931955874e-09,
@@ -1577,7 +1633,7 @@
           "te": 2.062080953363035e-09,
           "gu": 0.011351500337022797
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.920923456510677e-08,
           "hi": 0.001556257944892126,
           "mr": 5.40682790885702e-06,
@@ -1599,12 +1655,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9933131337165833,
         "manifest_probability_t1": 0.9999922513961792,
         "manifest_probability_t2": 0.9963153004646301,
         "selected_language_retained_mass": 0.9933208227157593,
-        "frame_loss_weight_share": 0.01914608100701204,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01914608100701204,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.7628778375397973e-10,
           "hi": 0.019145932651615596,
           "mr": 3.6916517702719943e-09,
@@ -1613,7 +1670,7 @@
           "te": 4.568371281279511e-10,
           "gu": 1.4304584121110361e-07
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.2914968739653096e-06,
           "hi": 0.019075533451221347,
           "mr": 8.37623350179386e-06,
@@ -1635,12 +1692,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9945955872535706,
         "manifest_probability_t1": 0.9999220371246338,
         "manifest_probability_t2": 0.9905827045440674,
         "selected_language_retained_mass": 0.9946730732917786,
-        "frame_loss_weight_share": 0.014005178703056191,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.014005178703056191,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.471677519728401e-13,
           "hi": 0.014004086819054483,
           "mr": 1.0274319361988952e-09,
@@ -1649,7 +1707,7 @@
           "te": 1.2732957732029332e-09,
           "gu": 1.088685632302061e-06
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 4.497366882058401e-08,
           "hi": 0.013873287797296376,
           "mr": 3.7577554208346674e-06,
@@ -1671,12 +1729,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.8728802800178528,
         "manifest_probability_t1": 0.9998792409896851,
         "manifest_probability_t2": 0.9872273206710815,
         "selected_language_retained_mass": 0.8729857206344604,
-        "frame_loss_weight_share": 0.017482847908673382,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.017482847908673382,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 8.776754262671452e-13,
           "hi": 0.017480736697262446,
           "mr": 7.047423649271459e-08,
@@ -1685,7 +1744,7 @@
           "te": 1.6176279462642905e-11,
           "gu": 2.040699688880914e-06
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.222971825875616e-07,
           "hi": 0.017259545098579646,
           "mr": 3.465490339949431e-05,
@@ -1707,12 +1766,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.7686290740966797,
         "manifest_probability_t1": 0.7791101932525635,
         "manifest_probability_t2": 0.6430595517158508,
         "selected_language_retained_mass": 0.9865472912788391,
-        "frame_loss_weight_share": 0.01124572378990342,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01124572378990342,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.683166035908301e-12,
           "hi": 0.008761658035216604,
           "mr": 4.293517482782306e-06,
@@ -1721,7 +1781,7 @@
           "te": 1.512394178804092e-09,
           "gu": 0.0024797698188313384
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.0023259264410788e-07,
           "hi": 0.007231670099055572,
           "mr": 0.00016008551886285535,
@@ -1743,12 +1803,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9981028437614441,
         "manifest_probability_t1": 0.9999997615814209,
         "manifest_probability_t2": 0.9993107318878174,
         "selected_language_retained_mass": 0.9981030821800232,
-        "frame_loss_weight_share": 0.01695363737738381,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01695363737738381,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 4.457400386721795e-14,
           "hi": 0.016953633335321676,
           "mr": 8.292287788087867e-10,
@@ -1757,7 +1818,7 @@
           "te": 3.573905678029705e-13,
           "gu": 3.4152966338579754e-09
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.747089893263024e-08,
           "hi": 0.016941951775754072,
           "mr": 3.7468753989102622e-06,
@@ -1779,12 +1840,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9862576127052307,
         "manifest_probability_t1": 0.9999949932098389,
         "manifest_probability_t2": 0.9974403381347656,
         "selected_language_retained_mass": 0.9862625598907471,
-        "frame_loss_weight_share": 0.015744013305864786,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.015744013305864786,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 3.1926973225716125e-15,
           "hi": 0.01574393447889387,
           "mr": 1.895365131756466e-09,
@@ -1793,7 +1855,7 @@
           "te": 8.858692938680936e-14,
           "gu": 7.682421613941816e-08
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 7.07171276673047e-09,
           "hi": 0.01570371395540002,
           "mr": 5.44869075759252e-06,
@@ -1815,12 +1877,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9997090697288513,
         "manifest_probability_t1": 0.9999257326126099,
         "manifest_probability_t2": 0.9901735782623291,
         "selected_language_retained_mass": 0.9997832179069519,
-        "frame_loss_weight_share": 0.013778374189646374,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.013778374189646374,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 9.517847733349391e-17,
           "hi": 0.013777350905792825,
           "mr": 2.556999856539171e-08,
@@ -1829,7 +1892,7 @@
           "te": 3.113166786486968e-12,
           "gu": 9.965208822022e-07
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.1339550763913184e-09,
           "hi": 0.01364298207399947,
           "mr": 1.858625081669407e-05,
@@ -1851,12 +1914,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9986134767532349,
         "manifest_probability_t1": 0.9999973773956299,
         "manifest_probability_t2": 0.9976240992546082,
         "selected_language_retained_mass": 0.998616099357605,
-        "frame_loss_weight_share": 0.01336256591506171,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01336256591506171,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 5.812841638860029e-16,
           "hi": 0.013362530870337945,
           "mr": 2.0486933362091655e-08,
@@ -1865,7 +1929,7 @@
           "te": 5.495173804905325e-11,
           "gu": 1.4329407789636778e-08
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.780396259289295e-09,
           "hi": 0.013330817784743767,
           "mr": 1.6506344902564192e-05,
@@ -1887,12 +1951,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9991183876991272,
         "manifest_probability_t1": 0.9998902082443237,
         "manifest_probability_t2": 0.9873578548431396,
         "selected_language_retained_mass": 0.9992281794548035,
-        "frame_loss_weight_share": 0.013891776446351282,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.013891776446351282,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 6.629799847280617e-18,
           "hi": 0.013890251243825775,
           "mr": 1.447644907135259e-06,
@@ -1901,7 +1966,7 @@
           "te": 6.157888047151352e-10,
           "gu": 7.802978216213044e-08
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.9965912858561047e-10,
           "hi": 0.013716154592029855,
           "mr": 0.0001400258904429476,
@@ -1923,12 +1988,13 @@
         "teacher_full_top1_index": 35,
         "teacher_full_top1_label": "hi: Hindi",
         "teacher_full_top1_supported_language": "hi",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9897542595863342,
         "manifest_probability_t1": 0.9981970191001892,
         "manifest_probability_t2": 0.9555937647819519,
         "selected_language_retained_mass": 0.9915420413017273,
-        "frame_loss_weight_share": 0.010640911754143908,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.010640911754143908,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 3.527359533230437e-14,
           "hi": 0.010621726393494613,
           "mr": 2.619342088291392e-08,
@@ -1937,7 +2003,7 @@
           "te": 6.983313313015485e-10,
           "gu": 1.9114803062946325e-05
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.8530171568641596e-08,
           "hi": 0.010168388923854901,
           "mr": 1.5968007551249414e-05,
@@ -1959,12 +2025,13 @@
         "teacher_full_top1_index": 63,
         "teacher_full_top1_label": "mr: Marathi",
         "teacher_full_top1_supported_language": "mr",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999969005584717,
         "manifest_probability_t1": 0.9999969005584717,
         "manifest_probability_t2": 0.9974155426025391,
         "selected_language_retained_mass": 1.0000001192092896,
-        "frame_loss_weight_share": 0.020242302821826156,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.020242302821826156,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 6.963721192826055e-16,
           "hi": 2.7588418204382826e-08,
           "mr": 0.02024224008199216,
@@ -1973,7 +2040,7 @@
           "te": 5.443779138180903e-12,
           "gu": 3.718787899964074e-08
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 3.744789870927328e-09,
           "hi": 2.3570571383922713e-05,
           "mr": 0.02018998745255664,
@@ -1995,12 +2062,13 @@
         "teacher_full_top1_index": 63,
         "teacher_full_top1_label": "mr: Marathi",
         "teacher_full_top1_supported_language": "mr",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9652162790298462,
         "manifest_probability_t1": 0.9875952005386353,
         "manifest_probability_t2": 0.8525447249412537,
         "selected_language_retained_mass": 0.9773401021957397,
-        "frame_loss_weight_share": 0.014950197508930427,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.014950197508930427,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 3.020735515024692e-13,
           "hi": 4.359817104858917e-05,
           "mr": 0.01476474330692435,
@@ -2009,7 +2077,7 @@
           "te": 5.457101645778674e-06,
           "gu": 0.00013627567669980596
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 5.7651084355073444e-08,
           "hi": 0.0006926044626423555,
           "mr": 0.012745712023068506,
@@ -2031,12 +2099,13 @@
         "teacher_full_top1_index": 63,
         "teacher_full_top1_label": "mr: Marathi",
         "teacher_full_top1_supported_language": "mr",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999997615814209,
         "manifest_probability_t1": 0.9999997615814209,
         "manifest_probability_t2": 0.9995219707489014,
         "selected_language_retained_mass": 0.9999999403953552,
-        "frame_loss_weight_share": 0.016878035872913873,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.016878035872913873,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.9498184411647434e-20,
           "hi": 8.406120590770627e-12,
           "mr": 0.01687803184887654,
@@ -2045,7 +2114,7 @@
           "te": 1.164715880815345e-13,
           "gu": 3.4402538594397988e-09
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.813219731297567e-11,
           "hi": 3.7648803252149496e-07,
           "mr": 0.016869967678065527,
@@ -2067,12 +2136,13 @@
         "teacher_full_top1_index": 63,
         "teacher_full_top1_label": "mr: Marathi",
         "teacher_full_top1_supported_language": "mr",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999737739562988,
         "manifest_probability_t1": 0.9999750852584839,
         "manifest_probability_t2": 0.994716227054596,
         "selected_language_retained_mass": 0.9999986290931702,
-        "frame_loss_weight_share": 0.011585930560018144,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.011585930560018144,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.987712871585798e-17,
           "hi": 9.20023849401952e-10,
           "mr": 0.011585641899553018,
@@ -2081,7 +2151,7 @@
           "te": 1.6490234772151164e-11,
           "gu": 2.8721219170417856e-07
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 5.852474166016068e-10,
           "hi": 3.247653118540711e-06,
           "mr": 0.01152471313357779,
@@ -2103,12 +2173,13 @@
         "teacher_full_top1_index": 63,
         "teacher_full_top1_label": "mr: Marathi",
         "teacher_full_top1_supported_language": "mr",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.982010543346405,
         "manifest_probability_t1": 0.9957056641578674,
         "manifest_probability_t2": 0.8970187306404114,
         "selected_language_retained_mass": 0.9862457513809204,
-        "frame_loss_weight_share": 0.015668411801394846,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.015668411801394846,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 6.370178491013824e-14,
           "hi": 2.443407286385139e-05,
           "mr": 0.015601126379006826,
@@ -2117,7 +2188,7 @@
           "te": 2.5465574766924807e-05,
           "gu": 1.736766200824702e-05
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.840039006813536e-08,
           "hi": 0.0005562198233840105,
           "mr": 0.014054858865238449,
@@ -2139,12 +2210,13 @@
         "teacher_full_top1_index": 63,
         "teacher_full_top1_label": "mr: Marathi",
         "teacher_full_top1_supported_language": "mr",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9926538467407227,
         "manifest_probability_t1": 0.9927023649215698,
         "manifest_probability_t2": 0.8917943239212036,
         "selected_language_retained_mass": 0.999951183795929,
-        "frame_loss_weight_share": 0.015441607287985031,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.015441607287985031,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 3.1814101312339198e-15,
           "hi": 4.95836805546189e-05,
           "mr": 0.015328920072972888,
@@ -2153,7 +2225,7 @@
           "te": 1.1230607575011439e-10,
           "gu": 6.310308504760323e-05
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 6.273519352237144e-09,
           "hi": 0.000783196634550542,
           "mr": 0.013770737731645341,
@@ -2175,12 +2247,13 @@
         "teacher_full_top1_index": 63,
         "teacher_full_top1_label": "mr: Marathi",
         "teacher_full_top1_supported_language": "mr",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.4978128671646118,
         "manifest_probability_t1": 0.5663208365440369,
         "manifest_probability_t2": 0.4545682966709137,
         "selected_language_retained_mass": 0.8790298104286194,
-        "frame_loss_weight_share": 0.012908956888242076,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.012908956888242076,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.8100774378685734e-13,
           "hi": 0.0014501992798887538,
           "mr": 0.007310611263860159,
@@ -2189,7 +2262,7 @@
           "te": 1.982988199117797e-09,
           "gu": 0.0041481429782203325
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.9198601097330797e-08,
           "hi": 0.0026135288287210384,
           "mr": 0.005868002544486459,
@@ -2211,12 +2284,13 @@
         "teacher_full_top1_index": 63,
         "teacher_full_top1_label": "mr: Marathi",
         "teacher_full_top1_supported_language": "mr",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999760389328003,
         "manifest_probability_t1": 0.9999765157699585,
         "manifest_probability_t2": 0.9933962225914001,
         "selected_language_retained_mass": 0.9999995231628418,
-        "frame_loss_weight_share": 0.01109452078096354,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01109452078096354,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.3941446533624954e-19,
           "hi": 1.9452034011572173e-07,
           "mr": 0.011094260234685321,
@@ -2225,7 +2299,7 @@
           "te": 1.7008914746809568e-12,
           "gu": 6.607474540753398e-08
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 3.906931529825042e-11,
           "hi": 4.614922336576537e-05,
           "mr": 0.011021255035270973,
@@ -2247,12 +2321,13 @@
         "teacher_full_top1_index": 63,
         "teacher_full_top1_label": "mr: Marathi",
         "teacher_full_top1_supported_language": "mr",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.997385561466217,
         "manifest_probability_t1": 0.9973862767219543,
         "manifest_probability_t2": 0.9329873919487,
         "selected_language_retained_mass": 0.9999992251396179,
-        "frame_loss_weight_share": 0.010716513258613846,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.010716513258613846,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.625149801858703e-16,
           "hi": 1.0414773629962352e-05,
           "mr": 0.010688503258450322,
@@ -2261,7 +2336,7 @@
           "te": 2.551682541763796e-12,
           "gu": 1.7594409377608938e-05
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.2328706571394084e-09,
           "hi": 0.0003121014156438706,
           "mr": 0.009998371755937796,
@@ -2283,12 +2358,13 @@
         "teacher_full_top1_index": 63,
         "teacher_full_top1_label": "mr: Marathi",
         "teacher_full_top1_supported_language": "mr",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.8460219502449036,
         "manifest_probability_t1": 0.856320321559906,
         "manifest_probability_t2": 0.6303540468215942,
         "selected_language_retained_mass": 0.9879736304283142,
-        "frame_loss_weight_share": 0.0096580921960347,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.0096580921960347,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.8805404831658946e-13,
           "hi": 0.0005295105938509575,
           "mr": 0.008270420614963653,
@@ -2297,7 +2373,7 @@
           "te": 5.995978883352284e-07,
           "gu": 0.000857526242223801
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.9030427032637294e-08,
           "hi": 0.0015404565222250854,
           "mr": 0.006088017500346532,
@@ -2319,12 +2395,13 @@
         "teacher_full_top1_index": 91,
         "teacher_full_top1_label": "ta: Tamil",
         "teacher_full_top1_supported_language": "ta",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999995231628418,
         "manifest_probability_t1": 1.0,
         "manifest_probability_t2": 0.9999349117279053,
         "selected_language_retained_mass": 0.9999995231628418,
-        "frame_loss_weight_share": 0.01623542308491939,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01623542308491939,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.28429904029584e-15,
           "hi": 2.056645939032643e-12,
           "mr": 1.1784199162752122e-12,
@@ -2333,7 +2410,7 @@
           "te": 2.6296488394921535e-11,
           "gu": 2.896469938660831e-13
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 6.089477152095126e-09,
           "hi": 1.827188430812406e-07,
           "mr": 1.383099892503053e-07,
@@ -2355,12 +2432,13 @@
         "teacher_full_top1_index": 91,
         "teacher_full_top1_label": "ta: Tamil",
         "teacher_full_top1_supported_language": "ta",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999778270721436,
         "manifest_probability_t1": 0.9999995231628418,
         "manifest_probability_t2": 0.999175488948822,
         "selected_language_retained_mass": 0.9999783039093018,
-        "frame_loss_weight_share": 0.015025799013400367,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.015025799013400367,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.0601322554687603e-15,
           "hi": 2.547892613152945e-10,
           "mr": 2.2278179863175006e-12,
@@ -2369,7 +2447,7 @@
           "te": 6.7445769782849854e-09,
           "gu": 1.7392375891502758e-12
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 5.559147755774075e-09,
           "hi": 1.9550202403633992e-06,
           "mr": 1.828102327647997e-07,
@@ -2391,12 +2469,13 @@
         "teacher_full_top1_index": 91,
         "teacher_full_top1_label": "ta: Tamil",
         "teacher_full_top1_supported_language": "ta",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9996370077133179,
         "manifest_probability_t1": 1.0,
         "manifest_probability_t2": 0.9997671246528625,
         "selected_language_retained_mass": 0.9996370673179626,
-        "frame_loss_weight_share": 0.015668411801394846,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.015668411801394846,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 4.3119377169266764e-16,
           "hi": 2.6398097924458935e-12,
           "mr": 4.0504495857521696e-13,
@@ -2405,7 +2484,7 @@
           "te": 6.641261253034418e-10,
           "gu": 2.7741558110433652e-14
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.5986487988729643e-09,
           "hi": 2.0332820481884166e-07,
           "mr": 7.964581328229212e-08,
@@ -2427,12 +2506,13 @@
         "teacher_full_top1_index": 91,
         "teacher_full_top1_label": "ta: Tamil",
         "teacher_full_top1_supported_language": "ta",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.999996542930603,
         "manifest_probability_t1": 1.0,
         "manifest_probability_t2": 0.9997590184211731,
         "selected_language_retained_mass": 0.9999966025352478,
-        "frame_loss_weight_share": 0.014496588482110793,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.014496588482110793,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.9981496748000707e-15,
           "hi": 7.04345151797556e-14,
           "mr": 4.482358018829896e-12,
@@ -2441,7 +2521,7 @@
           "te": 6.680803118776719e-10,
           "gu": 2.6290318285714583e-13
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 5.3807430848800544e-09,
           "hi": 3.1946332784583134e-08,
           "mr": 2.548481478177443e-07,
@@ -2463,12 +2543,13 @@
         "teacher_full_top1_index": 91,
         "teacher_full_top1_label": "ta: Tamil",
         "teacher_full_top1_supported_language": "ta",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999332427978516,
         "manifest_probability_t1": 0.9999991655349731,
         "manifest_probability_t2": 0.9990692734718323,
         "selected_language_retained_mass": 0.9999340772628784,
-        "frame_loss_weight_share": 0.017142641138558658,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.017142641138558658,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 9.176211211881556e-17,
           "hi": 4.046191152323955e-14,
           "mr": 1.2432037762076408e-14,
@@ -2477,7 +2558,7 @@
           "te": 1.4787126596965828e-08,
           "gu": 2.1519579942758927e-15
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.253044068911703e-09,
           "hi": 2.6312241482080664e-08,
           "mr": 1.458497868012512e-08,
@@ -2499,12 +2580,13 @@
         "teacher_full_top1_index": 91,
         "teacher_full_top1_label": "ta: Tamil",
         "teacher_full_top1_supported_language": "ta",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9978901743888855,
         "manifest_probability_t1": 0.9997546076774597,
         "manifest_probability_t2": 0.9836997985839844,
         "selected_language_retained_mass": 0.9981350302696228,
-        "frame_loss_weight_share": 0.010716513258613846,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.010716513258613846,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.079695707901601e-15,
           "hi": 4.121644554091535e-09,
           "mr": 2.129583092492443e-11,
@@ -2513,7 +2595,7 @@
           "te": 2.6253433618610053e-06,
           "gu": 1.9408510392026596e-10
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 4.644538106246117e-09,
           "hi": 6.538496434794323e-06,
           "mr": 4.6999141769417415e-07,
@@ -2535,12 +2617,13 @@
         "teacher_full_top1_index": 91,
         "teacher_full_top1_label": "ta: Tamil",
         "teacher_full_top1_supported_language": "ta",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9997745156288147,
         "manifest_probability_t1": 0.999832034111023,
         "manifest_probability_t2": 0.9867042303085327,
         "selected_language_retained_mass": 0.9999424815177917,
-        "frame_loss_weight_share": 0.012455347861422442,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.012455347861422442,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 9.8675763390235e-12,
           "hi": 7.203146750014319e-10,
           "mr": 1.3827797400520888e-12,
@@ -2549,7 +2632,7 @@
           "te": 2.0905556142951428e-06,
           "gu": 3.637895419184387e-13
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 3.4594468749465585e-07,
           "hi": 2.9557147968977666e-06,
           "mr": 1.295024273109908e-07,
@@ -2571,12 +2654,13 @@
         "teacher_full_top1_index": 91,
         "teacher_full_top1_label": "ta: Tamil",
         "teacher_full_top1_supported_language": "ta",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9986253976821899,
         "manifest_probability_t1": 0.9996429681777954,
         "manifest_probability_t2": 0.9811848998069763,
         "selected_language_retained_mass": 0.9989820718765259,
-        "frame_loss_weight_share": 0.010262904231794212,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.010262904231794212,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.1432275021343656e-12,
           "hi": 2.732630877391281e-10,
           "mr": 1.1744692330506648e-11,
@@ -2585,7 +2669,7 @@
           "te": 3.664327367484216e-06,
           "gu": 4.6793939724848065e-12
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.0629917227888771e-07,
           "hi": 1.6434406996276812e-06,
           "mr": 3.407095839749405e-07,
@@ -2607,12 +2691,13 @@
         "teacher_full_top1_index": 91,
         "teacher_full_top1_label": "ta: Tamil",
         "teacher_full_top1_supported_language": "ta",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9996042847633362,
         "manifest_probability_t1": 0.9996756315231323,
         "manifest_probability_t2": 0.9807112812995911,
         "selected_language_retained_mass": 0.9999285936355591,
-        "frame_loss_weight_share": 0.013400366667296678,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.013400366667296678,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.2646745321452597e-10,
           "hi": 9.359555916198276e-09,
           "mr": 1.0833272925081023e-09,
@@ -2621,7 +2706,7 @@
           "te": 4.3341842613940096e-06,
           "gu": 5.151382139322845e-11
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.708727655659031e-06,
           "hi": 1.0984937499853893e-05,
           "mr": 3.737230040805409e-06,
@@ -2643,12 +2728,13 @@
         "teacher_full_top1_index": 91,
         "teacher_full_top1_label": "ta: Tamil",
         "teacher_full_top1_supported_language": "ta",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9995059967041016,
         "manifest_probability_t1": 0.999997615814209,
         "manifest_probability_t2": 0.997899055480957,
         "selected_language_retained_mass": 0.999508261680603,
-        "frame_loss_weight_share": 0.008788674894630403,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.008788674894630403,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 1.926614675409071e-12,
           "hi": 3.838295266557908e-09,
           "mr": 5.7813960609506505e-12,
@@ -2657,7 +2743,7 @@
           "te": 1.638405994745381e-08,
           "gu": 7.508830588816278e-12
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.2985128633425502e-07,
           "hi": 5.7958616362989374e-06,
           "mr": 2.2493922685460333e-07,
@@ -2679,12 +2765,13 @@
         "teacher_full_top1_index": 92,
         "teacher_full_top1_label": "te: Telugu",
         "teacher_full_top1_supported_language": "te",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9998613595962524,
         "manifest_probability_t1": 0.9999743700027466,
         "manifest_probability_t2": 0.9945136308670044,
         "selected_language_retained_mass": 0.9998869299888611,
-        "frame_loss_weight_share": 0.02111172012323045,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.02111172012323045,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 3.320651499490794e-14,
           "hi": 6.523855450158364e-10,
           "mr": 1.8293761008337278e-11,
@@ -2693,7 +2780,7 @@
           "te": 0.02111117902990168,
           "gu": 1.4565861776601447e-09
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 2.633236091092291e-08,
           "hi": 3.690883038466081e-06,
           "mr": 6.180585307387171e-07,
@@ -2715,12 +2802,13 @@
         "teacher_full_top1_index": 92,
         "teacher_full_top1_label": "te: Telugu",
         "teacher_full_top1_supported_language": "te",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.999992847442627,
         "manifest_probability_t1": 0.999997615814209,
         "manifest_probability_t2": 0.9981929659843445,
         "selected_language_retained_mass": 0.9999952912330627,
-        "frame_loss_weight_share": 0.016802434368443933,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.016802434368443933,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 5.789395424282267e-16,
           "hi": 1.3386276267842357e-10,
           "mr": 2.2766121491807506e-11,
@@ -2729,7 +2817,7 @@
           "te": 0.016802394308318657,
           "gu": 2.8158467699609685e-10
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 3.11327659606136e-09,
           "hi": 1.4970317709838155e-06,
           "mr": 6.173701995562531e-07,
@@ -2751,12 +2839,13 @@
         "teacher_full_top1_index": 92,
         "teacher_full_top1_label": "te: Telugu",
         "teacher_full_top1_supported_language": "te",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.999895453453064,
         "manifest_probability_t1": 0.9999949932098389,
         "manifest_probability_t2": 0.9965247511863708,
         "selected_language_retained_mass": 0.9999004602432251,
-        "frame_loss_weight_share": 0.01914608100701204,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01914608100701204,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 5.4049979828163025e-15,
           "hi": 7.595689798454407e-09,
           "mr": 9.729364068932404e-10,
@@ -2765,7 +2854,7 @@
           "te": 0.01914598514660203,
           "gu": 6.574374391904986e-09
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.013740638781938e-08,
           "hi": 1.2017461353385478e-05,
           "mr": 4.3010187515375575e-06,
@@ -2787,12 +2876,13 @@
         "teacher_full_top1_index": 92,
         "teacher_full_top1_label": "te: Telugu",
         "teacher_full_top1_supported_language": "te",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9997581839561462,
         "manifest_probability_t1": 0.9999654293060303,
         "manifest_probability_t2": 0.993821382522583,
         "selected_language_retained_mass": 0.999792754650116,
-        "frame_loss_weight_share": 0.015970817819274605,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.015970817819274605,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 7.670184849034392e-16,
           "hi": 1.5425231050112332e-11,
           "mr": 2.014000308870734e-13,
@@ -2801,7 +2891,7 @@
           "te": 0.01597026569701933,
           "gu": 1.4980320257178123e-09
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 3.4784224505652527e-09,
           "hi": 4.932819979866708e-07,
           "mr": 5.636496285467088e-08,
@@ -2823,12 +2913,13 @@
         "teacher_full_top1_index": 92,
         "teacher_full_top1_label": "te: Telugu",
         "teacher_full_top1_supported_language": "te",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999887943267822,
         "manifest_probability_t1": 0.9999985694885254,
         "manifest_probability_t2": 0.998765230178833,
         "selected_language_retained_mass": 0.9999902248382568,
-        "frame_loss_weight_share": 0.01615982158044945,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01615982158044945,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.952927904867022e-17,
           "hi": 3.2902185814361503e-12,
           "mr": 8.464029518370759e-13,
@@ -2837,7 +2928,7 @@
           "te": 0.01615979846363925,
           "gu": 1.1722582448492811e-11
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 6.899353650715135e-10,
           "hi": 2.3030024276396625e-07,
           "mr": 1.1680746661999222e-07,
@@ -2859,12 +2950,13 @@
         "teacher_full_top1_index": 92,
         "teacher_full_top1_label": "te: Telugu",
         "teacher_full_top1_supported_language": "te",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9990424513816833,
         "manifest_probability_t1": 0.999920129776001,
         "manifest_probability_t2": 0.9843955039978027,
         "selected_language_retained_mass": 0.9991222620010376,
-        "frame_loss_weight_share": 0.014118580959761099,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.014118580959761099,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 6.01060714676438e-15,
           "hi": 4.544465690640291e-08,
           "mr": 4.6439611483917395e-07,
@@ -2873,7 +2965,7 @@
           "te": 0.014117453305537295,
           "gu": 5.691913711643496e-07
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 9.068629314122054e-09,
           "hi": 2.493583422143486e-05,
           "mr": 7.971256350031611e-05,
@@ -2895,12 +2987,13 @@
         "teacher_full_top1_index": 92,
         "teacher_full_top1_label": "te: Telugu",
         "teacher_full_top1_supported_language": "te",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9999845027923584,
         "manifest_probability_t1": 0.9999899864196777,
         "manifest_probability_t2": 0.9959360361099243,
         "selected_language_retained_mass": 0.9999945163726807,
-        "frame_loss_weight_share": 0.01124572378990342,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.01124572378990342,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 5.832469611890793e-13,
           "hi": 1.074414242496876e-08,
           "mr": 2.0827829315795045e-13,
@@ -2909,7 +3002,7 @@
           "te": 0.011245611179944966,
           "gu": 6.208709782852703e-11
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 8.065913922647558e-08,
           "hi": 1.0947455085368166e-05,
           "mr": 4.820025799445659e-08,
@@ -2931,12 +3024,13 @@
         "teacher_full_top1_index": 92,
         "teacher_full_top1_label": "te: Telugu",
         "teacher_full_top1_supported_language": "te",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9981985688209534,
         "manifest_probability_t1": 0.9983909130096436,
         "manifest_probability_t2": 0.9486305117607117,
         "selected_language_retained_mass": 0.9998075366020203,
-        "frame_loss_weight_share": 0.008486268876750648,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.008486268876750648,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.1540494569777285e-14,
           "hi": 1.143250890031028e-05,
           "mr": 1.290161406090176e-09,
@@ -2945,7 +3039,7 @@
           "te": 0.0084726137319044,
           "gu": 2.218322883018937e-06
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.2836097497063494e-08,
           "hi": 0.0002957167963127568,
           "mr": 3.141428501655529e-06,
@@ -2967,12 +3061,13 @@
         "teacher_full_top1_index": 92,
         "teacher_full_top1_label": "te: Telugu",
         "teacher_full_top1_supported_language": "te",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9996203184127808,
         "manifest_probability_t1": 0.9998989105224609,
         "manifest_probability_t2": 0.9826784729957581,
         "selected_language_retained_mass": 0.9997212886810303,
-        "frame_loss_weight_share": 0.014118580959761099,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.014118580959761099,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 8.751466075892705e-16,
           "hi": 1.0876509992154024e-06,
           "mr": 7.358126585909506e-08,
@@ -2981,7 +3076,7 @@
           "te": 0.014117153719788285,
           "gu": 1.5418244193225773e-07
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 3.4543738142666296e-09,
           "hi": 0.00012177935850187337,
           "mr": 3.167470394949655e-05,
@@ -3003,12 +3098,13 @@
         "teacher_full_top1_index": 92,
         "teacher_full_top1_label": "te: Telugu",
         "teacher_full_top1_supported_language": "te",
+        "teacher_full_top1_correct": true,
         "teacher_full_top1_probability": 0.9997579455375671,
         "manifest_probability_t1": 0.99998939037323,
         "manifest_probability_t2": 0.9945989847183228,
         "selected_language_retained_mass": 0.9997686743736267,
-        "frame_loss_weight_share": 0.010603111001908938,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.010603111001908938,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 2.2663206838469505e-16,
           "hi": 7.431448556176807e-08,
           "mr": 1.908975410326627e-09,
@@ -3017,7 +3113,7 @@
           "te": 0.010602998506858606,
           "gu": 3.591222698499393e-08
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 1.5417986584532722e-09,
           "hi": 2.7919245653090878e-05,
           "mr": 4.47473299441433e-06,
@@ -3033,8 +3129,8 @@
         "clip_id": "switch_hi_en_train",
         "valid_target_frames": 773,
         "valid_ramp_weight": 723.5,
-        "frame_loss_weight_share": 0.027348844242000417,
-        "aggregate_target_mass_contribution_t1": {
+        "full_corpus_frame_ramp_share": 0.027348844242000417,
+        "full_corpus_target_mass_contribution_t1": {
           "en": 0.006316620469091016,
           "hi": 0.016853339018352946,
           "mr": 0.0017619678262954053,
@@ -3043,7 +3139,7 @@
           "te": 0.0014620913250901594,
           "gu": 0.00027878832930823636
         },
-        "aggregate_target_mass_contribution_t2": {
+        "full_corpus_target_mass_contribution_t2": {
           "en": 0.005294068965065542,
           "hi": 0.016181720336438155,
           "mr": 0.0016593947316214052,
@@ -3054,7 +3150,7 @@
         }
       }
     ],
-    "audit_sha256": "fd691497e0b49387319a6a344152f6815a603cf356639e0ada7cbacdf04538ca"
+    "audit_sha256": "868e54b7403fc25638e02c0f8684d3b9cbd9358c05fb6126ea3dbe9560864bbb"
   },
   "speaker_split": {
     "train_speaker_ids": [
@@ -3091,7 +3187,7 @@
   },
   "target_cache": {
     "schema_version": 6,
-    "target_configuration_sha256": "215bb13eb5df41d0482065c5db2b1987f4b8a8f4c4746be638e1b7581453333f",
+    "target_configuration_sha256": "b8b609a05e0c62348fc291cfa4ccfdec9b2a25c0b0d543d3830c21bfc158353b",
     "manifest_snapshot": {
       "schema_version": 1,
       "manifest_file_sha256": "7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c",
@@ -3100,10 +3196,10 @@
     },
     "manifest_file_sha256": "7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c",
     "manifest_records_sha256": "d47a8b62af8d878867cc9ef2d0b6488f3a45a2706ce4e29ea62840b9030ecc01",
-    "target_files_sha256": "cf9c636981d98a1859861a8a26386982752e5ac4393d11cba933005fbcc68c20",
+    "target_files_sha256": "b061196aab675b0304523e7322aa518a74528530698c13f3379f4665495832b7",
     "teacher_revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
     "teacher_artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
-    "target_generator_source_sha256": "9cf8a34dc2436507d89390f98ef8d772efa8d9724cc405a5df847969b7597ac2",
+    "target_generator_source_sha256": "b099aef444d03585fe9eb0d43cd42c36a8f7184d14054e4a34962fed735a3b78",
     "target_expansion": "previous_anchor_hold",
     "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
     "availability_checked_frames": 2394,
@@ -3112,8 +3208,8 @@
     "dense_target_expansion_valid": true,
     "dense_target_validation_rtol": 1e-06,
     "dense_target_validation_atol": 2e-07,
-    "training_target_audit_schema_version": 1,
-    "training_target_audit_sha256": "fd691497e0b49387319a6a344152f6815a603cf356639e0ada7cbacdf04538ca",
+    "training_target_audit_schema_version": 2,
+    "training_target_audit_sha256": "868e54b7403fc25638e02c0f8684d3b9cbd9358c05fb6126ea3dbe9560864bbb",
     "training_target_audit_validated": true,
     "training_target_quality_floor_passed": false,
     "training_target_quality_failed_languages": [
