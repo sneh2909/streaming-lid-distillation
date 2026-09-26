@@ -24,8 +24,8 @@
     }
   },
   "target_generator": {
-    "source_sha256": "5302c17aa4b7731a18e5e6731a7e679ca93733ccdda9d041b85e59dd2affc95c",
-    "identity_sha256": "63077438faf283a78a86b6172877995afab00f6b186638010e76d02550919eba",
+    "source_sha256": "9cf8a34dc2436507d89390f98ef8d772efa8d9724cc405a5df847969b7597ac2",
+    "identity_sha256": "352601b1bbf53cd078504a591f8fb51eba908263017690450e25275d1e00f725",
     "files": {
       "scripts/teacher_targets.py": {
         "sha256": "367357496c5fda95d6ef8569a25e805e7fb6089a35988ede1120db849c577b8c",
@@ -40,8 +40,8 @@
         "bytes": 2969
       },
       "src/streaming_lid/data.py": {
-        "sha256": "10975c4ab0aecaa44882b9c2984f67a1b978d2f8d2dbf30c4500037b851f0c70",
-        "bytes": 68837
+        "sha256": "b0bc262100adf3766d390b18d06ed3e661150e7fdb0af608fe850b3847e4d298",
+        "bytes": 70045
       }
     },
     "dependencies": {
@@ -170,9 +170,12 @@
           "pa: Panjabi": 2,
           "sco: Scots": 2
         },
-        "mean_manifest_probability_t1": 0.5192705099412706,
-        "mean_manifest_probability_t2": 0.45025978703051805,
-        "mean_selected_language_retained_mass": 0.5127590410411358,
+        "clip_mean_manifest_probability_t1": 0.5192705099412706,
+        "clip_mean_manifest_probability_t2": 0.45025978703051805,
+        "clip_mean_selected_language_retained_mass": 0.5127590410411358,
+        "loss_weighted_mean_manifest_probability_t1": 0.5560845358564446,
+        "loss_weighted_mean_manifest_probability_t2": 0.4800207613921159,
+        "loss_weighted_mean_selected_language_retained_mass": 0.49322420970862985,
         "valid_ramp_weight": 3306.0,
         "frame_loss_weight_share": 0.12496928688880908,
         "aggregate_target_mass_contribution_t1": {
@@ -217,9 +220,12 @@
         "teacher_full_top1_counts": {
           "hi: Hindi": 10
         },
-        "mean_manifest_probability_t1": 0.9776908814907074,
-        "mean_manifest_probability_t2": 0.9544685244560241,
-        "mean_selected_language_retained_mass": 0.9821062088012695,
+        "clip_mean_manifest_probability_t1": 0.9776908814907074,
+        "clip_mean_manifest_probability_t2": 0.9544685244560241,
+        "clip_mean_selected_language_retained_mass": 0.9821062088012695,
+        "loss_weighted_mean_manifest_probability_t1": 0.9828427356245845,
+        "loss_weighted_mean_manifest_probability_t2": 0.9637126526372874,
+        "loss_weighted_mean_selected_language_retained_mass": 0.9798635018059806,
         "valid_ramp_weight": 3869.0,
         "frame_loss_weight_share": 0.1462511103970969,
         "aggregate_target_mass_contribution_t1": {
@@ -264,9 +270,12 @@
         "teacher_full_top1_counts": {
           "mr: Marathi": 10
         },
-        "mean_manifest_probability_t1": 0.9395978927612305,
-        "mean_manifest_probability_t2": 0.8644317477941513,
-        "mean_selected_language_retained_mass": 0.9830537915229798,
+        "clip_mean_manifest_probability_t1": 0.9395978927612305,
+        "clip_mean_manifest_probability_t2": 0.8644317477941513,
+        "clip_mean_selected_language_retained_mass": 0.9830537915229798,
+        "loss_weighted_mean_manifest_probability_t1": 0.9469611349555339,
+        "loss_weighted_mean_manifest_probability_t2": 0.8777318771273764,
+        "loss_weighted_mean_selected_language_retained_mass": 0.9839533097521826,
         "valid_ramp_weight": 3681.0,
         "frame_loss_weight_share": 0.13914456897692265,
         "aggregate_target_mass_contribution_t1": {
@@ -311,9 +320,12 @@
         "teacher_full_top1_counts": {
           "bn: Bengali": 10
         },
-        "mean_manifest_probability_t1": 0.9980711042881012,
-        "mean_manifest_probability_t2": 0.9696239709854126,
-        "mean_selected_language_retained_mass": 0.9986144125461578,
+        "clip_mean_manifest_probability_t1": 0.9980711042881012,
+        "clip_mean_manifest_probability_t2": 0.9696239709854126,
+        "clip_mean_selected_language_retained_mass": 0.9986144125461578,
+        "loss_weighted_mean_manifest_probability_t1": 0.997979105836358,
+        "loss_weighted_mean_manifest_probability_t2": 0.9672506834447332,
+        "loss_weighted_mean_selected_language_retained_mass": 0.9985766651846707,
         "valid_ramp_weight": 3461.0,
         "frame_loss_weight_share": 0.13082840348522937,
         "aggregate_target_mass_contribution_t1": {
@@ -358,9 +370,12 @@
         "teacher_full_top1_counts": {
           "ta: Tamil": 10
         },
-        "mean_manifest_probability_t1": 0.9998901546001434,
-        "mean_manifest_probability_t2": 0.9927905082702637,
-        "mean_selected_language_retained_mass": 0.9996042013168335,
+        "clip_mean_manifest_probability_t1": 0.9998901546001434,
+        "clip_mean_manifest_probability_t2": 0.9927905082702637,
+        "clip_mean_selected_language_retained_mass": 0.9996042013168335,
+        "loss_weighted_mean_manifest_probability_t1": 0.9999048004100021,
+        "loss_weighted_mean_manifest_probability_t2": 0.9936891803942935,
+        "loss_weighted_mean_selected_language_retained_mass": 0.9996748887485182,
         "valid_ramp_weight": 3550.0,
         "frame_loss_weight_share": 0.13419267043414165,
         "aggregate_target_mass_contribution_t1": {
@@ -405,9 +420,12 @@
         "teacher_full_top1_counts": {
           "te: Telugu": 10
         },
-        "mean_manifest_probability_t1": 0.9998120307922364,
-        "mean_manifest_probability_t2": 0.9888057470321655,
-        "mean_selected_language_retained_mass": 0.9997979938983917,
+        "clip_mean_manifest_probability_t1": 0.9998120307922364,
+        "clip_mean_manifest_probability_t2": 0.9888057470321655,
+        "clip_mean_selected_language_retained_mass": 0.9997979938983917,
+        "loss_weighted_mean_manifest_probability_t1": 0.9998802989911899,
+        "loss_weighted_mean_manifest_probability_t2": 0.99096437937221,
+        "loss_weighted_mean_selected_language_retained_mass": 0.9998083756338394,
         "valid_ramp_weight": 3909.0,
         "frame_loss_weight_share": 0.1477631404864957,
         "aggregate_target_mass_contribution_t1": {
@@ -452,9 +470,12 @@
         "teacher_full_top1_counts": {
           "gu: Gujarati": 10
         },
-        "mean_manifest_probability_t1": 0.9955563068389892,
-        "mean_manifest_probability_t2": 0.9497141718864441,
-        "mean_selected_language_retained_mass": 0.9982529282569885,
+        "clip_mean_manifest_probability_t1": 0.9955563068389892,
+        "clip_mean_manifest_probability_t2": 0.9497141718864441,
+        "clip_mean_selected_language_retained_mass": 0.9982529282569885,
+        "loss_weighted_mean_manifest_probability_t1": 0.9963856392202124,
+        "loss_weighted_mean_manifest_probability_t2": 0.9550460130013949,
+        "loss_weighted_mean_selected_language_retained_mass": 0.998385683640216,
         "valid_ramp_weight": 3955.0,
         "frame_loss_weight_share": 0.14950197508930427,
         "aggregate_target_mass_contribution_t1": {
@@ -3033,7 +3054,7 @@
         }
       }
     ],
-    "audit_sha256": "5cdf84d96de7a49539f86773a80676003bde63d4b6f8fc066eee25913758b6ef"
+    "audit_sha256": "fd691497e0b49387319a6a344152f6815a603cf356639e0ada7cbacdf04538ca"
   },
   "speaker_split": {
     "train_speaker_ids": [
@@ -3070,7 +3091,7 @@
   },
   "target_cache": {
     "schema_version": 6,
-    "target_configuration_sha256": "4d3cfc102484c93747f83b1c513ab6ccb1b5d5cd789ed64ce9d4be60c7422178",
+    "target_configuration_sha256": "215bb13eb5df41d0482065c5db2b1987f4b8a8f4c4746be638e1b7581453333f",
     "manifest_snapshot": {
       "schema_version": 1,
       "manifest_file_sha256": "7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c",
@@ -3079,10 +3100,10 @@
     },
     "manifest_file_sha256": "7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c",
     "manifest_records_sha256": "d47a8b62af8d878867cc9ef2d0b6488f3a45a2706ce4e29ea62840b9030ecc01",
-    "target_files_sha256": "1a5931a871f10717cab86e5cec0039e3c6bb96aeb8954ef0dbbd39a58664613c",
+    "target_files_sha256": "cf9c636981d98a1859861a8a26386982752e5ac4393d11cba933005fbcc68c20",
     "teacher_revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
     "teacher_artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
-    "target_generator_source_sha256": "5302c17aa4b7731a18e5e6731a7e679ca93733ccdda9d041b85e59dd2affc95c",
+    "target_generator_source_sha256": "9cf8a34dc2436507d89390f98ef8d772efa8d9724cc405a5df847969b7597ac2",
     "target_expansion": "previous_anchor_hold",
     "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
     "availability_checked_frames": 2394,
@@ -3092,7 +3113,7 @@
     "dense_target_validation_rtol": 1e-06,
     "dense_target_validation_atol": 2e-07,
     "training_target_audit_schema_version": 1,
-    "training_target_audit_sha256": "5cdf84d96de7a49539f86773a80676003bde63d4b6f8fc066eee25913758b6ef",
+    "training_target_audit_sha256": "fd691497e0b49387319a6a344152f6815a603cf356639e0ada7cbacdf04538ca",
     "training_target_audit_validated": true,
     "training_target_quality_floor_passed": false,
     "training_target_quality_failed_languages": [

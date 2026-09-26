@@ -22,8 +22,10 @@ from streaming_lid.config import (
     TEACHER_HOP_FRAMES,
     TEACHER_ARTIFACT_FILES,
     TEACHER_ARTIFACT_SHA256,
+    TEACHER_LABELS,
     TEACHER_LANGUAGE_INDICES,
     TEACHER_NAME,
+    TEACHER_OUTPUT_CLASSES,
     TEACHER_PAST_MS,
     TEACHER_REVISION,
     TEACHER_TEMPERATURE,
@@ -90,6 +92,14 @@ def extract_window(waveform: torch.Tensor, anchor_frame: int) -> torch.Tensor:
 
 def label_indices(teacher: EncoderClassifier) -> list[int]:
     index_to_label = teacher.hparams.label_encoder.ind2lab
+    actual_labels = tuple(
+        index_to_label.get(index) for index in range(TEACHER_OUTPUT_CLASSES)
+    )
+    if len(index_to_label) != TEACHER_OUTPUT_CLASSES or actual_labels != TEACHER_LABELS:
+        raise ValueError(
+            "pinned teacher's complete output label map differs from the "
+            "configured 107-class map"
+        )
     result = []
     for code in LANGUAGE_CODES:
         matches = [

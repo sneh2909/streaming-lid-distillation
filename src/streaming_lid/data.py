@@ -32,20 +32,25 @@ from .config import (
     TEACHER_HOP_FRAMES,
     TEACHER_ARTIFACT_FILES,
     TEACHER_ARTIFACT_SHA256,
+    TEACHER_LABELS,
     TEACHER_LANGUAGE_INDICES,
     TEACHER_NAME,
+    TEACHER_OUTPUT_CLASSES,
     TEACHER_PAST_MS,
     TEACHER_REVISION,
     TEACHER_TEMPERATURE,
     TEACHER_TARGET_EXPANSION,
     TARGET_AUDIT_EXPECTED_MONOLINGUAL_CLIPS_PER_LANGUAGE,
+    TARGET_AUDIT_MIN_CLIP_MEAN_MANIFEST_PROBABILITY_T1,
+    TARGET_AUDIT_MIN_CLIP_MEAN_RETAINED_MASS,
     TARGET_AUDIT_MIN_TEACHER_CORRECT_PER_LANGUAGE,
+    TARGET_AUDIT_MIN_TEACHER_NATIVE_CORRECT_PER_LANGUAGE,
     WIN_LENGTH,
 )
 
 
 TARGET_CACHE_SCHEMA_VERSION = 6
-TRAINING_TARGET_AUDIT_SCHEMA_VERSION = 1
+TRAINING_TARGET_AUDIT_SCHEMA_VERSION = 2
 MANIFEST_SNAPSHOT_SCHEMA_VERSION = 1
 DENSE_TARGET_VALIDATION_RTOL = 1e-6
 DENSE_TARGET_VALIDATION_ATOL = 2e-7
@@ -275,10 +280,23 @@ def target_cache_configuration() -> dict[str, Any]:
             "minimum_teacher_selected_top1_correct_per_language": (
                 TARGET_AUDIT_MIN_TEACHER_CORRECT_PER_LANGUAGE
             ),
+            "minimum_teacher_native_top1_correct_per_language": (
+                TARGET_AUDIT_MIN_TEACHER_NATIVE_CORRECT_PER_LANGUAGE
+            ),
+            "minimum_clip_mean_selected_language_retained_mass": (
+                TARGET_AUDIT_MIN_CLIP_MEAN_RETAINED_MASS
+            ),
+            "minimum_clip_mean_manifest_probability_t1": (
+                TARGET_AUDIT_MIN_CLIP_MEAN_MANIFEST_PROBABILITY_T1
+            ),
             "label_delay_frames": LABEL_DELAY_FRAMES,
             "model_lookahead_frames": MODEL_LOOKAHEAD_FRAMES,
             "early_ramp_frames": EARLY_RAMP_FRAMES,
             "aggregate_target_mass_includes_mixed_training_clips": True,
+            "aggregate_semantics": (
+                "one_pass_full_corpus_frame_ramp_surrogate_not_realized_"
+                "minibatch_exposure"
+            ),
             "quality_floor_is_diagnostic": True,
         },
         "target_generator": target_generator_identity(),
@@ -530,9 +548,14 @@ def _validate_teacher_summary_arrays(
         raise ValueError(f"target cache {path} in_set_mass contains invalid values")
     if np.any(in_set_mass < 0) or np.any(in_set_mass > 1.0 + 1e-5):
         raise ValueError(f"target cache {path} in_set_mass is outside [0, 1]")
-    if not np.issubdtype(full_indices.dtype, np.integer) or np.any(full_indices < 0):
+    if (
+        not np.issubdtype(full_indices.dtype, np.integer)
+        or np.any(full_indices < 0)
+        or np.any(full_indices >= TEACHER_OUTPUT_CLASSES)
+    ):
         raise ValueError(
-            f"target cache {path} full_top1_indices must be non-negative integers"
+            f"target cache {path} full_top1_indices must be integers inside the "
+            f"pinned {TEACHER_OUTPUT_CLASSES}-class teacher output space"
         )
     if not np.issubdtype(full_probabilities.dtype, np.number) or not np.isfinite(
         full_probabilities
@@ -544,9 +567,26 @@ def _validate_teacher_summary_arrays(
         raise ValueError(
             f"target cache {path} full_top1_probabilities is outside [0, 1]"
         )
+    minimum_top1_probability = 1.0 / TEACHER_OUTPUT_CLASSES
+    if np.any(full_probabilities < minimum_top1_probability - 1e-6):
+        raise ValueError(
+            f"target cache {path} full_top1_probabilities contains a value below "
+            f"1/{TEACHER_OUTPUT_CLASSES}, which is impossible for a normalized "
+            "teacher posterior maximum"
+        )
     labels = np.asarray([str(value) for value in full_labels.tolist()])
     if any(not label for label in labels):
         raise ValueError(f"target cache {path} full_top1_labels contains an empty label")
+    expected_labels = np.asarray(
+        [TEACHER_LABELS[int(index)] for index in full_indices.tolist()]
+    )
+    if not np.array_equal(labels, expected_labels):
+        row = int(np.flatnonzero(labels != expected_labels)[0])
+        raise ValueError(
+            f"target cache {path} full-space label {labels[row]!r} does not match "
+            f"pinned teacher index {int(full_indices[row])}, expected "
+            f"{expected_labels[row]!r}"
+        )
 
     selected_absolute = anchors.astype(np.float64) * in_set_mass[:, None]
     selected_maximum = selected_absolute.max(axis=-1)
@@ -579,11 +619,6 @@ def _validate_teacher_summary_arrays(
             raise ValueError(
                 f"target cache {path} selected/full teacher top-1 evidence "
                 f"disagrees at anchor {row}"
-            )
-        if not labels[row].startswith(f"{LANGUAGE_CODES[column]}:"):
-            raise ValueError(
-                f"target cache {path} full-space label {labels[row]!r} does not "
-                f"match selected teacher index {full_index}"
             )
     return {
         "in_set_mass": in_set_mass.astype(np.float64, copy=True),
@@ -745,6 +780,9 @@ def build_training_target_audit(
                     "teacher_full_top1_supported_language": (
                         supported_by_teacher_index.get(full_index)
                     ),
+                    "teacher_full_top1_correct": (
+                        full_index == TEACHER_LANGUAGE_INDICES[label_index]
+                    ),
                     "teacher_full_top1_probability": float(
                         teacher_summary["full_top1_probabilities"][0]
                     ),
@@ -774,17 +812,17 @@ def build_training_target_audit(
         per_clip.append(
             {
                 **staged,
-                "frame_loss_weight_share": (
+                "full_corpus_frame_ramp_share": (
                     staged["valid_ramp_weight"] / total_weight
                     if total_weight
                     else 0.0
                 ),
-                "aggregate_target_mass_contribution_t1": _ordered_probability_record(
+                "full_corpus_target_mass_contribution_t1": _ordered_probability_record(
                     t1_numerator / total_weight
                     if total_weight
                     else np.zeros(len(LANGUAGE_CODES))
                 ),
-                "aggregate_target_mass_contribution_t2": _ordered_probability_record(
+                "full_corpus_target_mass_contribution_t2": _ordered_probability_record(
                     t2_numerator / total_weight
                     if total_weight
                     else np.zeros(len(LANGUAGE_CODES))
@@ -811,12 +849,13 @@ def build_training_target_audit(
             voice = row["voice"]
             voice_counts[voice] = voice_counts.get(voice, 0) + 1
             group_t1 += np.asarray(
-                list(row["aggregate_target_mass_contribution_t1"].values())
+                list(row["full_corpus_target_mass_contribution_t1"].values())
             )
             group_t2 += np.asarray(
-                list(row["aggregate_target_mass_contribution_t2"].values())
+                list(row["full_corpus_target_mass_contribution_t2"].values())
             )
         correct = sum(bool(row["teacher_selected_top1_correct"]) for row in clips)
+        native_correct = sum(bool(row["teacher_full_top1_correct"]) for row in clips)
         weight = sum(float(row["valid_ramp_weight"]) for row in clips)
         weighted_probability_t1 = (
             sum(
@@ -851,6 +890,7 @@ def build_training_target_audit(
         per_language[language] = {
             "monolingual_clips": len(clips),
             "teacher_selected_top1_correct": correct,
+            "teacher_native_top1_correct": native_correct,
             "teacher_selected_top1_counts": selected_counts,
             "teacher_full_top1_counts": dict(sorted(full_counts.items())),
             "clip_mean_manifest_probability_t1": (
@@ -872,21 +912,23 @@ def build_training_target_audit(
                 if clips
                 else 0.0
             ),
-            "loss_weighted_mean_manifest_probability_t1": (
+            "full_corpus_frame_ramp_weighted_mean_manifest_probability_t1": (
                 weighted_probability_t1
             ),
-            "loss_weighted_mean_manifest_probability_t2": (
+            "full_corpus_frame_ramp_weighted_mean_manifest_probability_t2": (
                 weighted_probability_t2
             ),
-            "loss_weighted_mean_selected_language_retained_mass": (
+            "full_corpus_frame_ramp_weighted_mean_selected_language_retained_mass": (
                 weighted_retained_mass
             ),
             "valid_ramp_weight": weight,
-            "frame_loss_weight_share": weight / total_weight if total_weight else 0.0,
-            "aggregate_target_mass_contribution_t1": _ordered_probability_record(
+            "full_corpus_frame_ramp_share": (
+                weight / total_weight if total_weight else 0.0
+            ),
+            "full_corpus_target_mass_contribution_t1": _ordered_probability_record(
                 group_t1
             ),
-            "aggregate_target_mass_contribution_t2": _ordered_probability_record(
+            "full_corpus_target_mass_contribution_t2": _ordered_probability_record(
                 group_t2
             ),
             "provider_counts": dict(sorted(provider_counts.items())),
@@ -900,17 +942,17 @@ def build_training_target_audit(
         mixed_clips.append(
             {
                 **staged,
-                "frame_loss_weight_share": (
+                "full_corpus_frame_ramp_share": (
                     staged["valid_ramp_weight"] / total_weight
                     if total_weight
                     else 0.0
                 ),
-                "aggregate_target_mass_contribution_t1": _ordered_probability_record(
+                "full_corpus_target_mass_contribution_t1": _ordered_probability_record(
                     t1_numerator / total_weight
                     if total_weight
                     else np.zeros(len(LANGUAGE_CODES))
                 ),
-                "aggregate_target_mass_contribution_t2": _ordered_probability_record(
+                "full_corpus_target_mass_contribution_t2": _ordered_probability_record(
                     t2_numerator / total_weight
                     if total_weight
                     else np.zeros(len(LANGUAGE_CODES))
@@ -919,17 +961,42 @@ def build_training_target_audit(
         )
 
     expected_count = TARGET_AUDIT_EXPECTED_MONOLINGUAL_CLIPS_PER_LANGUAGE
-    minimum_correct = TARGET_AUDIT_MIN_TEACHER_CORRECT_PER_LANGUAGE
+    minimum_selected_correct = TARGET_AUDIT_MIN_TEACHER_CORRECT_PER_LANGUAGE
+    minimum_native_correct = (
+        TARGET_AUDIT_MIN_TEACHER_NATIVE_CORRECT_PER_LANGUAGE
+    )
+    minimum_retained_mass = TARGET_AUDIT_MIN_CLIP_MEAN_RETAINED_MASS
+    minimum_manifest_probability_t1 = (
+        TARGET_AUDIT_MIN_CLIP_MEAN_MANIFEST_PROBABILITY_T1
+    )
     count_failures = [
         language
         for language in LANGUAGE_CODES
         if per_language[language]["monolingual_clips"] != expected_count
     ]
-    teacher_failures = [
+    selected_teacher_failures = [
         language
         for language in LANGUAGE_CODES
         if per_language[language]["teacher_selected_top1_correct"]
-        < minimum_correct
+        < minimum_selected_correct
+    ]
+    native_teacher_failures = [
+        language
+        for language in LANGUAGE_CODES
+        if per_language[language]["teacher_native_top1_correct"]
+        < minimum_native_correct
+    ]
+    retained_mass_failures = [
+        language
+        for language in LANGUAGE_CODES
+        if per_language[language]["clip_mean_selected_language_retained_mass"]
+        < minimum_retained_mass
+    ]
+    manifest_probability_failures = [
+        language
+        for language in LANGUAGE_CODES
+        if per_language[language]["clip_mean_manifest_probability_t1"]
+        < minimum_manifest_probability_t1
     ]
     unique_t2_mass = {round(float(value), 15) for value in aggregate_t2.tolist()}
     base = {
@@ -939,27 +1006,77 @@ def build_training_target_audit(
         "checked_train_clips": len(train_records),
         "checked_monolingual_train_clips": len(staged_monolingual),
         "checked_mixed_train_clips": len(staged_mixed),
-        "total_valid_ramp_weight": total_weight,
+        "full_corpus_valid_ramp_weight": total_weight,
         "aggregate": {
-            "source_frame_loss_weight_share": {
+            "semantics": (
+                "one_pass_full_corpus_frame_ramp_surrogate_not_realized_"
+                "minibatch_exposure"
+            ),
+            "source_full_corpus_frame_ramp_share": {
                 source: (weight / total_weight if total_weight else 0.0)
                 for source, weight in source_weights.items()
             },
-            "target_mass_t1": _ordered_probability_record(aggregate_t1),
-            "target_mass_t2": _ordered_probability_record(aggregate_t2),
+            "full_corpus_target_mass_t1": _ordered_probability_record(aggregate_t1),
+            "full_corpus_target_mass_t2": _ordered_probability_record(aggregate_t2),
             "equal_monolingual_clip_counts": not count_failures,
-            "equal_clip_counts_do_not_imply_equal_t2_target_mass": (
+            "equal_clip_counts_do_not_imply_equal_full_corpus_t2_target_mass": (
                 not count_failures and len(unique_t2_mass) > 1
             ),
         },
         "quality_floor": {
             "expected_monolingual_clips_per_language": expected_count,
-            "minimum_teacher_selected_top1_correct_per_language": minimum_correct,
+            "minimum_teacher_selected_top1_correct_per_language": (
+                minimum_selected_correct
+            ),
+            "minimum_teacher_native_top1_correct_per_language": (
+                minimum_native_correct
+            ),
+            "minimum_clip_mean_selected_language_retained_mass": (
+                minimum_retained_mass
+            ),
+            "minimum_clip_mean_manifest_probability_t1": (
+                minimum_manifest_probability_t1
+            ),
             "exact_clip_count_passed": not count_failures,
-            "teacher_correctness_floor_passed": not teacher_failures,
+            "teacher_selected_correctness_floor_passed": (
+                not selected_teacher_failures
+            ),
+            "teacher_native_correctness_floor_passed": (
+                not native_teacher_failures
+            ),
+            "retained_mass_floor_passed": not retained_mass_failures,
+            "manifest_probability_floor_passed": (
+                not manifest_probability_failures
+            ),
             "failed_clip_count_languages": count_failures,
-            "failed_teacher_correctness_languages": teacher_failures,
-            "passed": not count_failures and not teacher_failures,
+            "failed_teacher_selected_correctness_languages": (
+                selected_teacher_failures
+            ),
+            "failed_teacher_native_correctness_languages": (
+                native_teacher_failures
+            ),
+            "failed_retained_mass_languages": retained_mass_failures,
+            "failed_manifest_probability_languages": (
+                manifest_probability_failures
+            ),
+            "failed_languages": sorted(
+                set(
+                    count_failures
+                    + selected_teacher_failures
+                    + native_teacher_failures
+                    + retained_mass_failures
+                    + manifest_probability_failures
+                )
+            ),
+            "passed": not any(
+                (
+                    count_failures,
+                    selected_teacher_failures,
+                    native_teacher_failures,
+                    retained_mass_failures,
+                    manifest_probability_failures,
+                )
+            ),
             "diagnostic_only": True,
         },
         "per_language": per_language,
@@ -1519,7 +1636,7 @@ class TeacherTargetCache:
             ]["passed"],
             "training_target_quality_failed_languages": self.training_target_audit[
                 "quality_floor"
-            ]["failed_teacher_correctness_languages"],
+            ]["failed_languages"],
             "training_target_audit_monolingual_clips": self.training_target_audit[
                 "checked_monolingual_train_clips"
             ],

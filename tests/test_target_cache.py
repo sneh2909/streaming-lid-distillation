@@ -8,6 +8,7 @@ import torch
 from streaming_lid.config import (
     LANGUAGE_CODES,
     TEACHER_ARTIFACT_SHA256,
+    TEACHER_LABELS,
     TEACHER_LANGUAGE_INDICES,
     TEACHER_NAME,
     TEACHER_REVISION,
@@ -57,14 +58,24 @@ def _write_target_file(
     num_frames: int = 3,
     anchor_probs: np.ndarray | None = None,
     in_set_mass: float = 0.75,
+    full_top1_index: int | None = None,
+    full_top1_probability: float | None = None,
 ) -> None:
     anchor_probs = _probabilities(1) if anchor_probs is None else anchor_probs
     anchor_soft_targets = _soften(anchor_probs)
     probabilities = np.repeat(anchor_probs, num_frames, axis=0)
     soft_targets = np.repeat(anchor_soft_targets, num_frames, axis=0)
     selected_column = int(np.argmax(anchor_probs[0]))
-    full_index = TEACHER_LANGUAGE_INDICES[selected_column]
-    full_probability = float(anchor_probs[0, selected_column] * in_set_mass)
+    full_index = (
+        TEACHER_LANGUAGE_INDICES[selected_column]
+        if full_top1_index is None
+        else full_top1_index
+    )
+    full_probability = (
+        float(anchor_probs[0, selected_column] * in_set_mass)
+        if full_top1_probability is None
+        else full_top1_probability
+    )
     np.savez_compressed(
         path,
         teacher_probs=probabilities,
@@ -75,9 +86,7 @@ def _write_target_file(
         in_set_mass=np.asarray([in_set_mass], dtype=np.float32),
         full_top1_indices=np.asarray([full_index], dtype=np.int64),
         full_top1_probabilities=np.asarray([full_probability], dtype=np.float32),
-        full_top1_labels=np.asarray(
-            [f"{LANGUAGE_CODES[selected_column]}: fixture"]
-        ),
+        full_top1_labels=np.asarray([TEACHER_LABELS[full_index]]),
         language_codes=np.asarray(language_codes),
         cache_schema_version=np.asarray(TARGET_CACHE_SCHEMA_VERSION),
         clip_id=np.asarray(item["id"]),
@@ -219,7 +228,12 @@ def _write_valid_local_cache(
             dtype=np.int64,
         ),
         full_top1_probabilities=np.asarray([0.525, 0.525], dtype=np.float32),
-        full_top1_labels=np.asarray(["en: fixture", "hi: fixture"]),
+        full_top1_labels=np.asarray(
+            [
+                TEACHER_LABELS[TEACHER_LANGUAGE_INDICES[0]],
+                TEACHER_LABELS[TEACHER_LANGUAGE_INDICES[1]],
+            ]
+        ),
         language_codes=np.asarray(LANGUAGE_CODES),
         cache_schema_version=np.asarray(TARGET_CACHE_SCHEMA_VERSION),
         clip_id=np.asarray(item["id"]),
@@ -550,22 +564,26 @@ def test_training_target_audit_exposes_skew_despite_equal_clip_counts(
     assert audit["aggregate"]["equal_monolingual_clip_counts"] is True
     assert (
         audit["aggregate"][
-            "equal_clip_counts_do_not_imply_equal_t2_target_mass"
+            "equal_clip_counts_do_not_imply_equal_full_corpus_t2_target_mass"
         ]
         is True
     )
     assert audit["per_language"]["en"]["teacher_selected_top1_correct"] == 6
+    assert audit["per_language"]["en"]["teacher_native_top1_correct"] == 6
     assert all(
         audit["per_language"][language]["monolingual_clips"] == 10
         for language in LANGUAGE_CODES
     )
-    assert audit["quality_floor"]["failed_teacher_correctness_languages"] == [
-        "en"
-    ]
+    assert audit["quality_floor"][
+        "failed_teacher_selected_correctness_languages"
+    ] == ["en"]
+    assert audit["quality_floor"][
+        "failed_teacher_native_correctness_languages"
+    ] == ["en"]
     assert audit["quality_floor"]["passed"] is False
     assert (
-        audit["aggregate"]["target_mass_t2"]["en"]
-        < audit["aggregate"]["target_mass_t2"]["hi"]
+        audit["aggregate"]["full_corpus_target_mass_t2"]["en"]
+        < audit["aggregate"]["full_corpus_target_mass_t2"]["hi"]
     )
 
 

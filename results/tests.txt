@@ -1,3 +1,3 @@
 $ MALLOC_ARENA_MAX=2 PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=6 MKL_NUM_THREADS=6 UV_CACHE_DIR=./.cache/uv HF_HOME=./.cache/hf TORCH_HOME=./.cache/torch PYTHONPATH=. .venv/bin/python -c 'import sys, torch, pytest; torch.set_num_threads(6); sys.exit(pytest.main(["-q", "-p", "no:cacheprovider"]))'
-.........................................................                [100%]
-57 passed in 22.15s
+...........................................................              [100%]
+59 passed in 39.69s

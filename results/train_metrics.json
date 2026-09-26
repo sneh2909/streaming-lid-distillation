@@ -1,5 +1,5 @@
 {
-  "run_id": "lidrun-ed4ae55b8edd1518f9c8b51eb656349352d3ab2a26c35705950afe88a26c1f71",
+  "run_id": "lidrun-25084aed5eaa5932f9dbed3975a6828be9aaef99ed58bd6f3e54f012832db870",
   "run_identity": {
     "schema_version": 4,
     "pipeline": {
@@ -68,8 +68,8 @@
       "source": {
         "schema_version": 1,
         "kind": "executed_source_snapshot",
-        "source_sha256": "9bf2ae32a60ba6608879c0d91354ae43687df838fd88753483cebc42e041202d",
-        "snapshot_root_sha256": "9bf2ae32a60ba6608879c0d91354ae43687df838fd88753483cebc42e041202d",
+        "source_sha256": "54e098d6329fc4f793a7d17aa9e476b438557e5da5f66171b5a90659f0f6d682",
+        "snapshot_root_sha256": "54e098d6329fc4f793a7d17aa9e476b438557e5da5f66171b5a90659f0f6d682",
         "snapshot_kind": "captured_worktree",
         "files": {
           "pyproject.toml": {
@@ -78,8 +78,8 @@
             "mode": 365
           },
           "scripts/eval.py": {
-            "sha256": "1fdaa3497ef8b83537880c0cdcedc8a2bd390833f546b721c87e4227cfbbe4ee",
-            "bytes": 32144,
+            "sha256": "32b0dfdf7851c6bfbb0ca8aeb90539641efdc2624e114b82f43c74558a7955ec",
+            "bytes": 33888,
             "mode": 365
           },
           "scripts/prepare_data.py": {
@@ -93,8 +93,8 @@
             "mode": 365
           },
           "scripts/teacher_targets.py": {
-            "sha256": "dde201c03bfff8c0e591478f5cea27a2c249f9a38875560ea75da06c7ac65e94",
-            "bytes": 17450,
+            "sha256": "367357496c5fda95d6ef8569a25e805e7fb6089a35988ede1120db849c577b8c",
+            "bytes": 18659,
             "mode": 365
           },
           "scripts/train.py": {
@@ -113,13 +113,13 @@
             "mode": 365
           },
           "src/streaming_lid/config.py": {
-            "sha256": "8976b7f9f5ef498fa296acb7963154c1adf3efb78db2afe5e4df9e98e0716b8c",
-            "bytes": 2571,
+            "sha256": "6caba12ebb5de3e481eeef68486c3f6165bd34f042d897bd4b7a1f31933e0072",
+            "bytes": 2969,
             "mode": 365
           },
           "src/streaming_lid/data.py": {
-            "sha256": "da09298571c92fc0d144af586571688502ac2736a39adb17ee30c9e947c6aa7d",
-            "bytes": 45245,
+            "sha256": "b0bc262100adf3766d390b18d06ed3e661150e7fdb0af608fe850b3847e4d298",
+            "bytes": 70045,
             "mode": 365
           },
           "src/streaming_lid/loss.py": {
@@ -150,7 +150,7 @@
           },
           "eval": {
             "path": "scripts/eval.py",
-            "sha256": "1fdaa3497ef8b83537880c0cdcedc8a2bd390833f546b721c87e4227cfbbe4ee"
+            "sha256": "32b0dfdf7851c6bfbb0ca8aeb90539641efdc2624e114b82f43c74558a7955ec"
           }
         },
         "local_module_origins": {
@@ -314,8 +314,8 @@
     },
     "target_cache": {
       "identity": {
-        "schema_version": 5,
-        "target_configuration_sha256": "bd2e98c590ace6222f134c52bebf67135c587cb00b69559096cb5932e6634c26",
+        "schema_version": 6,
+        "target_configuration_sha256": "215bb13eb5df41d0482065c5db2b1987f4b8a8f4c4746be638e1b7581453333f",
         "manifest_snapshot": {
           "schema_version": 1,
           "manifest_file_sha256": "7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c",
@@ -324,12 +324,12 @@
         },
         "manifest_file_sha256": "7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c",
         "manifest_records_sha256": "d47a8b62af8d878867cc9ef2d0b6488f3a45a2706ce4e29ea62840b9030ecc01",
-        "target_files_sha256": "0dc5a6e88c52606af18c4b204bddff5c908ef7caa54b6eba94fa808704855553",
+        "target_files_sha256": "cf9c636981d98a1859861a8a26386982752e5ac4393d11cba933005fbcc68c20",
         "teacher_revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
         "teacher_artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
-        "target_generator_source_sha256": "44f64417d17bc388e2b7c4583b212da091def9c8667004b7a32de2ecc5220aad"
+        "target_generator_source_sha256": "9cf8a34dc2436507d89390f98ef8d772efa8d9724cc405a5df847969b7597ac2"
       },
-      "metadata_sha256": "d882411ae0a0eb86ac47a28a227be8117a06764a69df5ba5494d81d307e57ab3"
+      "metadata_sha256": "97552ab381111838d962f3e83846b0bc1b9015c5a8ac27890f87b9a4ad1a3b2f"
     },
     "training": {
       "requested_steps": 1600,
@@ -346,7 +346,7 @@
     "manifest_bindings_equal": true,
     "model_state_sha256": "b96a856c4d77f0a70be10421fa362d838be4b7c047596fb1049b977629b42273"
   },
-  "checkpoint_sha256": "2b361e663517ecf95badaaaa8fd7307432b12886e2816cb015315a81c40602ed",
+  "checkpoint_sha256": "e9d8c79578826e577df772c297b911d6d3066ed728e67c9e51d6c7b5e3e1be35",
   "optimizer_steps": 1600,
   "requested_optimizer_steps": 1600,
   "successful_optimizer_steps": 1600,
@@ -402,8 +402,8 @@
     "speaker_disjoint": true
   },
   "target_cache": {
-    "schema_version": 5,
-    "target_configuration_sha256": "bd2e98c590ace6222f134c52bebf67135c587cb00b69559096cb5932e6634c26",
+    "schema_version": 6,
+    "target_configuration_sha256": "215bb13eb5df41d0482065c5db2b1987f4b8a8f4c4746be638e1b7581453333f",
     "manifest_snapshot": {
       "schema_version": 1,
       "manifest_file_sha256": "7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c",
@@ -412,10 +412,10 @@
     },
     "manifest_file_sha256": "7df6fc5d94db4c88cac9df6b2de8bc9dc5fcacf1bf36853f839bf494ad59314c",
     "manifest_records_sha256": "d47a8b62af8d878867cc9ef2d0b6488f3a45a2706ce4e29ea62840b9030ecc01",
-    "target_files_sha256": "0dc5a6e88c52606af18c4b204bddff5c908ef7caa54b6eba94fa808704855553",
+    "target_files_sha256": "cf9c636981d98a1859861a8a26386982752e5ac4393d11cba933005fbcc68c20",
     "teacher_revision": "0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9",
     "teacher_artifact_sha256": "f193a0548951e8fbd6ca438a492b98b5c48bf7d98c86451ca3878dd4a7c0f706",
-    "target_generator_source_sha256": "44f64417d17bc388e2b7c4583b212da091def9c8667004b7a32de2ecc5220aad",
+    "target_generator_source_sha256": "9cf8a34dc2436507d89390f98ef8d772efa8d9724cc405a5df847969b7597ac2",
     "target_expansion": "previous_anchor_hold",
     "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
     "availability_checked_frames": 2394,
@@ -424,6 +424,14 @@
     "dense_target_expansion_valid": true,
     "dense_target_validation_rtol": 1e-06,
     "dense_target_validation_atol": 2e-07,
+    "training_target_audit_schema_version": 1,
+    "training_target_audit_sha256": "fd691497e0b49387319a6a344152f6815a603cf356639e0ada7cbacdf04538ca",
+    "training_target_audit_validated": true,
+    "training_target_quality_floor_passed": false,
+    "training_target_quality_failed_languages": [
+      "en"
+    ],
+    "training_target_audit_monolingual_clips": 70,
     "provenance_validated": true,
     "validated_clips": 94,
     "indexed_clips": 94

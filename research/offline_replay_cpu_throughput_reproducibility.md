@@ -1,14 +1,23 @@
 # Reproducible offline-replay CPU throughput (METHOD-48)
 
 Research and Hugging Face Hub audit: **2026-09-26 (Asia/Calcutta)**.
+POLISH-12 refresh: **2026-09-26 15:54 IST**, bound to the live
+`results/eval_metrics.json` SHA-256 `edd95202...8cd4` observed at that time.
 
 ## Decision
 
-Do not present `1 / 0.0171435 = 58.3x real time` as a reproducible speed
-factor. It is the correct reciprocal of one five-repeat process median, but an
-otherwise equivalent process on the same named machine recorded a median RTF
-of `0.0883288`, or 11.3x real time. The two medians differ by **5.1523x** and
-their individual-repeat ranges do not overlap.
+Do not present the reciprocal of any of the four retained five-repeat process
+medians as a reproducible speed factor. The observed medians are `0.0883288`,
+`0.0171435`, `0.00583736`, and `0.00660979` RTF. Their process-median range is
+therefore **0.005837--0.088329 RTF**, a **15.1316x** max/min spread. Every
+process happened to run faster than real time, but this spread is evidence
+against treating any one reciprocal as stable host capability.
+
+The arithmetic median of the four process medians is `0.0118766` RTF (whose
+reciprocal is 84.2x), but it is not a release benchmark: these processes were
+not launched under a predeclared multi-process protocol, their host controls
+were not captured, and the fourth artifact was still an uncommitted live
+release when audited. Do not use that derived reciprocal as a headline.
 
 The current benchmark is still useful as a scoped compute smoke test. Rename
 its primary quantity to `offline_replay_frontend_student_wall_rtf`, run it in
@@ -19,46 +28,52 @@ show its dispersion.
 
 This change has **zero expected model or accuracy gain**. Its expected gain is
 honest, repeatable measurement. The controlled median, dispersion, and cause
-of the existing 5.15x gap are **unverified**.
+of the observed 15.13x span are **unverified**.
 
-## What the two artifacts establish
+## What the four observed processes establish
 
-The comparison is between autosave commits
-`ea58c4aeda6b960ef4d72a7a1380b2211294b25b` (2026-09-26 14:23:30 IST) and
-`80c65e3c2a8d7b7c830fe520e96754b836682546` (2026-09-26 14:43:41 IST).
-Read-only reconstruction found:
+Three observations are recoverable from Git states and the fourth from the
+live worktree. “Git state” means the revision from which the exact result was
+read; it does not imply that the revision created the process. The full result
+hashes prevent a later overwritten `eval_metrics.json` from being mistaken for
+one of these rows.
 
-| Quantity | Earlier process | Later process |
-|---|---:|---:|
-| Stored RTF repeats | 0.088329, 0.069447, 0.115597, 0.139778, 0.086933 | 0.023586, 0.017836, 0.017143, 0.012417, 0.014229 |
-| Median wall RTF | 0.088328768 | 0.017143464 |
-| Median x real time | 11.321x | 58.331x |
-| Min--max RTF | 0.069447--0.139778 | 0.012417--0.023586 |
-| Within-process max/min | 2.0127x | 1.8995x |
-| Population CV of five repeats | 24.76% | 22.38% |
-| Median wall time over 78.97025 s audio | 6.9753 s | 1.3538 s |
+| Process | Retained state | Result SHA-256 | Five RTF repeats | Median | Repeat min--max | Max/min | Population CV |
+|---|---|---|---|---:|---:|---:|---:|
+| A | `ea58c4ae...b25b` | `2e1cb8d1...3034` | 0.088329, 0.069447, 0.115597, 0.139778, 0.086933 | 0.088328768 | 0.069447--0.139778 | 2.0127x | 24.76% |
+| B | `80c65e3c...2546` | `6877be23...d8ed` | 0.023586, 0.017836, 0.017143, 0.012417, 0.014229 | 0.017143464 | 0.012417--0.023586 | 1.8995x | 22.38% |
+| C | `041e727d...7cea` | `490a4a04...926e` | 0.007812, 0.005837, 0.006011, 0.005821, 0.005323 | 0.005837363 | 0.005323--0.007812 | 1.4675x | 13.91% |
+| D | live worktree at 15:54 IST | `edd95202...8cd4` | 0.006979, 0.006442, 0.006610, 0.006946, 0.006510 | 0.006609792 | 0.006442--0.006979 | 1.0834x | 3.33% |
 
-The later process is not merely different from the earlier one; each process
-is itself unstable. In the later run, the median of the last two repeats is
-35.67% below the median of the first two. In the earlier run it is 43.69%
-above. Five same-process samples after one partial warm-up do not demonstrate
-a steady state.
+Processes A--C are also noisy within a process. Comparing the last two repeats
+with the first two gives `+43.69%`, `-35.67%`, and `-18.36%`; process D gives
+`+0.259%`. D is the first row that looks quiet under this post-hoc two-versus-
+two diagnostic, but one process with five sweeps after one partial warm-up does
+not establish steady state or validate the proposed ten-sweep half-drift gate.
 
 Several important identities are held fixed:
 
-- `scripts/eval.py` is byte-identical at both commits (whole-file SHA-256
-  `147b8819...d7715`), including `benchmark_rtf()`.
+- The exact 871-byte `benchmark_rtf()` source segment is identical in all four
+  generations (SHA-256 `cda82384...f267b`). Whole `scripts/eval.py` is
+  byte-identical only for A/B (`147b8819...d7715`); C and D add surrounding
+  provenance/target-audit reporting outside the timed function. These are
+  workload-equivalent observations, not four byte-identical evaluator trees.
+- The complete frontend and student implementation files are identical in all
+  four (`audio.py` `4cce5b81...6260`, `model.py` `bf0b73f2...b2e68`), and the
+  serialized frontend, student, and 16-frame chunk configurations agree.
 - The student state is identical (`b96a856c...b42273`).
-- The 94-file audio identity is identical (`f0946a45...e589a67`), as are the
-  manifest and target identities. The timed subset is the same 21 held-out
-  monolingual waveforms, totalling exactly 1,263,524 samples / 78.97025 s at
-  16 kHz.
-- Both artifacts declare six Torch intra-op threads and five repeats.
+- The 94-file audio identity (`f0946a45...e589a67`) and manifest digests are
+  identical. The timed subset is the same 21 held-out monolingual waveforms,
+  totalling exactly 1,263,524 samples / 78.97025 s at 16 kHz.
+- All four artifacts declare six Torch intra-op threads and five repeats.
 
-The checkpoint file hashes differ because the later release adds executed
-source/environment evidence around the same model state. That does not explain
-the timed-body result. Conversely, byte-equivalent code and data do not make
-wall time deterministic.
+The target-cache, checkpoint, run, and source-root identities differ as the
+release contract evolves, despite the identical model state and timed
+workload. Targets and the offline teacher are not read in the timed body; the
+checkpoint wrapper has already been loaded into the identical model state.
+Those identity changes therefore do not by themselves explain any timing
+result. Conversely, an equivalent timed body, model, and data do not make wall
+time deterministic.
 
 ## What is actually timed
 
@@ -349,8 +364,11 @@ placeholders, not measured values.
 2. Exact boundary fixtures pass at max/min `1.20` and half-drift `0.10`; a
    one-ULP larger value fails. Non-positive, non-finite, or empty timing arrays
    fail.
-3. The current two historical process medians fail the dispersion gate by
-   construction (`0.0883288 / 0.0171435 = 5.1523`).
+3. A bound fixture containing all four observed process medians reproduces
+   aggregate median `0.0118766277`, range `0.0058373628--0.0883287678`, and
+   max/min `15.1316221`; it must be labelled
+   `historical_opportunistic_n=4` and fail the `<=1.20` dispersion gate. The
+   four rows cannot satisfy a protocol requiring seven fresh processes.
 4. Changed source, checkpoint, model state, clip order, WAV, sample count,
    frontend, chunk size, dtype, output digest, affinity, or thread setting
    prevents aggregation.
@@ -368,7 +386,8 @@ placeholders, not measured values.
 
 ## Hugging Face Hub audit
 
-The live Hub API on 2026-09-26 still resolves
+The [live Hub API](https://huggingface.co/api/models/speechbrain/lang-id-voxlingua107-ecapa),
+rechecked on 2026-09-26, still resolves
 [`speechbrain/lang-id-voxlingua107-ecapa`](https://huggingface.co/speechbrain/lang-id-voxlingua107-ecapa)
 to full revision
 [`0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9`](https://huggingface.co/speechbrain/lang-id-voxlingua107-ecapa/commit/0253049ae131d6a4be1c4f0d8b0ff483a0f8c8e9),
@@ -383,11 +402,11 @@ timed region. No newer Hub artifact changes the METHOD-48 conclusion.
 
 ## Bottom line
 
-The current `0.0171` number is a valid record of one opportunistic process, not
-a stable host capability. Preserve it and the `0.0883` predecessor as evidence
-of measurement variance. The next defensible artifact is a separately named,
-source/input-bound seven-process distribution with fixed/verified threading
-and affinity, dual clocks, full-corpus warm-up, and an explicit WSL limitation.
-Until that exists, the honest public statement is: **offline replay was faster
-than real time in both observed processes, with process medians spanning
-0.0171--0.0883 RTF; reproducible throughput is unverified**.
+All four numbers are valid records of opportunistic processes, not stable host
+capability estimates. Preserve them as an append-only diagnostic history. The
+next defensible artifact is a separately named, source/input-bound seven-
+process distribution with fixed/verified threading and affinity, dual clocks,
+full-corpus warm-up, and an explicit WSL limitation. Until that exists, the
+honest public statement is: **offline replay was faster than real time in four
+observed workload-equivalent processes, with medians spanning
+0.00584--0.08833 RTF (15.13x); reproducible throughput is unverified**.
