@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import torch
 
 from slid.streaming import StreamingSession
@@ -13,8 +14,14 @@ def _model(left=16):
     return m
 
 
-def test_stream_matches_whole_clip_forward():
-    m = _model()
+def _model_v1():
+    torch.manual_seed(0)
+    return StreamingLID(n_langs=3, d=32, layers=2, heads=2, ff=64, kernel=5, dropout=0.0).eval()
+
+
+@pytest.mark.parametrize("make", [_model, _model_v1], ids=["v2-bounded-relpos", "v1-growing-abspos"])
+def test_stream_matches_whole_clip_forward(make):
+    m = make()
     rng = np.random.default_rng(0)
     wav = rng.standard_normal(16000 * 7).astype(np.float32)
     for chunk in (1, 2, 4, 8):

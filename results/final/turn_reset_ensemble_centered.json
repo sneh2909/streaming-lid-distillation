@@ -1,0 +1,25 @@
+{
+  "gap_s": 0.5,
+  "policy": {
+    "switch_lag_median_s": 1.045,
+    "missed": 33,
+    "flips_per_min": 0.0,
+    "premature_rate": 0.06666666666666667
+  },
+  "chunk": 4,
+  "pause_detected": 77,
+  "n": 90,
+  "none": {
+    "switch_lag_median_s": 1.205,
+    "missed": 41,
+    "flips_per_min": 0.0,
+    "premature_rate": 0.05555555555555555
+  },
+  "state": {
+    "switch_lag_median_s": 1.245,
+    "missed": 24,
+    "flips_per_min": 0.0,
+    "premature_rate": 0.05555555555555555
+  },
+  "ckpt": "checkpoints/final_centered/student.pt"
+}

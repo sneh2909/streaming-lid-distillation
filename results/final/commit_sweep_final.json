@@ -1,5 +1,5 @@
 {
-  "ckpt": "checkpoints/ensemble_causal/student.pt",
+  "ckpt": "checkpoints/ensemble_causal_v1/student.pt",
   "chunk": 4,
   "rows": [
     {

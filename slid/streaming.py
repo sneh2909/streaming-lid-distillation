@@ -11,14 +11,15 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from slid.student import HOP, SUBSAMPLE, StreamingLID, frame_end_sample
+from slid.student import HOP, SUBSAMPLE, StreamingLID, frame_end_sample, sinusoid
 
 CTX_FRAMES = 2       # front end: output frame t needs mel frames [8t - 14, 8t] -> start 2 frames early
 
 
 class StreamingSession:
     def __init__(self, model: StreamingLID, chunk: int):
-        assert model.rel_pos and model.left_frames > 0, "needs a bounded-history, relative-position model"
+        # v2 (rel_pos, bounded history): constant memory.  v1 (absolute positions, unbounded history):
+        # the KV cache grows with the call (~7 kB per 80 ms frame for all layers) - fine for phone calls.
         self.m, self.C = model.eval(), chunk
         dev = next(model.parameters()).device
         self.dev = dev
@@ -60,7 +61,10 @@ class StreamingSession:
         assert feats.shape[1] == m_last - m0 + 1
         y = self.m.sub(feats)                                          # output k <-> frame m0/8 + k
         first = t0 - m0 // SUBSAMPLE
-        return y[:, first: first + (t1 - t0)]
+        y = y[:, first: first + (t1 - t0)]
+        if not self.m.rel_pos:
+            y = y + sinusoid(t1, y.shape[2], y.device)[t0:t1]
+        return y
 
     def _block(self, i: int, b, x: torch.Tensor) -> torch.Tensor:
         x = x + 0.5 * b.ff1(x)
@@ -75,11 +79,13 @@ class StreamingSession:
         c, n_k = q.shape[2], k.shape[2]
         q_pos = torch.arange(self.t, self.t + c, device=x.device)
         k_pos = torch.arange(self.t + c - n_k, self.t + c, device=x.device)
-        scores = q @ k.transpose(-1, -2) / (d // H) ** 0.5 + self.m.attn_bias(q_pos, k_pos)[None]
+        scores = q @ k.transpose(-1, -2) / (d // H) ** 0.5
+        if self.m.rel_pos:
+            scores = scores + self.m.attn_bias(q_pos, k_pos)[None]
         a = (scores.softmax(-1) @ v).transpose(1, 2).reshape(1, c, d)
         x = x + b.att.out_proj(a)
         L = self.m.left_frames
-        self.k_cache[i], self.v_cache[i] = k[:, :, -L:], v[:, :, -L:]
+        self.k_cache[i], self.v_cache[i] = (k[:, :, -L:], v[:, :, -L:]) if L > 0 else (k, v)
         h = F.glu(b.pw1(b.ln_conv(x)), dim=-1).transpose(1, 2)        # [1, d, c]
         hin = torch.cat([self.conv[i], h], dim=2)
         y = F.conv1d(hin, b.dw.weight, b.dw.bias, groups=b.dw.groups)

@@ -1,0 +1,34 @@
+{
+  "n_clips": 118,
+  "chance": 0.14285714285714285,
+  "models": {
+    "final": {
+      "acc_on_silence": 0.09322033898305085,
+      "mean_top_prob": 0.6486291289329529
+    },
+    "ensemble_centered": {
+      "acc_on_silence": 0.6440677966101694,
+      "mean_top_prob": 0.665125846862793
+    },
+    "indic-transcribe_causal": {
+      "acc_on_silence": 0.13559322033898305,
+      "mean_top_prob": 0.38301682472229004
+    },
+    "indic-transcribe_prefix": {
+      "acc_on_silence": 0.1016949152542373,
+      "mean_top_prob": 0.43003904819488525
+    },
+    "indic-transcribe_centered": {
+      "acc_on_silence": 0.7288135593220338,
+      "mean_top_prob": 0.6791112422943115
+    },
+    "indic-transcribe_full": {
+      "acc_on_silence": 0.6186440677966102,
+      "mean_top_prob": 0.7043526768684387
+    },
+    "indic-transcribe_hybrid": {
+      "acc_on_silence": 0.6779661016949152,
+      "mean_top_prob": 0.6857110261917114
+    }
+  }
+}

@@ -25,7 +25,7 @@ plt.rcParams.update({"figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "ax
 
 
 def switch_trace():
-    model = load_student(ROOT / "checkpoints/ensemble_causal/student.pt")
+    model = load_student(ROOT / "checkpoints/final/student.pt")
     targets = torch.load(ROOT / "data/targets/ensemble/causal.pt")
     clips = [json.loads(l) for l in open(ROOT / "data/manifests/switch.jsonl") if '"hi->en"' in l]
     sw = clips[0]
@@ -64,7 +64,7 @@ def switch_trace():
 
 
 def agreement_curves():
-    runs = [("ensemble_causal", "ensemble teacher, causal", BLUE),
+    runs = [("final", "final: ensemble teacher, causal", BLUE),
             ("indic-transcribe_causal", "Indic-T, causal", AQUA),
             ("indic-transcribe_prefix", "Indic-T, prefix", YELLOW),
             ("indic-transcribe_centered", "Indic-T, centred", ORANGE),
@@ -78,17 +78,18 @@ def agreement_curves():
         s = [e["step"] for e in ev]
         a = [e["heldout_kd"] for e in ev]
         ax.plot(s, a, color=color, marker="o", ms=4)
-        ax.text(s[-1] + 80, a[-1], label, color=INK, fontsize=8, va="center")
+        nudge = {"indic-transcribe_centered": 0.014, "indic-transcribe_prefix": 0.004, "indic-transcribe_causal": -0.012, "final": -0.012}.get(name, 0)
+        ax.text(s[-1] + 80, a[-1] + nudge, label, color=INK, fontsize=8, va="center")
     ax.set_xlim(0, 6400)
     ax.set_xlabel("optimizer step")
     ax.set_ylabel("held-out KD loss (own targets)")
-    ax.set_title("Held-out distillation loss falls for every target type", loc="left", color=INK, fontsize=11)
+    ax.set_title("Held-out KD loss: future-informed targets plateau higher", loc="left", color=INK, fontsize=11)
     fig.tight_layout()
     fig.savefig(OUT / "heldout_kd.png", dpi=150)
 
 
 def commit_tradeoff():
-    rows = json.loads((ROOT / "results/commit_sweep.json").read_text())["rows"]
+    rows = json.loads((ROOT / "results/final/commit_sweep_final.json").read_text())["rows"]
     rows = [r for r in rows if r["dwell_frames"] == 3]
     fig, ax = plt.subplots(figsize=(6, 3.4))
     xs = [r["first_correct_commit_s_median"] for r in rows]
