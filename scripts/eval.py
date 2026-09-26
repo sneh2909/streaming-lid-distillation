@@ -512,6 +512,18 @@ def main() -> None:
         "target_availability_contract_valid": target_cache.audit()[
             "availability_contract_valid"
         ],
+        "dense_target_checked_frames": target_cache.audit()[
+            "dense_target_checked_frames"
+        ],
+        "dense_target_expansion_valid": target_cache.audit()[
+            "dense_target_expansion_valid"
+        ],
+        "dense_target_validation_rtol": target_cache.audit()[
+            "dense_target_validation_rtol"
+        ],
+        "dense_target_validation_atol": target_cache.audit()[
+            "dense_target_validation_atol"
+        ],
         "switch_detected_seconds": detected_seconds,
         "true_switch_seconds": true_switch_seconds,
         "switch_lag_ms": switch_lag_ms,
@@ -573,6 +585,18 @@ def main() -> None:
         ],
         "target_availability_contract_valid": target_cache.audit()[
             "availability_contract_valid"
+        ],
+        "dense_target_checked_frames": target_cache.audit()[
+            "dense_target_checked_frames"
+        ],
+        "dense_target_expansion_valid": target_cache.audit()[
+            "dense_target_expansion_valid"
+        ],
+        "dense_target_validation_rtol": target_cache.audit()[
+            "dense_target_validation_rtol"
+        ],
+        "dense_target_validation_atol": target_cache.audit()[
+            "dense_target_validation_atol"
         ],
         "target_configuration_sha256": target_cache.identity[
             "target_configuration_sha256"

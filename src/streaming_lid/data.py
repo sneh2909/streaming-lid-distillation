@@ -6,6 +6,7 @@ import copy
 import hashlib
 import importlib.metadata
 import json
+import math
 import platform
 from collections.abc import Iterable
 from pathlib import Path
@@ -39,7 +40,9 @@ from .config import (
 )
 
 
-TARGET_CACHE_SCHEMA_VERSION = 3
+TARGET_CACHE_SCHEMA_VERSION = 4
+DENSE_TARGET_VALIDATION_RTOL = 1e-6
+DENSE_TARGET_VALIDATION_ATOL = 2e-7
 TARGET_GENERATOR_SOURCE_FILES = (
     "scripts/teacher_targets.py",
     "src/streaming_lid/audio.py",
@@ -50,6 +53,7 @@ TARGET_PROBABILITY_KEYS = (
     "teacher_probs",
     "teacher_soft_targets",
     "anchor_probs",
+    "anchor_soft_targets",
 )
 TARGET_AVAILABILITY_KEYS = (
     "semantic_frames",
@@ -169,6 +173,15 @@ def target_cache_configuration() -> dict[str, Any]:
                 "(label_delay_frames+model_lookahead_frames)*hop_length"
             ),
             "require_teacher_not_after_student": True,
+        },
+        "dense_target_contract": {
+            "raw_anchor_key": "anchor_probs",
+            "soft_anchor_key": "anchor_soft_targets",
+            "raw_dense_key": "teacher_probs",
+            "soft_dense_key": "teacher_soft_targets",
+            "soft_anchor_formula": "normalize(anchor_probs ** (1 / temperature))",
+            "validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
+            "validation_atol": DENSE_TARGET_VALIDATION_ATOL,
         },
         "target_generator": target_generator_identity(),
     }
@@ -384,6 +397,149 @@ def _validate_probability_array(
         raise ValueError(f"target cache {path} {name} rows are not normalized")
 
 
+def _temperature_soften_probabilities(
+    probabilities: np.ndarray, temperature: float
+) -> np.ndarray:
+    """Recover temperature-softened probabilities from a T=1 distribution."""
+    if not math.isfinite(temperature) or temperature <= 0:
+        raise ValueError("temperature must be finite and positive")
+    values = np.asarray(probabilities, dtype=np.float64)
+    softened = np.power(values, 1.0 / temperature)
+    denominator = softened.sum(axis=-1, keepdims=True)
+    if np.any(denominator <= 0) or not np.isfinite(denominator).all():
+        raise ValueError("cannot temperature-soften an invalid probability row")
+    return np.asarray(softened / denominator, dtype=np.float32)
+
+
+def _assert_probability_reconstruction(
+    actual: np.ndarray,
+    expected: np.ndarray,
+    *,
+    name: str,
+    contract: str,
+    path: Path,
+) -> None:
+    """Reject probability tensors that disagree with their declared lineage."""
+    actual = np.asarray(actual)
+    expected = np.asarray(expected)
+    if actual.shape != expected.shape:
+        raise ValueError(
+            f"target cache {path} {name} shape {actual.shape} differs from "
+            f"the {contract} reconstruction {expected.shape}"
+        )
+    close = np.isclose(
+        actual,
+        expected,
+        rtol=DENSE_TARGET_VALIDATION_RTOL,
+        atol=DENSE_TARGET_VALIDATION_ATOL,
+    )
+    if bool(close.all()):
+        return
+    frame, column = (int(value) for value in np.argwhere(~close)[0])
+    maximum_error = float(
+        np.max(np.abs(actual.astype(np.float64) - expected.astype(np.float64)))
+    )
+    raise ValueError(
+        f"target cache {path} {name} differs from its declared {contract} "
+        f"at frame {frame}, class {column}: found {actual[frame, column]!r}, "
+        f"expected {expected[frame, column]!r}; max_abs_error={maximum_error:.9g}, "
+        f"rtol={DENSE_TARGET_VALIDATION_RTOL}, "
+        f"atol={DENSE_TARGET_VALIDATION_ATOL}"
+    )
+
+
+def _validate_dense_target_expansion(
+    target_file: np.lib.npyio.NpzFile,
+    *,
+    path: Path,
+    num_frames: int,
+    target_kind: str,
+) -> dict[str, int | bool]:
+    """Bind the dense training tensors to raw/soft anchors and target policy."""
+    for key in TARGET_PROBABILITY_KEYS:
+        if key not in target_file:
+            raise ValueError(f"target cache {path} is missing array {key!r}")
+        _validate_probability_array(
+            np.asarray(target_file[key]),
+            name=key,
+            path=path,
+            expected_classes=len(LANGUAGE_CODES),
+        )
+    if "anchor_frames" not in target_file:
+        raise ValueError(f"target cache {path} is missing array 'anchor_frames'")
+
+    anchor_frames = np.asarray(target_file["anchor_frames"])
+    anchor_probs = np.asarray(target_file["anchor_probs"])
+    anchor_soft_targets = np.asarray(target_file["anchor_soft_targets"])
+    if anchor_frames.ndim != 1 or len(anchor_frames) != len(anchor_probs):
+        raise ValueError(f"target cache anchor arrays mismatch for {path}")
+    if anchor_soft_targets.shape != anchor_probs.shape:
+        raise ValueError(f"target cache soft/raw anchor shapes mismatch for {path}")
+
+    expected_soft_anchors = _temperature_soften_probabilities(
+        anchor_probs, TEACHER_TEMPERATURE
+    )
+    _assert_probability_reconstruction(
+        anchor_soft_targets,
+        expected_soft_anchors,
+        name="anchor_soft_targets",
+        contract=f"T={TEACHER_TEMPERATURE:g} anchor-temperature",
+        path=path,
+    )
+
+    if target_kind == "local_windows":
+        expected_raw = expand_local_posteriors(
+            anchor_frames,
+            anchor_probs,
+            num_frames,
+            expansion=TEACHER_TARGET_EXPANSION,
+        )
+        expected_soft = expand_local_posteriors(
+            anchor_frames,
+            anchor_soft_targets,
+            num_frames,
+            expansion=TEACHER_TARGET_EXPANSION,
+        )
+        expansion_contract = TEACHER_TARGET_EXPANSION
+    elif target_kind == "converged_utterance":
+        if len(anchor_frames) != 1:
+            raise ValueError(
+                f"target cache {path} converged target must contain one anchor"
+            )
+        if not np.issubdtype(anchor_frames.dtype, np.integer):
+            raise ValueError(f"target cache {path} anchor_frames must be integers")
+        anchor_frame = int(anchor_frames[0])
+        if not 0 <= anchor_frame < num_frames:
+            raise ValueError(
+                f"target cache {path} converged anchor {anchor_frame} is outside "
+                f"the {num_frames}-frame clip"
+            )
+        expected_raw = np.repeat(anchor_probs, num_frames, axis=0)
+        expected_soft = np.repeat(anchor_soft_targets, num_frames, axis=0)
+        expansion_contract = "constant_utterance_repeat"
+    else:
+        raise ValueError(f"unsupported target kind {target_kind!r}")
+
+    _assert_probability_reconstruction(
+        np.asarray(target_file["teacher_probs"]),
+        expected_raw,
+        name="teacher_probs",
+        contract=expansion_contract,
+        path=path,
+    )
+    _assert_probability_reconstruction(
+        np.asarray(target_file["teacher_soft_targets"]),
+        expected_soft,
+        name="teacher_soft_targets",
+        contract=expansion_contract,
+        path=path,
+    )
+    return {
+        "dense_target_checked_frames": num_frames,
+        "dense_target_expansion_valid": True,
+    }
+
+
 def load_teacher_target_array(
     target_path: str | Path,
     array_name: str,
@@ -544,6 +700,26 @@ class TeacherTargetCache:
                 )
         self.availability_audit = availability_expectations
 
+        dense_target_expectations = {
+            "dense_target_checked_frames": sum(
+                int(entry.get("dense_target_checked_frames", -1))
+                for entry in self.entries_by_id.values()
+            ),
+            "dense_target_expansion_valid": all(
+                entry.get("dense_target_expansion_valid") is True
+                for entry in self.entries_by_id.values()
+            ),
+            "dense_target_validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
+            "dense_target_validation_atol": DENSE_TARGET_VALIDATION_ATOL,
+        }
+        for key, expected in dense_target_expectations.items():
+            if self.metadata.get(key) != expected:
+                raise ValueError(
+                    f"target cache dense-target metadata field {key!r} is "
+                    f"{self.metadata.get(key)!r}, expected {expected!r}"
+                )
+        self.dense_target_audit = dense_target_expectations
+
         self.identity = {
             "schema_version": TARGET_CACHE_SCHEMA_VERSION,
             "target_configuration_sha256": expected_configuration_hash,
@@ -636,6 +812,12 @@ class TeacherTargetCache:
             anchor_probs = np.asarray(target_file["anchor_probs"])
             if anchor_frames.ndim != 1 or len(anchor_frames) != len(anchor_probs):
                 raise ValueError(f"target cache anchor arrays mismatch for {clip_id}")
+            dense_target_audit = _validate_dense_target_expansion(
+                target_file,
+                path=target_path,
+                num_frames=cached_frames,
+                target_kind=expected_kind,
+            )
             if expected_kind == "local_windows":
                 availability_audit = _validate_local_target_availability(
                     target_file,
@@ -648,10 +830,10 @@ class TeacherTargetCache:
                     "availability_contract_valid": None,
                     "minimum_availability_margin_samples": None,
                 }
-            for key, expected in availability_audit.items():
+            for key, expected in {**availability_audit, **dense_target_audit}.items():
                 if entry.get(key) != expected:
                     raise ValueError(
-                        f"target cache availability index field {key!r} "
+                        f"target cache validation index field {key!r} "
                         f"mismatch for {clip_id}"
                     )
 
@@ -680,6 +862,7 @@ class TeacherTargetCache:
         return {
             **self.identity,
             **self.availability_audit,
+            **self.dense_target_audit,
             "provenance_validated": True,
             "validated_clips": len(self._validated_ids),
             "indexed_clips": len(self.entries_by_id),

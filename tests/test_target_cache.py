@@ -11,6 +11,8 @@ from streaming_lid.config import (
     TEACHER_REVISION,
 )
 from streaming_lid.data import (
+    DENSE_TARGET_VALIDATION_ATOL,
+    DENSE_TARGET_VALIDATION_RTOL,
     TARGET_CACHE_SCHEMA_VERSION,
     TeacherTargetCache,
     canonical_json_sha256,
@@ -32,6 +34,11 @@ def _probabilities(frames: int) -> np.ndarray:
     return value
 
 
+def _soften(probabilities: np.ndarray, temperature: float = 2.0) -> np.ndarray:
+    values = np.power(probabilities.astype(np.float64), 1.0 / temperature)
+    return np.asarray(values / values.sum(axis=-1, keepdims=True), dtype=np.float32)
+
+
 def _write_target_file(
     path: Path,
     item: dict,
@@ -40,13 +47,17 @@ def _write_target_file(
     language_codes: tuple[str, ...] = LANGUAGE_CODES,
     teacher_revision: str = TEACHER_REVISION,
 ) -> None:
-    probabilities = _probabilities(3)
+    anchor_probs = _probabilities(1)
+    anchor_soft_targets = _soften(anchor_probs)
+    probabilities = np.repeat(anchor_probs, 3, axis=0)
+    soft_targets = np.repeat(anchor_soft_targets, 3, axis=0)
     np.savez_compressed(
         path,
         teacher_probs=probabilities,
-        teacher_soft_targets=probabilities,
+        teacher_soft_targets=soft_targets,
         anchor_frames=np.asarray([1], dtype=np.int64),
-        anchor_probs=probabilities[:1],
+        anchor_probs=anchor_probs,
+        anchor_soft_targets=anchor_soft_targets,
         in_set_mass=np.asarray([0.75], dtype=np.float32),
         language_codes=np.asarray(language_codes),
         cache_schema_version=np.asarray(TARGET_CACHE_SCHEMA_VERSION),
@@ -95,6 +106,10 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
         "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
         "availability_checked_frames": 0,
         "availability_contract_valid": True,
+        "dense_target_checked_frames": 3,
+        "dense_target_expansion_valid": True,
+        "dense_target_validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
+        "dense_target_validation_atol": DENSE_TARGET_VALIDATION_ATOL,
         "target_files_sha256": canonical_json_sha256(
             {item["id"]: file_sha256(target_path)}
         ),
@@ -107,6 +122,8 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
                 "availability_checked_frames": 0,
                 "availability_contract_valid": None,
                 "minimum_availability_margin_samples": None,
+                "dense_target_checked_frames": 3,
+                "dense_target_expansion_valid": True,
                 "audio_sha256": audio_hash,
                 "manifest_record_sha256": manifest_record_sha256(item),
                 "target_file_sha256": file_sha256(target_path),
@@ -120,7 +137,10 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
 
 
 def _write_valid_local_cache(
-    tmp_path: Path, *, teacher_latest_offset: int = 0
+    tmp_path: Path,
+    *,
+    teacher_latest_offset: int = 0,
+    dense_expansion: str = "previous_anchor_hold",
 ) -> tuple[Path, Path, dict]:
     item = {
         "id": "switch",
@@ -142,7 +162,14 @@ def _write_valid_local_cache(
     target_path = targets_dir / "switch.npz"
     anchors = np.asarray([0, 2], dtype=np.int64)
     anchor_probs = _probabilities(2)
-    probabilities = expand_local_posteriors(anchors, anchor_probs, 3)
+    anchor_probs[1] = np.roll(anchor_probs[1], 1)
+    anchor_soft_targets = _soften(anchor_probs)
+    probabilities = expand_local_posteriors(
+        anchors, anchor_probs, 3, expansion=dense_expansion
+    )
+    soft_targets = expand_local_posteriors(
+        anchors, anchor_soft_targets, 3, expansion=dense_expansion
+    )
     ledger = local_target_availability_ledger(anchors, 3)
     ledger["teacher_latest_samples"] = ledger["teacher_latest_samples"].copy()
     ledger["teacher_latest_samples"][1] += teacher_latest_offset
@@ -150,9 +177,10 @@ def _write_valid_local_cache(
     np.savez_compressed(
         target_path,
         teacher_probs=probabilities,
-        teacher_soft_targets=probabilities,
+        teacher_soft_targets=soft_targets,
         anchor_frames=anchors,
         anchor_probs=anchor_probs,
+        anchor_soft_targets=anchor_soft_targets,
         in_set_mass=np.asarray([0.75, 0.75], dtype=np.float32),
         language_codes=np.asarray(LANGUAGE_CODES),
         cache_schema_version=np.asarray(TARGET_CACHE_SCHEMA_VERSION),
@@ -179,6 +207,8 @@ def _write_valid_local_cache(
         "availability_checked_frames": 3,
         "availability_contract_valid": True,
         "minimum_availability_margin_samples": 0,
+        "dense_target_checked_frames": 3,
+        "dense_target_expansion_valid": True,
         "audio_sha256": audio_hash,
         "manifest_record_sha256": manifest_record_sha256(item),
         "target_file_sha256": file_sha256(target_path),
@@ -194,6 +224,10 @@ def _write_valid_local_cache(
         "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
         "availability_checked_frames": 3,
         "availability_contract_valid": True,
+        "dense_target_checked_frames": 3,
+        "dense_target_expansion_valid": True,
+        "dense_target_validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
+        "dense_target_validation_atol": DENSE_TARGET_VALIDATION_ATOL,
         "target_files_sha256": canonical_json_sha256(
             {item["id"]: entry["target_file_sha256"]}
         ),
@@ -247,6 +281,51 @@ def test_strict_cache_rejects_tampered_local_availability_ledger(
     cache = TeacherTargetCache(manifest_path, targets_dir)
 
     with pytest.raises(ValueError, match="teacher_latest_samples.*differs"):
+        cache.load(item, "teacher_soft_targets", expected_frames=3)
+
+
+def test_strict_cache_rejects_dense_targets_that_disagree_with_hold_ledger(
+    tmp_path: Path,
+) -> None:
+    manifest_path, targets_dir, item = _write_valid_local_cache(
+        tmp_path, dense_expansion="linear_probability"
+    )
+    cache = TeacherTargetCache(manifest_path, targets_dir)
+
+    with pytest.raises(
+        ValueError,
+        match="teacher_probs differs from its declared previous_anchor_hold",
+    ):
+        cache.load(item, "teacher_soft_targets", expected_frames=3)
+
+
+def test_strict_cache_rejects_soft_anchors_not_derived_at_temperature(
+    tmp_path: Path,
+) -> None:
+    manifest_path, targets_dir, item = _write_valid_local_cache(tmp_path)
+    target_path = targets_dir / "switch.npz"
+    with np.load(target_path, allow_pickle=False) as target_file:
+        payload = {key: np.asarray(target_file[key]) for key in target_file.files}
+    bad_soft_anchors = np.roll(payload["anchor_soft_targets"], 1, axis=1)
+    payload["anchor_soft_targets"] = bad_soft_anchors
+    payload["teacher_soft_targets"] = expand_local_posteriors(
+        payload["anchor_frames"], bad_soft_anchors, 3
+    )
+    np.savez_compressed(target_path, **payload)
+    metadata_path = targets_dir / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    target_hash = file_sha256(target_path)
+    metadata["clips"][0]["target_file_sha256"] = target_hash
+    metadata["target_files_sha256"] = canonical_json_sha256(
+        {item["id"]: target_hash}
+    )
+    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+    cache = TeacherTargetCache(manifest_path, targets_dir)
+
+    with pytest.raises(
+        ValueError,
+        match="anchor_soft_targets differs from its declared T=2 anchor-temperature",
+    ):
         cache.load(item, "teacher_soft_targets", expected_frames=3)
 
 

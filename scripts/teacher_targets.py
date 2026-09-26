@@ -31,6 +31,8 @@ from streaming_lid.config import (
     WIN_LENGTH,
 )
 from streaming_lid.data import (
+    DENSE_TARGET_VALIDATION_ATOL,
+    DENSE_TARGET_VALIDATION_RTOL,
     TARGET_CACHE_SCHEMA_VERSION,
     TeacherTargetCache,
     canonical_json_sha256,
@@ -254,6 +256,7 @@ def main() -> None:
             "teacher_soft_targets": soft,
             "anchor_frames": anchor_frames,
             "anchor_probs": raw_anchors.astype(np.float32),
+            "anchor_soft_targets": soft_anchors.astype(np.float32),
             "in_set_mass": in_set_mass.astype(np.float32),
             "language_codes": np.asarray(LANGUAGE_CODES),
             "cache_schema_version": np.asarray(TARGET_CACHE_SCHEMA_VERSION),
@@ -306,6 +309,8 @@ def main() -> None:
                     if availability_ledger is not None
                     else None
                 ),
+                "dense_target_checked_frames": num_frames,
+                "dense_target_expansion_valid": True,
                 "minimum_availability_margin_samples": (
                     int(
                         np.min(
@@ -348,6 +353,14 @@ def main() -> None:
             record["availability_contract_valid"] is not False
             for record in summary_records
         ),
+        "dense_target_checked_frames": sum(
+            record["dense_target_checked_frames"] for record in summary_records
+        ),
+        "dense_target_expansion_valid": all(
+            record["dense_target_expansion_valid"] for record in summary_records
+        ),
+        "dense_target_validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
+        "dense_target_validation_atol": DENSE_TARGET_VALIDATION_ATOL,
         "target_configuration": target_configuration,
         "target_configuration_sha256": target_configuration_hash,
         "manifest_records_sha256": manifest_hash,
@@ -387,6 +400,12 @@ def main() -> None:
         "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
         "availability_checked_frames": metadata["availability_checked_frames"],
         "availability_contract_valid": metadata["availability_contract_valid"],
+        "dense_target_checked_frames": metadata["dense_target_checked_frames"],
+        "dense_target_expansion_valid": metadata[
+            "dense_target_expansion_valid"
+        ],
+        "dense_target_validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
+        "dense_target_validation_atol": DENSE_TARGET_VALIDATION_ATOL,
         "speaker_split": speaker_audit,
         "target_cache": cache_audit,
     }
