@@ -33,9 +33,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--teacher", required=True)
     ap.add_argument("--max-per-lang", type=int, default=60)
+    ap.add_argument("--manifest", default="eval", help="eval, or train for the ensemble-weight dev slice")
+    ap.add_argument("--no-switch", action="store_true")
     args = ap.parse_args()
+    tag = args.teacher if args.manifest == "eval" else f"{args.teacher}.{args.manifest}"
 
-    items = read_jsonl(ROOT / "data/manifests/eval.jsonl")
+    items = read_jsonl(ROOT / f"data/manifests/{args.manifest}.jsonl")
     group = lambda it: "en-in" if it.get("source") == "svarah" else it["lang"]
     counts: dict[str, int] = {}
     kept = []
@@ -53,6 +56,7 @@ def main() -> None:
     teacher.probs([clean[0][:SR]])                               # warm-up
     res = {"teacher": args.teacher, "n_clips": len(items), "by_condition": {}}
     n_calls, t_total = 0, 0.0
+    saved = {"y": y, "groups": groups}
     for cond, wavs in (("clean", clean), ("telephony", tel)):
         rows = {}
         argmax_seq = []
@@ -64,6 +68,7 @@ def main() -> None:
             n_calls += len(segs)
             q = restrict(p)
             key = "full" if pre is None else f"{pre:g}s"
+            saved[f"{cond}/{key}"] = p
             per_lang_acc = {g: float((q[groups == g].argmax(1) == y[groups == g]).mean())
                             for g in sorted(set(groups))}
             rows[key] = {
@@ -78,8 +83,11 @@ def main() -> None:
         rows["prefix_flip_gt1"] = float(((np.diff(seq, axis=1) != 0).sum(1) > 1).mean())
         res["by_condition"][cond] = rows
 
+    out = ROOT / "results/teachers"
+    out.mkdir(parents=True, exist_ok=True)
+    np.savez(out / f"{tag}.npz", **saved)
     lags = {}
-    for sw in read_jsonl(ROOT / "data/manifests/switch.jsonl"):
+    for sw in ([] if args.no_switch else read_jsonl(ROOT / "data/manifests/switch.jsonl")):
         x = load_wav(sw["path"])
         frames, q = build_targets(teacher, x, "causal", every=4, window_s=3.0)
         b = sw["segments"][1][0]
@@ -89,9 +97,7 @@ def main() -> None:
                                         "n": len(v)} for k, v in lags.items()}
     res["ms_per_call"] = 1000 * t_total / n_calls
 
-    out = ROOT / "results/teachers"
-    out.mkdir(parents=True, exist_ok=True)
-    (out / f"{args.teacher}.json").write_text(json.dumps(res, indent=2))
+    (out / f"{tag}.json").write_text(json.dumps(res, indent=2))
     c, t = res["by_condition"]["clean"], res["by_condition"]["telephony"]
     print(f"{args.teacher}: acc@1s {c['1s']['acc_restricted']:.3f} acc@3s {c['3s']['acc_restricted']:.3f} "
           f"full {c['full']['acc_restricted']:.3f} | tel full {t['full']['acc_restricted']:.3f} | "

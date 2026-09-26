@@ -117,18 +117,36 @@ class Whisper(Teacher):
 class IndicTranscribe(Teacher):
     """Bodhan/AI4Bharat Indic-Transcribe-core: one decoder step after the encoder."""
     name = "indic-transcribe"
-    batch_size = 1
+    batch_size = 16
 
     def __init__(self):
         path = snapshot_download("bodhan-ai/indic-transcribe-core")
         sys.path.insert(0, path)
         from indic_transcribe import IndicTranscribe as _IT
+        from lid import language_token_map, lid_from_encoder_states
         self.asr = _IT.from_pretrained(path, device=DEVICE)
+        self._lid = lid_from_encoder_states
+        self.lang_map = language_token_map(self.asr.tokenizer)
+        self.labels = sorted(set(self.lang_map.values()))
 
     def native(self, wavs):
-        top = self.asr.identify(wavs[0], topk=10_000)
-        labels, p = zip(*top)
-        return list(labels), np.array([p], dtype=np.float64)
+        """Batched version of IndicTranscribe.identify(): same 1 s centred padding of short
+        clips, one padded encoder pass, one decoder step for the whole batch."""
+        lens = [max(len(w), SR) for w in wavs]
+        batch = torch.zeros(len(wavs), max(lens))
+        for i, w in enumerate(wavs):
+            off = round((SR - len(w)) / 2) if len(w) < SR else 0
+            batch[i, off: off + len(w)] = torch.from_numpy(w)
+        feats, feat_lens = self.asr.fe(batch.to(DEVICE), torch.tensor(lens, device=DEVICE))
+        mask = (torch.arange(feats.size(2), device=DEVICE)[None, :] < feat_lens[:, None]).long()
+        enc = self.asr.model.model.encoder(feats, attention_mask=mask)
+        rows = self._lid(self.asr.model, enc.last_hidden_state, enc.lengths, tokenizer=self.asr.tokenizer,
+                         lang_map=self.lang_map, topk=len(self.lang_map))
+        p = np.zeros((len(wavs), len(self.labels)))
+        for i, row in enumerate(rows):
+            for lab, prob in row:
+                p[i, self.labels.index(lab)] += prob
+        return self.labels, p
 
 
 class XlsrVoxLingua(Teacher):

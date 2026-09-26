@@ -35,5 +35,7 @@ def switch_lag(frames: np.ndarray, labels: np.ndarray, new: int, switch_s: float
 
 def flips_per_min(labels: np.ndarray, n_ref_changes: int, frame_s: float = FRAME_S) -> float:
     """Label changes beyond the reference number of changes, per minute of audio."""
+    if len(labels) == 0:
+        return float("nan")
     extra = max(0, int((np.diff(labels) != 0).sum()) - n_ref_changes)
     return 60.0 * extra / (len(labels) * frame_s)
