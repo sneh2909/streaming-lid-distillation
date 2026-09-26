@@ -19,3 +19,6 @@ data/generated/
 data/targets/
 data/manifests/
 results/teachers/*.npz
+slid.egg-info/
+logs/
+checkpoints/
