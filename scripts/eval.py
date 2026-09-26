@@ -222,6 +222,41 @@ def main() -> None:
     # Evaluation is also the release gate: validate every indexed target/audio,
     # not only the clips that happen to contribute to the headline metrics.
     target_cache.validate_all()
+    training_target_audit = target_cache.training_target_audit
+    training_target_audit_summary = {
+        "schema_version": training_target_audit["schema_version"],
+        "audit_sha256": training_target_audit["audit_sha256"],
+        "contract_valid": training_target_audit["contract_valid"],
+        "checked_train_clips": training_target_audit["checked_train_clips"],
+        "checked_monolingual_train_clips": training_target_audit[
+            "checked_monolingual_train_clips"
+        ],
+        "checked_mixed_train_clips": training_target_audit[
+            "checked_mixed_train_clips"
+        ],
+        "aggregate": training_target_audit["aggregate"],
+        "quality_floor": training_target_audit["quality_floor"],
+        "per_language": {
+            language: {
+                key: values[key]
+                for key in (
+                    "monolingual_clips",
+                    "teacher_selected_top1_correct",
+                    "clip_mean_manifest_probability_t1",
+                    "clip_mean_manifest_probability_t2",
+                    "clip_mean_selected_language_retained_mass",
+                    "loss_weighted_mean_manifest_probability_t1",
+                    "loss_weighted_mean_manifest_probability_t2",
+                    "loss_weighted_mean_selected_language_retained_mass",
+                    "valid_ramp_weight",
+                    "frame_loss_weight_share",
+                    "provider_counts",
+                    "voice_counts",
+                )
+            }
+            for language, values in training_target_audit["per_language"].items()
+        },
+    }
     train_metrics_path = args.results_dir / "train_metrics.json"
     train_metrics = json.loads(train_metrics_path.read_text(encoding="utf-8"))
     run_identity = validate_evaluation_run_contract(
@@ -586,6 +621,7 @@ def main() -> None:
         "heldout_per_clip": per_clip,
         "speaker_split": speaker_audit,
         "target_cache": target_cache.audit(),
+        "training_target_audit": training_target_audit_summary,
         "target_expansion": target_cache.audit()["target_expansion"],
         "target_availability_sample_index_semantics": target_cache.audit()[
             "availability_sample_index_semantics"
@@ -698,6 +734,7 @@ def main() -> None:
         "dense_target_validation_atol": target_cache.audit()[
             "dense_target_validation_atol"
         ],
+        "training_target_audit": training_target_audit_summary,
         "target_configuration_sha256": target_cache.identity[
             "target_configuration_sha256"
         ],

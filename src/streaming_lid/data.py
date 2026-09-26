@@ -20,6 +20,7 @@ from torch.utils.data import Dataset
 
 from .audio import LogMelFrontend, feature_frame_count, load_audio
 from .config import (
+    EARLY_RAMP_FRAMES,
     HOP_LENGTH,
     LABEL_DELAY_FRAMES,
     LANGUAGE_CODES,
@@ -37,11 +38,14 @@ from .config import (
     TEACHER_REVISION,
     TEACHER_TEMPERATURE,
     TEACHER_TARGET_EXPANSION,
+    TARGET_AUDIT_EXPECTED_MONOLINGUAL_CLIPS_PER_LANGUAGE,
+    TARGET_AUDIT_MIN_TEACHER_CORRECT_PER_LANGUAGE,
     WIN_LENGTH,
 )
 
 
-TARGET_CACHE_SCHEMA_VERSION = 5
+TARGET_CACHE_SCHEMA_VERSION = 6
+TRAINING_TARGET_AUDIT_SCHEMA_VERSION = 1
 MANIFEST_SNAPSHOT_SCHEMA_VERSION = 1
 DENSE_TARGET_VALIDATION_RTOL = 1e-6
 DENSE_TARGET_VALIDATION_ATOL = 2e-7
@@ -65,6 +69,12 @@ TARGET_AVAILABILITY_KEYS = (
     "teacher_latest_samples",
     "student_latest_samples",
     "availability_valid",
+)
+TARGET_TEACHER_SUMMARY_KEYS = (
+    "in_set_mass",
+    "full_top1_indices",
+    "full_top1_probabilities",
+    "full_top1_labels",
 )
 
 
@@ -254,6 +264,22 @@ def target_cache_configuration() -> dict[str, Any]:
             "soft_anchor_formula": "normalize(anchor_probs ** (1 / temperature))",
             "validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
             "validation_atol": DENSE_TARGET_VALIDATION_ATOL,
+        },
+        "training_target_audit_contract": {
+            "schema_version": TRAINING_TARGET_AUDIT_SCHEMA_VERSION,
+            "split": "train",
+            "known_monolingual_languages": list(LANGUAGE_CODES),
+            "expected_monolingual_clips_per_language": (
+                TARGET_AUDIT_EXPECTED_MONOLINGUAL_CLIPS_PER_LANGUAGE
+            ),
+            "minimum_teacher_selected_top1_correct_per_language": (
+                TARGET_AUDIT_MIN_TEACHER_CORRECT_PER_LANGUAGE
+            ),
+            "label_delay_frames": LABEL_DELAY_FRAMES,
+            "model_lookahead_frames": MODEL_LOOKAHEAD_FRAMES,
+            "early_ramp_frames": EARLY_RAMP_FRAMES,
+            "aggregate_target_mass_includes_mixed_training_clips": True,
+            "quality_floor_is_diagnostic": True,
         },
         "target_generator": target_generator_identity(),
     }
@@ -469,6 +495,480 @@ def _validate_probability_array(
         raise ValueError(f"target cache {path} {name} rows are not normalized")
 
 
+def _validate_teacher_summary_arrays(
+    target_file: np.lib.npyio.NpzFile,
+    *,
+    path: Path,
+    anchor_probs: np.ndarray,
+) -> dict[str, np.ndarray]:
+    """Validate compact native-space evidence retained for every teacher call."""
+    missing = [key for key in TARGET_TEACHER_SUMMARY_KEYS if key not in target_file]
+    if missing:
+        raise ValueError(
+            f"target cache {path} is missing teacher-summary fields {missing}"
+        )
+    anchors = np.asarray(anchor_probs)
+    n_anchors = len(anchors)
+    in_set_mass = np.asarray(target_file["in_set_mass"])
+    full_indices = np.asarray(target_file["full_top1_indices"])
+    full_probabilities = np.asarray(target_file["full_top1_probabilities"])
+    full_labels = np.asarray(target_file["full_top1_labels"])
+    for name, value in (
+        ("in_set_mass", in_set_mass),
+        ("full_top1_indices", full_indices),
+        ("full_top1_probabilities", full_probabilities),
+        ("full_top1_labels", full_labels),
+    ):
+        if value.ndim != 1 or len(value) != n_anchors:
+            raise ValueError(
+                f"target cache {path} {name} must have shape ({n_anchors},), "
+                f"got {value.shape}"
+            )
+    if not np.issubdtype(in_set_mass.dtype, np.number) or not np.isfinite(
+        in_set_mass
+    ).all():
+        raise ValueError(f"target cache {path} in_set_mass contains invalid values")
+    if np.any(in_set_mass < 0) or np.any(in_set_mass > 1.0 + 1e-5):
+        raise ValueError(f"target cache {path} in_set_mass is outside [0, 1]")
+    if not np.issubdtype(full_indices.dtype, np.integer) or np.any(full_indices < 0):
+        raise ValueError(
+            f"target cache {path} full_top1_indices must be non-negative integers"
+        )
+    if not np.issubdtype(full_probabilities.dtype, np.number) or not np.isfinite(
+        full_probabilities
+    ).all():
+        raise ValueError(
+            f"target cache {path} full_top1_probabilities contains invalid values"
+        )
+    if np.any(full_probabilities < 0) or np.any(full_probabilities > 1.0 + 1e-5):
+        raise ValueError(
+            f"target cache {path} full_top1_probabilities is outside [0, 1]"
+        )
+    labels = np.asarray([str(value) for value in full_labels.tolist()])
+    if any(not label for label in labels):
+        raise ValueError(f"target cache {path} full_top1_labels contains an empty label")
+
+    selected_absolute = anchors.astype(np.float64) * in_set_mass[:, None]
+    selected_maximum = selected_absolute.max(axis=-1)
+    if np.any(full_probabilities.astype(np.float64) + 1e-6 < selected_maximum):
+        row = int(
+            np.flatnonzero(
+                full_probabilities.astype(np.float64) + 1e-6 < selected_maximum
+            )[0]
+        )
+        raise ValueError(
+            f"target cache {path} full-space top-1 probability at anchor {row} "
+            "is smaller than a selected-language absolute probability"
+        )
+
+    selected_index_to_column = {
+        index: column for column, index in enumerate(TEACHER_LANGUAGE_INDICES)
+    }
+    for row, full_index_value in enumerate(full_indices.tolist()):
+        full_index = int(full_index_value)
+        if full_index not in selected_index_to_column:
+            continue
+        column = selected_index_to_column[full_index]
+        expected_probability = selected_absolute[row, column]
+        if int(np.argmax(anchors[row])) != column or not np.isclose(
+            float(full_probabilities[row]),
+            expected_probability,
+            rtol=1e-5,
+            atol=1e-6,
+        ):
+            raise ValueError(
+                f"target cache {path} selected/full teacher top-1 evidence "
+                f"disagrees at anchor {row}"
+            )
+        if not labels[row].startswith(f"{LANGUAGE_CODES[column]}:"):
+            raise ValueError(
+                f"target cache {path} full-space label {labels[row]!r} does not "
+                f"match selected teacher index {full_index}"
+            )
+    return {
+        "in_set_mass": in_set_mass.astype(np.float64, copy=True),
+        "full_top1_indices": full_indices.astype(np.int64, copy=True),
+        "full_top1_probabilities": full_probabilities.astype(
+            np.float64, copy=True
+        ),
+        "full_top1_labels": labels.copy(),
+    }
+
+
+def _ordered_probability_record(values: np.ndarray) -> dict[str, float]:
+    vector = np.asarray(values, dtype=np.float64)
+    if vector.shape != (len(LANGUAGE_CODES),) or not np.isfinite(vector).all():
+        raise ValueError("target-audit probability vector has invalid shape or values")
+    return {
+        language: float(vector[index])
+        for index, language in enumerate(LANGUAGE_CODES)
+    }
+
+
+def build_training_target_audit(
+    records: list[dict], targets_dir: str | Path
+) -> dict[str, Any]:
+    """Recompute the labelled-training supervision ledger from target files.
+
+    The quality floor is diagnostic: a failed floor remains publishable, but a
+    missing, forged, or arithmetically inconsistent ledger is not.  This keeps
+    the known teacher failure visible while allowing the exact baseline to be
+    reproduced for controlled follow-up experiments.
+    """
+    target_root = Path(targets_dir)
+    train_records = [item for item in records if item.get("split") == "train"]
+    total_weight = 0.0
+    aggregate_t1_numerator = np.zeros(len(LANGUAGE_CODES), dtype=np.float64)
+    aggregate_t2_numerator = np.zeros(len(LANGUAGE_CODES), dtype=np.float64)
+    source_weights = {language: 0.0 for language in LANGUAGE_CODES}
+    source_weights["mixed"] = 0.0
+    staged_monolingual: list[dict[str, Any]] = []
+    staged_mixed: list[dict[str, Any]] = []
+
+    for item in train_records:
+        clip_id = item.get("id")
+        if not isinstance(clip_id, str) or not clip_id:
+            raise ValueError("training target audit found an invalid clip ID")
+        path = target_root / f"{clip_id}.npz"
+        if not path.is_file():
+            raise FileNotFoundError(f"missing teacher target for audit: {path}")
+        with np.load(path, allow_pickle=False) as target_file:
+            actual_languages = tuple(
+                str(code) for code in target_file["language_codes"].tolist()
+            )
+            if actual_languages != LANGUAGE_CODES:
+                raise ValueError(
+                    f"target audit language order mismatch in {path}: "
+                    f"{actual_languages}"
+                )
+            if str(_npz_scalar(target_file, "clip_id", path)) != clip_id:
+                raise ValueError(f"target audit clip binding mismatch in {path}")
+            if str(
+                _npz_scalar(target_file, "manifest_record_sha256", path)
+            ) != manifest_record_sha256(item):
+                raise ValueError(f"target audit manifest binding mismatch in {path}")
+            target_kind = str(_npz_scalar(target_file, "target_kind", path))
+            if target_kind != target_kind_for_item(item):
+                raise ValueError(f"target audit target kind mismatch in {path}")
+            num_frames = int(_npz_scalar(target_file, "num_frames", path))
+            raw = np.asarray(target_file["teacher_probs"])
+            soft = np.asarray(target_file["teacher_soft_targets"])
+            anchor_probs = np.asarray(target_file["anchor_probs"])
+            anchor_soft_targets = np.asarray(target_file["anchor_soft_targets"])
+            for name, values in (
+                ("teacher_probs", raw),
+                ("teacher_soft_targets", soft),
+                ("anchor_probs", anchor_probs),
+                ("anchor_soft_targets", anchor_soft_targets),
+            ):
+                _validate_probability_array(
+                    values,
+                    name=name,
+                    path=path,
+                    expected_classes=len(LANGUAGE_CODES),
+                )
+            if raw.shape != soft.shape or raw.shape[0] != num_frames:
+                raise ValueError(f"target audit dense target shape mismatch in {path}")
+            teacher_summary = _validate_teacher_summary_arrays(
+                target_file, path=path, anchor_probs=anchor_probs
+            )
+
+        valid_frames = num_frames - LABEL_DELAY_FRAMES - MODEL_LOOKAHEAD_FRAMES
+        if valid_frames <= 0:
+            raise ValueError(
+                f"training clip {clip_id!r} has no causally valid target frame"
+            )
+        frame_indices = np.arange(valid_frames, dtype=np.float64)
+        ramp = np.minimum((frame_indices + 1.0) / EARLY_RAMP_FRAMES, 1.0)
+        ramp_weight = float(ramp.sum())
+        t1_numerator = np.sum(
+            raw[:valid_frames].astype(np.float64) * ramp[:, None], axis=0
+        )
+        t2_numerator = np.sum(
+            soft[:valid_frames].astype(np.float64) * ramp[:, None], axis=0
+        )
+        if not np.isclose(float(t1_numerator.sum()), ramp_weight, atol=1e-7):
+            raise ValueError(f"T=1 target mass does not close for {clip_id}")
+        if not np.isclose(float(t2_numerator.sum()), ramp_weight, atol=1e-7):
+            raise ValueError(f"T=2 target mass does not close for {clip_id}")
+        total_weight += ramp_weight
+        aggregate_t1_numerator += t1_numerator
+        aggregate_t2_numerator += t2_numerator
+
+        language = item.get("language")
+        source_key = language if language in LANGUAGE_CODES else "mixed"
+        source_weights[source_key] += ramp_weight
+        common = {
+            "clip_id": clip_id,
+            "valid_target_frames": valid_frames,
+            "valid_ramp_weight": ramp_weight,
+            "_t1_numerator": t1_numerator,
+            "_t2_numerator": t2_numerator,
+        }
+        if language in LANGUAGE_CODES:
+            if target_kind != "converged_utterance" or len(anchor_probs) != 1:
+                raise ValueError(
+                    f"known monolingual training clip {clip_id} must have one "
+                    "converged teacher anchor"
+                )
+            recipe = item.get("audio_recipe")
+            recipe = recipe if isinstance(recipe, dict) else {}
+            provider = recipe.get("provider", item.get("source"))
+            voice = recipe.get("voice", item.get("speaker_id"))
+            if not isinstance(provider, str) or not provider:
+                raise ValueError(f"training clip {clip_id} has no provider identity")
+            if not isinstance(voice, str) or not voice:
+                raise ValueError(f"training clip {clip_id} has no voice identity")
+            label_index = LANGUAGE_CODES.index(language)
+            selected_top1_index = int(np.argmax(anchor_probs[0]))
+            full_index = int(teacher_summary["full_top1_indices"][0])
+            supported_by_teacher_index = {
+                value: LANGUAGE_CODES[index]
+                for index, value in enumerate(TEACHER_LANGUAGE_INDICES)
+            }
+            staged_monolingual.append(
+                {
+                    **common,
+                    "manifest_language": language,
+                    "provider": provider,
+                    "voice": voice,
+                    "teacher_selected_top1_language": LANGUAGE_CODES[
+                        selected_top1_index
+                    ],
+                    "teacher_selected_top1_correct": (
+                        selected_top1_index == label_index
+                    ),
+                    "teacher_full_top1_index": full_index,
+                    "teacher_full_top1_label": str(
+                        teacher_summary["full_top1_labels"][0]
+                    ),
+                    "teacher_full_top1_supported_language": (
+                        supported_by_teacher_index.get(full_index)
+                    ),
+                    "teacher_full_top1_probability": float(
+                        teacher_summary["full_top1_probabilities"][0]
+                    ),
+                    "manifest_probability_t1": float(anchor_probs[0, label_index]),
+                    "manifest_probability_t2": float(
+                        anchor_soft_targets[0, label_index]
+                    ),
+                    "selected_language_retained_mass": float(
+                        teacher_summary["in_set_mass"][0]
+                    ),
+                }
+            )
+        else:
+            staged_mixed.append(common)
+
+    if total_weight > 0:
+        aggregate_t1 = aggregate_t1_numerator / total_weight
+        aggregate_t2 = aggregate_t2_numerator / total_weight
+    else:
+        aggregate_t1 = np.zeros(len(LANGUAGE_CODES), dtype=np.float64)
+        aggregate_t2 = np.zeros(len(LANGUAGE_CODES), dtype=np.float64)
+
+    per_clip: list[dict[str, Any]] = []
+    for staged in sorted(staged_monolingual, key=lambda value: value["clip_id"]):
+        t1_numerator = staged.pop("_t1_numerator")
+        t2_numerator = staged.pop("_t2_numerator")
+        per_clip.append(
+            {
+                **staged,
+                "frame_loss_weight_share": (
+                    staged["valid_ramp_weight"] / total_weight
+                    if total_weight
+                    else 0.0
+                ),
+                "aggregate_target_mass_contribution_t1": _ordered_probability_record(
+                    t1_numerator / total_weight
+                    if total_weight
+                    else np.zeros(len(LANGUAGE_CODES))
+                ),
+                "aggregate_target_mass_contribution_t2": _ordered_probability_record(
+                    t2_numerator / total_weight
+                    if total_weight
+                    else np.zeros(len(LANGUAGE_CODES))
+                ),
+            }
+        )
+
+    per_language: dict[str, dict[str, Any]] = {}
+    for language in LANGUAGE_CODES:
+        clips = [row for row in per_clip if row["manifest_language"] == language]
+        selected_counts = {code: 0 for code in LANGUAGE_CODES}
+        full_counts: dict[str, int] = {}
+        provider_counts: dict[str, int] = {}
+        voice_counts: dict[str, int] = {}
+        group_t1 = np.zeros(len(LANGUAGE_CODES), dtype=np.float64)
+        group_t2 = np.zeros(len(LANGUAGE_CODES), dtype=np.float64)
+        for row in clips:
+            selected = row["teacher_selected_top1_language"]
+            selected_counts[selected] += 1
+            full_label = row["teacher_full_top1_label"]
+            full_counts[full_label] = full_counts.get(full_label, 0) + 1
+            provider = row["provider"]
+            provider_counts[provider] = provider_counts.get(provider, 0) + 1
+            voice = row["voice"]
+            voice_counts[voice] = voice_counts.get(voice, 0) + 1
+            group_t1 += np.asarray(
+                list(row["aggregate_target_mass_contribution_t1"].values())
+            )
+            group_t2 += np.asarray(
+                list(row["aggregate_target_mass_contribution_t2"].values())
+            )
+        correct = sum(bool(row["teacher_selected_top1_correct"]) for row in clips)
+        weight = sum(float(row["valid_ramp_weight"]) for row in clips)
+        weighted_probability_t1 = (
+            sum(
+                float(row["valid_ramp_weight"])
+                * float(row["manifest_probability_t1"])
+                for row in clips
+            )
+            / weight
+            if weight
+            else 0.0
+        )
+        weighted_probability_t2 = (
+            sum(
+                float(row["valid_ramp_weight"])
+                * float(row["manifest_probability_t2"])
+                for row in clips
+            )
+            / weight
+            if weight
+            else 0.0
+        )
+        weighted_retained_mass = (
+            sum(
+                float(row["valid_ramp_weight"])
+                * float(row["selected_language_retained_mass"])
+                for row in clips
+            )
+            / weight
+            if weight
+            else 0.0
+        )
+        per_language[language] = {
+            "monolingual_clips": len(clips),
+            "teacher_selected_top1_correct": correct,
+            "teacher_selected_top1_counts": selected_counts,
+            "teacher_full_top1_counts": dict(sorted(full_counts.items())),
+            "clip_mean_manifest_probability_t1": (
+                float(np.mean([row["manifest_probability_t1"] for row in clips]))
+                if clips
+                else 0.0
+            ),
+            "clip_mean_manifest_probability_t2": (
+                float(np.mean([row["manifest_probability_t2"] for row in clips]))
+                if clips
+                else 0.0
+            ),
+            "clip_mean_selected_language_retained_mass": (
+                float(
+                    np.mean(
+                        [row["selected_language_retained_mass"] for row in clips]
+                    )
+                )
+                if clips
+                else 0.0
+            ),
+            "loss_weighted_mean_manifest_probability_t1": (
+                weighted_probability_t1
+            ),
+            "loss_weighted_mean_manifest_probability_t2": (
+                weighted_probability_t2
+            ),
+            "loss_weighted_mean_selected_language_retained_mass": (
+                weighted_retained_mass
+            ),
+            "valid_ramp_weight": weight,
+            "frame_loss_weight_share": weight / total_weight if total_weight else 0.0,
+            "aggregate_target_mass_contribution_t1": _ordered_probability_record(
+                group_t1
+            ),
+            "aggregate_target_mass_contribution_t2": _ordered_probability_record(
+                group_t2
+            ),
+            "provider_counts": dict(sorted(provider_counts.items())),
+            "voice_counts": dict(sorted(voice_counts.items())),
+        }
+
+    mixed_clips = []
+    for staged in sorted(staged_mixed, key=lambda value: value["clip_id"]):
+        t1_numerator = staged.pop("_t1_numerator")
+        t2_numerator = staged.pop("_t2_numerator")
+        mixed_clips.append(
+            {
+                **staged,
+                "frame_loss_weight_share": (
+                    staged["valid_ramp_weight"] / total_weight
+                    if total_weight
+                    else 0.0
+                ),
+                "aggregate_target_mass_contribution_t1": _ordered_probability_record(
+                    t1_numerator / total_weight
+                    if total_weight
+                    else np.zeros(len(LANGUAGE_CODES))
+                ),
+                "aggregate_target_mass_contribution_t2": _ordered_probability_record(
+                    t2_numerator / total_weight
+                    if total_weight
+                    else np.zeros(len(LANGUAGE_CODES))
+                ),
+            }
+        )
+
+    expected_count = TARGET_AUDIT_EXPECTED_MONOLINGUAL_CLIPS_PER_LANGUAGE
+    minimum_correct = TARGET_AUDIT_MIN_TEACHER_CORRECT_PER_LANGUAGE
+    count_failures = [
+        language
+        for language in LANGUAGE_CODES
+        if per_language[language]["monolingual_clips"] != expected_count
+    ]
+    teacher_failures = [
+        language
+        for language in LANGUAGE_CODES
+        if per_language[language]["teacher_selected_top1_correct"]
+        < minimum_correct
+    ]
+    unique_t2_mass = {round(float(value), 15) for value in aggregate_t2.tolist()}
+    base = {
+        "schema_version": TRAINING_TARGET_AUDIT_SCHEMA_VERSION,
+        "contract": target_cache_configuration()["training_target_audit_contract"],
+        "contract_valid": True,
+        "checked_train_clips": len(train_records),
+        "checked_monolingual_train_clips": len(staged_monolingual),
+        "checked_mixed_train_clips": len(staged_mixed),
+        "total_valid_ramp_weight": total_weight,
+        "aggregate": {
+            "source_frame_loss_weight_share": {
+                source: (weight / total_weight if total_weight else 0.0)
+                for source, weight in source_weights.items()
+            },
+            "target_mass_t1": _ordered_probability_record(aggregate_t1),
+            "target_mass_t2": _ordered_probability_record(aggregate_t2),
+            "equal_monolingual_clip_counts": not count_failures,
+            "equal_clip_counts_do_not_imply_equal_t2_target_mass": (
+                not count_failures and len(unique_t2_mass) > 1
+            ),
+        },
+        "quality_floor": {
+            "expected_monolingual_clips_per_language": expected_count,
+            "minimum_teacher_selected_top1_correct_per_language": minimum_correct,
+            "exact_clip_count_passed": not count_failures,
+            "teacher_correctness_floor_passed": not teacher_failures,
+            "failed_clip_count_languages": count_failures,
+            "failed_teacher_correctness_languages": teacher_failures,
+            "passed": not count_failures and not teacher_failures,
+            "diagnostic_only": True,
+        },
+        "per_language": per_language,
+        "monolingual_clips": per_clip,
+        "mixed_training_clips": mixed_clips,
+    }
+    return {**base, "audit_sha256": canonical_json_sha256(base)}
+
+
 def _temperature_soften_probabilities(
     probabilities: np.ndarray, temperature: float
 ) -> np.ndarray:
@@ -547,6 +1047,11 @@ def _validate_dense_target_expansion(
         raise ValueError(f"target cache anchor arrays mismatch for {path}")
     if anchor_soft_targets.shape != anchor_probs.shape:
         raise ValueError(f"target cache soft/raw anchor shapes mismatch for {path}")
+    _validate_teacher_summary_arrays(
+        target_file,
+        path=path,
+        anchor_probs=anchor_probs,
+    )
 
     expected_soft_anchors = _temperature_soften_probabilities(
         anchor_probs, TEACHER_TEMPERATURE
@@ -813,6 +1318,36 @@ class TeacherTargetCache:
                 )
         self.dense_target_audit = dense_target_expectations
 
+        training_target_audit = self.metadata.get("training_target_audit")
+        if not isinstance(training_target_audit, dict):
+            raise ValueError("target cache metadata is missing training_target_audit")
+        audit_digest = training_target_audit.get("audit_sha256")
+        audit_payload = {
+            key: value
+            for key, value in training_target_audit.items()
+            if key != "audit_sha256"
+        }
+        if not isinstance(audit_digest, str) or audit_digest != canonical_json_sha256(
+            audit_payload
+        ):
+            raise ValueError("target cache training-target audit digest is invalid")
+        if self.metadata.get("training_target_audit_sha256") != audit_digest:
+            raise ValueError(
+                "target cache training-target audit metadata digest is inconsistent"
+            )
+        expected_audit_contract = expected_configuration[
+            "training_target_audit_contract"
+        ]
+        if (
+            training_target_audit.get("schema_version")
+            != TRAINING_TARGET_AUDIT_SCHEMA_VERSION
+            or training_target_audit.get("contract") != expected_audit_contract
+            or training_target_audit.get("contract_valid") is not True
+        ):
+            raise ValueError("target cache training-target audit contract differs")
+        self.training_target_audit = copy.deepcopy(training_target_audit)
+        self.training_target_audit_validated = False
+
         self.identity = {
             "schema_version": TARGET_CACHE_SCHEMA_VERSION,
             "target_configuration_sha256": expected_configuration_hash,
@@ -954,6 +1489,15 @@ class TeacherTargetCache:
                 "teacher_soft_targets",
                 expected_frames=feature_frame_count(len(waveform)),
             )
+        recomputed_audit = build_training_target_audit(
+            self.records, self.targets_dir
+        )
+        if recomputed_audit != self.training_target_audit:
+            raise ValueError(
+                "target cache training-target audit does not reproduce from the "
+                "bound manifest and target files"
+            )
+        self.training_target_audit_validated = True
         return self.audit()
 
     def audit(self) -> dict[str, Any]:
@@ -961,6 +1505,24 @@ class TeacherTargetCache:
             **self.identity,
             **self.availability_audit,
             **self.dense_target_audit,
+            "training_target_audit_schema_version": (
+                TRAINING_TARGET_AUDIT_SCHEMA_VERSION
+            ),
+            "training_target_audit_sha256": self.training_target_audit[
+                "audit_sha256"
+            ],
+            "training_target_audit_validated": (
+                self.training_target_audit_validated
+            ),
+            "training_target_quality_floor_passed": self.training_target_audit[
+                "quality_floor"
+            ]["passed"],
+            "training_target_quality_failed_languages": self.training_target_audit[
+                "quality_floor"
+            ]["failed_teacher_correctness_languages"],
+            "training_target_audit_monolingual_clips": self.training_target_audit[
+                "checked_monolingual_train_clips"
+            ],
             "provenance_validated": True,
             "validated_clips": len(self._validated_ids),
             "indexed_clips": len(self.entries_by_id),

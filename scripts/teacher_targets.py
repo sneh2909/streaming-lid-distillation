@@ -35,6 +35,7 @@ from streaming_lid.data import (
     DENSE_TARGET_VALIDATION_RTOL,
     TARGET_CACHE_SCHEMA_VERSION,
     TeacherTargetCache,
+    build_training_target_audit,
     canonical_json_sha256,
     capture_manifest_snapshot,
     expand_local_posteriors,
@@ -201,6 +202,8 @@ def main() -> None:
             windows = waveform.unsqueeze(0)
         selected_log_probabilities = []
         in_set_masses = []
+        full_top1_indices = []
+        full_top1_probabilities = []
         with torch.inference_mode():
             for start in range(0, len(windows), args.batch_size):
                 log_probabilities, _, _, _ = teacher.classify_batch(
@@ -209,6 +212,10 @@ def main() -> None:
                 chosen = log_probabilities[:, selected_indices]
                 selected_log_probabilities.append(chosen.cpu())
                 in_set_masses.append(chosen.exp().sum(dim=-1).cpu())
+                probabilities = log_probabilities.exp()
+                top_probabilities, top_indices = probabilities.max(dim=-1)
+                full_top1_indices.append(top_indices.cpu())
+                full_top1_probabilities.append(top_probabilities.cpu())
         selected_logs = torch.cat(selected_log_probabilities)
         raw_anchors = torch.softmax(selected_logs, dim=-1).numpy()
         soft_anchors = torch.softmax(
@@ -247,6 +254,16 @@ def main() -> None:
             raw = np.repeat(raw_anchors.astype(np.float32), num_frames, axis=0)
             soft = np.repeat(soft_anchors.astype(np.float32), num_frames, axis=0)
         in_set_mass = torch.cat(in_set_masses).numpy()
+        native_top1_indices = torch.cat(full_top1_indices).numpy().astype(np.int64)
+        native_top1_probabilities = (
+            torch.cat(full_top1_probabilities).numpy().astype(np.float32)
+        )
+        native_top1_labels = np.asarray(
+            [
+                teacher.hparams.label_encoder.ind2lab[int(index)]
+                for index in native_top1_indices
+            ]
+        )
         output_path = args.output_dir / f"{item['id']}.npz"
         audio_path = resolve_audio_path(item, manifest_snapshot)
         audio_hash = file_sha256(audio_path)
@@ -258,6 +275,9 @@ def main() -> None:
             "anchor_probs": raw_anchors.astype(np.float32),
             "anchor_soft_targets": soft_anchors.astype(np.float32),
             "in_set_mass": in_set_mass.astype(np.float32),
+            "full_top1_indices": native_top1_indices,
+            "full_top1_probabilities": native_top1_probabilities,
+            "full_top1_labels": native_top1_labels,
             "language_codes": np.asarray(LANGUAGE_CODES),
             "cache_schema_version": np.asarray(TARGET_CACHE_SCHEMA_VERSION),
             "clip_id": np.asarray(item["id"]),
@@ -337,6 +357,7 @@ def main() -> None:
             flush=True,
         )
 
+    training_target_audit = build_training_target_audit(records, args.output_dir)
     metadata = {
         "schema_version": TARGET_CACHE_SCHEMA_VERSION,
         "teacher": TEACHER_NAME,
@@ -364,6 +385,8 @@ def main() -> None:
         ),
         "dense_target_validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
         "dense_target_validation_atol": DENSE_TARGET_VALIDATION_ATOL,
+        "training_target_audit": training_target_audit,
+        "training_target_audit_sha256": training_target_audit["audit_sha256"],
         "target_configuration": target_configuration,
         "target_configuration_sha256": target_configuration_hash,
         "manifest_snapshot": manifest_identity,
@@ -415,6 +438,7 @@ def main() -> None:
         ],
         "dense_target_validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
         "dense_target_validation_atol": DENSE_TARGET_VALIDATION_ATOL,
+        "training_target_audit": training_target_audit,
         "speaker_split": speaker_audit,
         "target_cache": cache_audit,
     }

@@ -78,6 +78,13 @@ CHUNK_MS = CHUNK_FRAMES * FRAME_MS
 ALGORITHMIC_LATENCY_MS = WINDOW_MS + EVIDENCE_LOOKAHEAD_MS + CHUNK_MS
 EARLY_RAMP_FRAMES = 100  # First second is down-weighted: little speech context exists.
 
+# The demo corpus deliberately has ten labelled monolingual training clips per
+# language.  This is a diagnostic target-quality floor, not a production
+# acceptance threshold: it is published even when it fails so a balanced
+# manifest cannot be mistaken for balanced teacher supervision.
+TARGET_AUDIT_EXPECTED_MONOLINGUAL_CLIPS_PER_LANGUAGE = 10
+TARGET_AUDIT_MIN_TEACHER_CORRECT_PER_LANGUAGE = 8
+
 STUDENT_HIDDEN_SIZE = 64
 STUDENT_DILATIONS = (1, 2, 4, 8, 16, 32)
 

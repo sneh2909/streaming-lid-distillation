@@ -8,6 +8,7 @@ import torch
 from streaming_lid.config import (
     LANGUAGE_CODES,
     TEACHER_ARTIFACT_SHA256,
+    TEACHER_LANGUAGE_INDICES,
     TEACHER_NAME,
     TEACHER_REVISION,
 )
@@ -17,6 +18,7 @@ from streaming_lid.data import (
     TARGET_CACHE_SCHEMA_VERSION,
     DistillationDataset,
     TeacherTargetCache,
+    build_training_target_audit,
     canonical_json_sha256,
     capture_manifest_snapshot,
     expand_local_posteriors,
@@ -52,24 +54,35 @@ def _write_target_file(
     language_codes: tuple[str, ...] = LANGUAGE_CODES,
     teacher_revision: str = TEACHER_REVISION,
     manifest_file_sha256: str = "unused-manifest",
+    num_frames: int = 3,
+    anchor_probs: np.ndarray | None = None,
+    in_set_mass: float = 0.75,
 ) -> None:
-    anchor_probs = _probabilities(1)
+    anchor_probs = _probabilities(1) if anchor_probs is None else anchor_probs
     anchor_soft_targets = _soften(anchor_probs)
-    probabilities = np.repeat(anchor_probs, 3, axis=0)
-    soft_targets = np.repeat(anchor_soft_targets, 3, axis=0)
+    probabilities = np.repeat(anchor_probs, num_frames, axis=0)
+    soft_targets = np.repeat(anchor_soft_targets, num_frames, axis=0)
+    selected_column = int(np.argmax(anchor_probs[0]))
+    full_index = TEACHER_LANGUAGE_INDICES[selected_column]
+    full_probability = float(anchor_probs[0, selected_column] * in_set_mass)
     np.savez_compressed(
         path,
         teacher_probs=probabilities,
         teacher_soft_targets=soft_targets,
-        anchor_frames=np.asarray([1], dtype=np.int64),
+        anchor_frames=np.asarray([num_frames // 2], dtype=np.int64),
         anchor_probs=anchor_probs,
         anchor_soft_targets=anchor_soft_targets,
-        in_set_mass=np.asarray([0.75], dtype=np.float32),
+        in_set_mass=np.asarray([in_set_mass], dtype=np.float32),
+        full_top1_indices=np.asarray([full_index], dtype=np.int64),
+        full_top1_probabilities=np.asarray([full_probability], dtype=np.float32),
+        full_top1_labels=np.asarray(
+            [f"{LANGUAGE_CODES[selected_column]}: fixture"]
+        ),
         language_codes=np.asarray(language_codes),
         cache_schema_version=np.asarray(TARGET_CACHE_SCHEMA_VERSION),
         clip_id=np.asarray(item["id"]),
         target_kind=np.asarray("converged_utterance"),
-        num_frames=np.asarray(3),
+        num_frames=np.asarray(num_frames),
         audio_sha256=np.asarray(audio_hash),
         manifest_record_sha256=np.asarray(manifest_record_sha256(item)),
         manifest_file_sha256=np.asarray(manifest_file_sha256),
@@ -87,7 +100,7 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
     item = {
         "id": "clip",
         "audio_path": "clip.wav",
-        "split": "train",
+        "split": "heldout",
         "language": "en",
         "speaker_id": "speaker",
         "text": "hello",
@@ -108,6 +121,7 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
         manifest_file_sha256=manifest_snapshot.manifest_file_sha256,
     )
     configuration = target_cache_configuration()
+    training_target_audit = build_training_target_audit([item], targets_dir)
     metadata = {
         "schema_version": TARGET_CACHE_SCHEMA_VERSION,
         "teacher_identity": configuration["teacher"],
@@ -125,6 +139,8 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
         "dense_target_expansion_valid": True,
         "dense_target_validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
         "dense_target_validation_atol": DENSE_TARGET_VALIDATION_ATOL,
+        "training_target_audit": training_target_audit,
+        "training_target_audit_sha256": training_target_audit["audit_sha256"],
         "target_files_sha256": canonical_json_sha256(
             {item["id"]: file_sha256(target_path)}
         ),
@@ -160,7 +176,7 @@ def _write_valid_local_cache(
     item = {
         "id": "switch",
         "audio_path": "switch.wav",
-        "split": "train",
+        "split": "switch",
         "language": "mixed",
         "speaker_ids": ["speaker-a", "speaker-b"],
         "segments": [
@@ -198,6 +214,12 @@ def _write_valid_local_cache(
         anchor_probs=anchor_probs,
         anchor_soft_targets=anchor_soft_targets,
         in_set_mass=np.asarray([0.75, 0.75], dtype=np.float32),
+        full_top1_indices=np.asarray(
+            [TEACHER_LANGUAGE_INDICES[0], TEACHER_LANGUAGE_INDICES[1]],
+            dtype=np.int64,
+        ),
+        full_top1_probabilities=np.asarray([0.525, 0.525], dtype=np.float32),
+        full_top1_labels=np.asarray(["en: fixture", "hi: fixture"]),
         language_codes=np.asarray(LANGUAGE_CODES),
         cache_schema_version=np.asarray(TARGET_CACHE_SCHEMA_VERSION),
         clip_id=np.asarray(item["id"]),
@@ -216,6 +238,7 @@ def _write_valid_local_cache(
         **ledger,
     )
     configuration = target_cache_configuration()
+    training_target_audit = build_training_target_audit([item], targets_dir)
     entry = {
         "id": item["id"],
         "frames": 3,
@@ -247,6 +270,8 @@ def _write_valid_local_cache(
         "dense_target_expansion_valid": True,
         "dense_target_validation_rtol": DENSE_TARGET_VALIDATION_RTOL,
         "dense_target_validation_atol": DENSE_TARGET_VALIDATION_ATOL,
+        "training_target_audit": training_target_audit,
+        "training_target_audit_sha256": training_target_audit["audit_sha256"],
         "target_files_sha256": canonical_json_sha256(
             {item["id"]: entry["target_file_sha256"]}
         ),
@@ -331,7 +356,7 @@ def test_shared_manifest_snapshot_feeds_consumers_without_a_second_open(
     dataset = DistillationDataset(
         snapshot,
         targets_dir,
-        splits=("train",),
+        splits=("heldout",),
         target_cache=cache,
     )
     assert len(dataset) == 1
@@ -483,3 +508,87 @@ def test_strict_cache_rejects_modified_target_file(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="file SHA-256 mismatch"):
         cache.load(item, "teacher_soft_targets", expected_frames=3)
+
+
+def test_training_target_audit_exposes_skew_despite_equal_clip_counts(
+    tmp_path: Path,
+) -> None:
+    targets_dir = tmp_path / "targets"
+    targets_dir.mkdir()
+    records = []
+    for language_index, language in enumerate(LANGUAGE_CODES):
+        for clip_index in range(10):
+            item = {
+                "id": f"{language}_{clip_index}",
+                "audio_path": f"{language}_{clip_index}.wav",
+                "split": "train",
+                "language": language,
+                "speaker_id": f"{language}-voice",
+                "audio_recipe": {
+                    "provider": "fixture-tts",
+                    "voice": f"{language}-voice",
+                },
+            }
+            records.append(item)
+            predicted_index = language_index
+            if language == "en" and clip_index >= 6:
+                predicted_index = LANGUAGE_CODES.index("hi")
+            probabilities = np.full(
+                (1, len(LANGUAGE_CODES)), 0.05, dtype=np.float32
+            )
+            probabilities[0, predicted_index] = 0.70
+            _write_target_file(
+                targets_dir / f"{item['id']}.npz",
+                item,
+                "unused",
+                num_frames=26,
+                anchor_probs=probabilities,
+            )
+
+    audit = build_training_target_audit(records, targets_dir)
+
+    assert audit["aggregate"]["equal_monolingual_clip_counts"] is True
+    assert (
+        audit["aggregate"][
+            "equal_clip_counts_do_not_imply_equal_t2_target_mass"
+        ]
+        is True
+    )
+    assert audit["per_language"]["en"]["teacher_selected_top1_correct"] == 6
+    assert all(
+        audit["per_language"][language]["monolingual_clips"] == 10
+        for language in LANGUAGE_CODES
+    )
+    assert audit["quality_floor"]["failed_teacher_correctness_languages"] == [
+        "en"
+    ]
+    assert audit["quality_floor"]["passed"] is False
+    assert (
+        audit["aggregate"]["target_mass_t2"]["en"]
+        < audit["aggregate"]["target_mass_t2"]["hi"]
+    )
+
+
+def test_strict_cache_recomputes_self_rehashed_training_target_audit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest_path, targets_dir, _ = _write_valid_cache(tmp_path)
+    metadata_path = targets_dir / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    metadata["training_target_audit"]["checked_monolingual_train_clips"] = 1
+    audit_payload = {
+        key: value
+        for key, value in metadata["training_target_audit"].items()
+        if key != "audit_sha256"
+    }
+    forged_hash = canonical_json_sha256(audit_payload)
+    metadata["training_target_audit"]["audit_sha256"] = forged_hash
+    metadata["training_target_audit_sha256"] = forged_hash
+    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+    monkeypatch.setattr(
+        "streaming_lid.data.load_audio", lambda _path: torch.zeros(720)
+    )
+
+    cache = TeacherTargetCache(manifest_path, targets_dir)
+    with pytest.raises(ValueError, match="does not reproduce"):
+        cache.validate_all()
