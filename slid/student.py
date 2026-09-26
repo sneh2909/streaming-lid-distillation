@@ -88,14 +88,24 @@ class ConformerBlock(nn.Module):
         return self.ln_out(x)
 
 
-def chunk_mask(T: int, chunk: int, left_chunks: int, device=None) -> torch.Tensor:
-    """Boolean [T, T]; True = NOT allowed. Frame i sees frames of its own chunk and the
-    `left_chunks` chunks before it (left_chunks < 0 means unlimited history)."""
-    c = torch.arange(T, device=device) // chunk
+def chunk_mask(T: int, chunk: int, left_frames: int = -1, device=None) -> torch.Tensor:
+    """Boolean [T, T]; True = NOT allowed. Frame i sees every frame of its own chunk and at most
+    `left_frames` frames before its chunk starts (-1 = unlimited history)."""
+    idx = torch.arange(T, device=device)
+    c = idx // chunk
     allowed = c[None, :] <= c[:, None]
-    if left_chunks >= 0:
-        allowed &= c[None, :] >= c[:, None] - left_chunks
+    if left_frames >= 0:
+        allowed &= idx[None, :] >= (c[:, None] * chunk - left_frames)
     return ~allowed
+
+
+MAX_CHUNK = 8
+
+
+def rel_index(q_pos: torch.Tensor, k_pos: torch.Tensor, left_frames: int) -> torch.Tensor:
+    """Bucket of the relative distance q - k, clipped to [-MAX_CHUNK, left_frames + MAX_CHUNK]."""
+    d = (q_pos[:, None] - k_pos[None, :]).clamp(-MAX_CHUNK, left_frames + MAX_CHUNK)
+    return d + MAX_CHUNK
 
 
 def sinusoid(T: int, d: int, device=None) -> torch.Tensor:
@@ -107,24 +117,48 @@ def sinusoid(T: int, d: int, device=None) -> torch.Tensor:
 
 
 class StreamingLID(nn.Module):
+    """left_frames > 0 bounds attention history (constant cost per chunk, any call length);
+    rel_pos replaces absolute sinusoidal positions with a learned per-head bias on q - k distance.
+    Both default off so the first-generation checkpoints load unchanged."""
+
     def __init__(self, n_langs: int, d: int = 144, layers: int = 6, heads: int = 4, ff: int = 576,
-                 kernel: int = 15, dropout: float = 0.1, left_chunks: int = -1):
+                 kernel: int = 15, dropout: float = 0.1, left_frames: int = -1, rel_pos: bool = False):
         super().__init__()
         self.feat = LogMel()
         self.sub = Subsample(80, d)
         self.blocks = nn.ModuleList([ConformerBlock(d, heads, ff, kernel, dropout) for _ in range(layers)])
         self.head = nn.Linear(d, n_langs)
-        self.left_chunks = left_chunks
+        self.left_frames, self.rel_pos, self.heads = left_frames, rel_pos, heads
+        if rel_pos:
+            assert left_frames > 0, "relative positions need bounded history"
+            self.rel_bias = nn.Embedding(left_frames + 2 * MAX_CHUNK + 1, heads)
+            nn.init.zeros_(self.rel_bias.weight)
+
+    def attn_bias(self, q_pos, k_pos):
+        """[heads, Tq, Tk] additive attention bias."""
+        return self.rel_bias(rel_index(q_pos, k_pos, self.left_frames)).permute(2, 0, 1)
 
     def forward(self, wav: torch.Tensor, chunk: int) -> torch.Tensor:
         """[B, N] waveform -> [B, T, n_langs] logits, T = number of 80 ms frames."""
         x = self.sub(self.feat(wav))
-        T = x.shape[1]
-        x = x + sinusoid(T, x.shape[2], x.device)
-        mask = chunk_mask(T, chunk, self.left_chunks, x.device)
+        B, T, _ = x.shape
+        mask = chunk_mask(T, chunk, self.left_frames, x.device)
+        if self.rel_pos:
+            pos = torch.arange(T, device=x.device)
+            bias = self.attn_bias(pos, pos).masked_fill(mask, float("-inf"))
+            mask = bias.repeat(B, 1, 1)                           # [B*heads, T, T], batch-major like MHA
+        else:
+            x = x + sinusoid(T, x.shape[2], x.device)
         for b in self.blocks:
             x = b(x, mask)
         return self.head(x)
+
+
+def load_student(path, device="cpu") -> StreamingLID:
+    ck = torch.load(path, map_location="cpu")
+    m = StreamingLID(ck["n_langs"], **ck.get("arch", {}))
+    m.load_state_dict(ck["state"])
+    return m.to(device).eval()
 
 
 def n_frames(n_samples: int) -> int:

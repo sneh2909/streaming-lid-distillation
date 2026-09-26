@@ -92,6 +92,8 @@ def main() -> None:
     ap.add_argument("--tel-p", type=float, default=0.5, help="share of training clips run through telephony sim")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--left-frames", type=int, default=64, help="attention history in 80 ms frames (-1 = unlimited)")
+    ap.add_argument("--rel-pos", type=int, default=1, help="relative position bias instead of absolute sinusoids")
     args = ap.parse_args()
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
 
@@ -101,7 +103,8 @@ def main() -> None:
     load = lambda items: {"path": [it["path"] for it in items], "wav": [load_wav(it["path"]) for it in items]}
     train_d, held_d = load(train), load(held)
 
-    model = StreamingLID(len(LANGS)).to(args.device)
+    arch = {"left_frames": args.left_frames, "rel_pos": bool(args.rel_pos)}
+    model = StreamingLID(len(LANGS), **arch).to(args.device)
     cmvn_wavs = random.sample(train_d["wav"], 200)
     cmvn_wavs = [telephony(w, seed=i)[: len(w)] if i % 2 and args.tel_p > 0 else w for i, w in enumerate(cmvn_wavs)]
     fit_cmvn(model, cmvn_wavs, args.device)
@@ -139,7 +142,7 @@ def main() -> None:
 
     out = Path(args.out or ROOT / f"checkpoints/{args.teacher}_{args.kind}")
     out.mkdir(parents=True, exist_ok=True)
-    torch.save({"state": model.state_dict(), "n_langs": len(LANGS), "args": vars(args)}, out / "student.pt")
+    torch.save({"state": model.state_dict(), "n_langs": len(LANGS), "arch": arch, "args": vars(args)}, out / "student.pt")
     (out / "train_log.json").write_text(json.dumps(log))
     print("saved", out)
 

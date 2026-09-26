@@ -1,0 +1,171 @@
+{
+  "ckpt": "checkpoints/indic-transcribe_centered/student.pt",
+  "chunk": 4,
+  "rows": [
+    {
+      "theta_commit": 0.5,
+      "theta_switch": 0.6,
+      "dwell_frames": 1,
+      "first_correct_commit_s_median": 0.505,
+      "wrong_first_commit_rate": 0.18125,
+      "never_correct_rate": 0.12291666666666666,
+      "hi_en_switch_lag_s_median": 1.1775,
+      "hi_en_switch_missed_rate": 0.35,
+      "flips_per_min": 2.3181094394511734
+    },
+    {
+      "theta_commit": 0.5,
+      "theta_switch": 0.6,
+      "dwell_frames": 3,
+      "first_correct_commit_s_median": 0.505,
+      "wrong_first_commit_rate": 0.18125,
+      "never_correct_rate": 0.12291666666666666,
+      "hi_en_switch_lag_s_median": 1.2249999999999996,
+      "hi_en_switch_missed_rate": 0.35,
+      "flips_per_min": 2.116496536225367
+    },
+    {
+      "theta_commit": 0.5,
+      "theta_switch": 0.6,
+      "dwell_frames": 6,
+      "first_correct_commit_s_median": 0.505,
+      "wrong_first_commit_rate": 0.18125,
+      "never_correct_rate": 0.12291666666666666,
+      "hi_en_switch_lag_s_median": 1.3049999999999997,
+      "hi_en_switch_missed_rate": 0.375,
+      "flips_per_min": 1.729898598081037
+    },
+    {
+      "theta_commit": 0.6,
+      "theta_switch": 0.7,
+      "dwell_frames": 1,
+      "first_correct_commit_s_median": 0.585,
+      "wrong_first_commit_rate": 0.1375,
+      "never_correct_rate": 0.13125,
+      "hi_en_switch_lag_s_median": 1.2575,
+      "hi_en_switch_missed_rate": 0.4,
+      "flips_per_min": 1.7757822765796412
+    },
+    {
+      "theta_commit": 0.6,
+      "theta_switch": 0.7,
+      "dwell_frames": 3,
+      "first_correct_commit_s_median": 0.585,
+      "wrong_first_commit_rate": 0.1375,
+      "never_correct_rate": 0.13333333333333333,
+      "hi_en_switch_lag_s_median": 1.3849999999999998,
+      "hi_en_switch_missed_rate": 0.425,
+      "flips_per_min": 1.1241961194058852
+    },
+    {
+      "theta_commit": 0.6,
+      "theta_switch": 0.7,
+      "dwell_frames": 6,
+      "first_correct_commit_s_median": 0.585,
+      "wrong_first_commit_rate": 0.1375,
+      "never_correct_rate": 0.13333333333333333,
+      "hi_en_switch_lag_s_median": 1.625,
+      "hi_en_switch_missed_rate": 0.425,
+      "flips_per_min": 1.1241961194058852
+    },
+    {
+      "theta_commit": 0.7,
+      "theta_switch": 0.7999999999999999,
+      "dwell_frames": 1,
+      "first_correct_commit_s_median": 0.745,
+      "wrong_first_commit_rate": 0.08333333333333333,
+      "never_correct_rate": 0.1375,
+      "hi_en_switch_lag_s_median": 1.3449999999999998,
+      "hi_en_switch_missed_rate": 0.45,
+      "flips_per_min": 0.6543803418803419
+    },
+    {
+      "theta_commit": 0.7,
+      "theta_switch": 0.7999999999999999,
+      "dwell_frames": 3,
+      "first_correct_commit_s_median": 0.745,
+      "wrong_first_commit_rate": 0.08333333333333333,
+      "never_correct_rate": 0.1375,
+      "hi_en_switch_lag_s_median": 1.505,
+      "hi_en_switch_missed_rate": 0.45,
+      "flips_per_min": 0.6543803418803419
+    },
+    {
+      "theta_commit": 0.7,
+      "theta_switch": 0.7999999999999999,
+      "dwell_frames": 6,
+      "first_correct_commit_s_median": 0.745,
+      "wrong_first_commit_rate": 0.08333333333333333,
+      "never_correct_rate": 0.1375,
+      "hi_en_switch_lag_s_median": 1.625,
+      "hi_en_switch_missed_rate": 0.45,
+      "flips_per_min": 0.4139957264957266
+    },
+    {
+      "theta_commit": 0.8,
+      "theta_switch": 0.9,
+      "dwell_frames": 1,
+      "first_correct_commit_s_median": 0.825,
+      "wrong_first_commit_rate": 0.058333333333333334,
+      "never_correct_rate": 0.15208333333333332,
+      "hi_en_switch_lag_s_median": 1.545,
+      "hi_en_switch_missed_rate": 0.55,
+      "flips_per_min": 0.22163120567375885
+    },
+    {
+      "theta_commit": 0.8,
+      "theta_switch": 0.9,
+      "dwell_frames": 3,
+      "first_correct_commit_s_median": 0.825,
+      "wrong_first_commit_rate": 0.058333333333333334,
+      "never_correct_rate": 0.15208333333333332,
+      "hi_en_switch_lag_s_median": 1.625,
+      "hi_en_switch_missed_rate": 0.575,
+      "flips_per_min": 0.22163120567375885
+    },
+    {
+      "theta_commit": 0.8,
+      "theta_switch": 0.9,
+      "dwell_frames": 6,
+      "first_correct_commit_s_median": 0.825,
+      "wrong_first_commit_rate": 0.058333333333333334,
+      "never_correct_rate": 0.15208333333333332,
+      "hi_en_switch_lag_s_median": 1.705,
+      "hi_en_switch_missed_rate": 0.6,
+      "flips_per_min": 0.22163120567375885
+    },
+    {
+      "theta_commit": 0.9,
+      "theta_switch": 0.95,
+      "dwell_frames": 1,
+      "first_correct_commit_s_median": 1.065,
+      "wrong_first_commit_rate": 0.035416666666666666,
+      "never_correct_rate": 0.15625,
+      "hi_en_switch_lag_s_median": 1.625,
+      "hi_en_switch_missed_rate": 0.775,
+      "flips_per_min": 0.0
+    },
+    {
+      "theta_commit": 0.9,
+      "theta_switch": 0.95,
+      "dwell_frames": 3,
+      "first_correct_commit_s_median": 1.065,
+      "wrong_first_commit_rate": 0.035416666666666666,
+      "never_correct_rate": 0.15625,
+      "hi_en_switch_lag_s_median": 1.625,
+      "hi_en_switch_missed_rate": 0.775,
+      "flips_per_min": 0.0
+    },
+    {
+      "theta_commit": 0.9,
+      "theta_switch": 0.95,
+      "dwell_frames": 6,
+      "first_correct_commit_s_median": 1.065,
+      "wrong_first_commit_rate": 0.035416666666666666,
+      "never_correct_rate": 0.15625,
+      "hi_en_switch_lag_s_median": 1.585,
+      "hi_en_switch_missed_rate": 0.8,
+      "flips_per_min": 0.0
+    }
+  ]
+}

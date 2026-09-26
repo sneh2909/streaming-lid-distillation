@@ -12,7 +12,7 @@ from slid.audio import load_wav
 from slid.commit import commit_stream
 from slid.config import LANGS
 from slid.metrics import frame_time
-from slid.student import StreamingLID
+from slid.student import load_student
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "results/figures"
@@ -25,9 +25,7 @@ plt.rcParams.update({"figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "ax
 
 
 def switch_trace():
-    ck = torch.load(ROOT / "checkpoints/ensemble_causal/student.pt", map_location="cpu")
-    model = StreamingLID(ck["n_langs"]).eval()
-    model.load_state_dict(ck["state"])
+    model = load_student(ROOT / "checkpoints/ensemble_causal/student.pt")
     targets = torch.load(ROOT / "data/targets/ensemble/causal.pt")
     clips = [json.loads(l) for l in open(ROOT / "data/manifests/switch.jsonl") if '"hi->en"' in l]
     sw = clips[0]

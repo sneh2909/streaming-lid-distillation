@@ -8,7 +8,7 @@ from slid.targets import grid_frames, teacher_inputs
 def _model(left_chunks=-1):
     torch.manual_seed(0)
     return StreamingLID(n_langs=3, d=32, layers=2, heads=2, ff=64, kernel=5, dropout=0.0,
-                        left_chunks=left_chunks).eval()
+                        left_frames=left_chunks).eval()
 
 
 def test_frame_count_matches_forward():
@@ -19,7 +19,7 @@ def test_frame_count_matches_forward():
 
 
 def test_chunk_mask_lookahead_is_bounded_by_chunk_end():
-    mask = chunk_mask(8, chunk=4, left_chunks=-1)
+    mask = chunk_mask(8, chunk=4, left_frames=-1)
     assert not mask[0, 3] and mask[0, 4]        # frame 0 sees its chunk (0..3), not the next
     assert not mask[7, 0] and mask[3, 7]
 
