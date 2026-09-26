@@ -14,8 +14,10 @@ from streaming_lid.data import (
     TARGET_CACHE_SCHEMA_VERSION,
     TeacherTargetCache,
     canonical_json_sha256,
+    expand_local_posteriors,
     file_sha256,
     load_teacher_target_array,
+    local_target_availability_ledger,
     manifest_record_sha256,
     manifest_records_sha256,
     target_cache_configuration,
@@ -89,6 +91,10 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
         "target_configuration": configuration,
         "target_configuration_sha256": canonical_json_sha256(configuration),
         "manifest_records_sha256": manifest_records_sha256([item]),
+        "target_expansion": "previous_anchor_hold",
+        "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
+        "availability_checked_frames": 0,
+        "availability_contract_valid": True,
         "target_files_sha256": canonical_json_sha256(
             {item["id"]: file_sha256(target_path)}
         ),
@@ -97,11 +103,101 @@ def _write_valid_cache(tmp_path: Path) -> tuple[Path, Path, dict]:
                 "id": item["id"],
                 "frames": 3,
                 "target_kind": "converged_utterance",
+                "target_expansion": "constant_utterance_repeat",
+                "availability_checked_frames": 0,
+                "availability_contract_valid": None,
+                "minimum_availability_margin_samples": None,
                 "audio_sha256": audio_hash,
                 "manifest_record_sha256": manifest_record_sha256(item),
                 "target_file_sha256": file_sha256(target_path),
             }
         ],
+    }
+    (targets_dir / "metadata.json").write_text(
+        json.dumps(metadata), encoding="utf-8"
+    )
+    return manifest_path, targets_dir, item
+
+
+def _write_valid_local_cache(
+    tmp_path: Path, *, teacher_latest_offset: int = 0
+) -> tuple[Path, Path, dict]:
+    item = {
+        "id": "switch",
+        "audio_path": "switch.wav",
+        "split": "train",
+        "language": "mixed",
+        "speaker_ids": ["speaker-a", "speaker-b"],
+        "segments": [
+            {"start_seconds": 0.0, "end_seconds": 1.0, "language": "en"},
+            {"start_seconds": 1.0, "end_seconds": 2.0, "language": "hi"},
+        ],
+    }
+    manifest_path = tmp_path / "manifest.jsonl"
+    manifest_path.write_text(json.dumps(item) + "\n", encoding="utf-8")
+    audio_path = tmp_path / "switch.wav"
+    audio_path.write_bytes(b"local-audio")
+    targets_dir = tmp_path / "targets"
+    targets_dir.mkdir()
+    target_path = targets_dir / "switch.npz"
+    anchors = np.asarray([0, 2], dtype=np.int64)
+    anchor_probs = _probabilities(2)
+    probabilities = expand_local_posteriors(anchors, anchor_probs, 3)
+    ledger = local_target_availability_ledger(anchors, 3)
+    ledger["teacher_latest_samples"] = ledger["teacher_latest_samples"].copy()
+    ledger["teacher_latest_samples"][1] += teacher_latest_offset
+    audio_hash = file_sha256(audio_path)
+    np.savez_compressed(
+        target_path,
+        teacher_probs=probabilities,
+        teacher_soft_targets=probabilities,
+        anchor_frames=anchors,
+        anchor_probs=anchor_probs,
+        in_set_mass=np.asarray([0.75, 0.75], dtype=np.float32),
+        language_codes=np.asarray(LANGUAGE_CODES),
+        cache_schema_version=np.asarray(TARGET_CACHE_SCHEMA_VERSION),
+        clip_id=np.asarray(item["id"]),
+        target_kind=np.asarray("local_windows"),
+        num_frames=np.asarray(3),
+        audio_sha256=np.asarray(audio_hash),
+        manifest_record_sha256=np.asarray(manifest_record_sha256(item)),
+        target_configuration_sha256=np.asarray(target_configuration_sha256()),
+        teacher_name=np.asarray(TEACHER_NAME),
+        teacher_revision=np.asarray(TEACHER_REVISION),
+        teacher_artifact_sha256=np.asarray(TEACHER_ARTIFACT_SHA256),
+        target_generator_source_sha256=np.asarray(
+            target_generator_identity()["source_sha256"]
+        ),
+        **ledger,
+    )
+    configuration = target_cache_configuration()
+    entry = {
+        "id": item["id"],
+        "frames": 3,
+        "target_kind": "local_windows",
+        "target_expansion": "previous_anchor_hold",
+        "availability_checked_frames": 3,
+        "availability_contract_valid": True,
+        "minimum_availability_margin_samples": 0,
+        "audio_sha256": audio_hash,
+        "manifest_record_sha256": manifest_record_sha256(item),
+        "target_file_sha256": file_sha256(target_path),
+    }
+    metadata = {
+        "schema_version": TARGET_CACHE_SCHEMA_VERSION,
+        "teacher_identity": configuration["teacher"],
+        "target_generator": configuration["target_generator"],
+        "target_configuration": configuration,
+        "target_configuration_sha256": canonical_json_sha256(configuration),
+        "manifest_records_sha256": manifest_records_sha256([item]),
+        "target_expansion": "previous_anchor_hold",
+        "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
+        "availability_checked_frames": 3,
+        "availability_contract_valid": True,
+        "target_files_sha256": canonical_json_sha256(
+            {item["id"]: entry["target_file_sha256"]}
+        ),
+        "clips": [entry],
     }
     (targets_dir / "metadata.json").write_text(
         json.dumps(metadata), encoding="utf-8"
@@ -131,6 +227,27 @@ def test_strict_cache_accepts_content_bound_target(tmp_path: Path) -> None:
 
     assert value.shape == (3, len(LANGUAGE_CODES))
     assert cache.audit()["validated_clips"] == 1
+
+
+def test_strict_cache_recomputes_local_availability_ledger(tmp_path: Path) -> None:
+    manifest_path, targets_dir, item = _write_valid_local_cache(tmp_path)
+    cache = TeacherTargetCache(manifest_path, targets_dir)
+
+    value = cache.load(item, "teacher_soft_targets", expected_frames=3)
+
+    assert value.shape == (3, len(LANGUAGE_CODES))
+
+
+def test_strict_cache_rejects_tampered_local_availability_ledger(
+    tmp_path: Path,
+) -> None:
+    manifest_path, targets_dir, item = _write_valid_local_cache(
+        tmp_path, teacher_latest_offset=1
+    )
+    cache = TeacherTargetCache(manifest_path, targets_dir)
+
+    with pytest.raises(ValueError, match="teacher_latest_samples.*differs"):
+        cache.load(item, "teacher_soft_targets", expected_frames=3)
 
 
 def test_strict_cache_rejects_changed_audio(tmp_path: Path) -> None:

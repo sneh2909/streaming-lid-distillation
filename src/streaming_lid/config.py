@@ -65,7 +65,8 @@ TEACHER_TEMPERATURE = 2.0
 TEACHER_PAST_MS = 1_750
 TEACHER_FUTURE_MS = 250
 TEACHER_WINDOW_MS = TEACHER_PAST_MS + TEACHER_FUTURE_MS
-TEACHER_HOP_FRAMES = 25  # Run the expensive teacher every 250 ms, then interpolate.
+TEACHER_HOP_FRAMES = 25  # Run the expensive teacher every 250 ms.
+TEACHER_TARGET_EXPANSION = "previous_anchor_hold"
 
 # A prediction at student index i + 21 consumes explicit feature lookahead through
 # i + 21 + 4. Thus it has exactly the teacher's 250 ms of future evidence.

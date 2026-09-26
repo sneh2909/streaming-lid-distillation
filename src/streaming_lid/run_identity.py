@@ -33,6 +33,7 @@ from .config import (
     TEACHER_PAST_MS,
     TEACHER_REVISION,
     TEACHER_TEMPERATURE,
+    TEACHER_TARGET_EXPANSION,
     WINDOW_MS,
     WIN_LENGTH,
 )
@@ -109,6 +110,8 @@ def pipeline_configuration() -> dict[str, Any]:
             "past_ms": TEACHER_PAST_MS,
             "future_ms": TEACHER_FUTURE_MS,
             "hop_frames": TEACHER_HOP_FRAMES,
+            "anchor_expansion": TEACHER_TARGET_EXPANSION,
+            "sample_index_semantics": "exclusive_right_edge_unclipped",
         },
         "student": {
             "class": "streaming_lid.model.CausalLIDStudent",

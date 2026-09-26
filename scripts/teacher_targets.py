@@ -27,13 +27,16 @@ from streaming_lid.config import (
     TEACHER_PAST_MS,
     TEACHER_REVISION,
     TEACHER_TEMPERATURE,
+    TEACHER_TARGET_EXPANSION,
     WIN_LENGTH,
 )
 from streaming_lid.data import (
     TARGET_CACHE_SCHEMA_VERSION,
     TeacherTargetCache,
     canonical_json_sha256,
+    expand_local_posteriors,
     file_sha256,
+    local_target_availability_ledger,
     manifest_record_sha256,
     manifest_records_sha256,
     read_manifest,
@@ -140,21 +143,6 @@ def resolve_teacher_artifact() -> tuple[Path, dict]:
     return snapshot, actual
 
 
-def interpolate_posteriors(
-    anchor_frames: np.ndarray, anchor_values: np.ndarray, num_frames: int
-) -> np.ndarray:
-    frame_index = np.arange(num_frames)
-    interpolated = np.stack(
-        [
-            np.interp(frame_index, anchor_frames, anchor_values[:, column])
-            for column in range(anchor_values.shape[1])
-        ],
-        axis=-1,
-    ).astype(np.float32)
-    interpolated /= np.clip(interpolated.sum(axis=-1, keepdims=True), 1e-8, None)
-    return interpolated
-
-
 def expected_language(item: dict, time_seconds: float) -> str:
     for segment in item["segments"]:
         if segment["start_seconds"] <= time_seconds < segment["end_seconds"]:
@@ -224,34 +212,69 @@ def main() -> None:
         soft_anchors = torch.softmax(
             selected_logs / TEACHER_TEMPERATURE, dim=-1
         ).numpy()
-        raw = interpolate_posteriors(anchor_frames, raw_anchors, num_frames)
-        soft = interpolate_posteriors(anchor_frames, soft_anchors, num_frames)
+        availability_ledger = None
+        if target_kind == "local_windows":
+            raw = expand_local_posteriors(
+                anchor_frames,
+                raw_anchors,
+                num_frames,
+                expansion=TEACHER_TARGET_EXPANSION,
+            )
+            soft = expand_local_posteriors(
+                anchor_frames,
+                soft_anchors,
+                num_frames,
+                expansion=TEACHER_TARGET_EXPANSION,
+            )
+            availability_ledger = local_target_availability_ledger(
+                anchor_frames,
+                num_frames,
+                expansion=TEACHER_TARGET_EXPANSION,
+            )
+            invalid = np.flatnonzero(~availability_ledger["availability_valid"])
+            if len(invalid):
+                frame = int(invalid[0])
+                raise ValueError(
+                    f"target availability violation for {item['id']} frame {frame}: "
+                    f"teacher latest sample "
+                    f"{availability_ledger['teacher_latest_samples'][frame]} exceeds "
+                    f"student latest sample "
+                    f"{availability_ledger['student_latest_samples'][frame]}"
+                )
+        else:
+            raw = np.repeat(raw_anchors.astype(np.float32), num_frames, axis=0)
+            soft = np.repeat(soft_anchors.astype(np.float32), num_frames, axis=0)
         in_set_mass = torch.cat(in_set_masses).numpy()
         output_path = args.output_dir / f"{item['id']}.npz"
         audio_path = resolve_audio_path(item, args.manifest)
         audio_hash = file_sha256(audio_path)
         record_hash = manifest_record_sha256(item)
-        np.savez_compressed(
-            output_path,
-            teacher_probs=raw,
-            teacher_soft_targets=soft,
-            anchor_frames=anchor_frames,
-            anchor_probs=raw_anchors.astype(np.float32),
-            in_set_mass=in_set_mass.astype(np.float32),
-            language_codes=np.asarray(LANGUAGE_CODES),
-            cache_schema_version=np.asarray(TARGET_CACHE_SCHEMA_VERSION),
-            clip_id=np.asarray(item["id"]),
-            target_kind=np.asarray(target_kind),
-            num_frames=np.asarray(num_frames),
-            audio_sha256=np.asarray(audio_hash),
-            manifest_record_sha256=np.asarray(record_hash),
-            target_configuration_sha256=np.asarray(target_configuration_hash),
-            teacher_name=np.asarray(TEACHER_NAME),
-            teacher_revision=np.asarray(TEACHER_REVISION),
-            teacher_artifact_sha256=np.asarray(TEACHER_ARTIFACT_SHA256),
-            target_generator_source_sha256=np.asarray(
+        target_payload = {
+            "teacher_probs": raw,
+            "teacher_soft_targets": soft,
+            "anchor_frames": anchor_frames,
+            "anchor_probs": raw_anchors.astype(np.float32),
+            "in_set_mass": in_set_mass.astype(np.float32),
+            "language_codes": np.asarray(LANGUAGE_CODES),
+            "cache_schema_version": np.asarray(TARGET_CACHE_SCHEMA_VERSION),
+            "clip_id": np.asarray(item["id"]),
+            "target_kind": np.asarray(target_kind),
+            "num_frames": np.asarray(num_frames),
+            "audio_sha256": np.asarray(audio_hash),
+            "manifest_record_sha256": np.asarray(record_hash),
+            "target_configuration_sha256": np.asarray(target_configuration_hash),
+            "teacher_name": np.asarray(TEACHER_NAME),
+            "teacher_revision": np.asarray(TEACHER_REVISION),
+            "teacher_artifact_sha256": np.asarray(TEACHER_ARTIFACT_SHA256),
+            "target_generator_source_sha256": np.asarray(
                 generator_identity["source_sha256"]
             ),
+        }
+        if availability_ledger is not None:
+            target_payload.update(availability_ledger)
+        np.savez_compressed(
+            output_path,
+            **target_payload,
         )
 
         predicted = raw_anchors.argmax(axis=-1)
@@ -270,6 +293,29 @@ def main() -> None:
                 "frames": num_frames,
                 "anchors": len(anchor_frames),
                 "target_kind": target_kind,
+                "target_expansion": (
+                    TEACHER_TARGET_EXPANSION
+                    if availability_ledger is not None
+                    else "constant_utterance_repeat"
+                ),
+                "availability_checked_frames": (
+                    num_frames if availability_ledger is not None else 0
+                ),
+                "availability_contract_valid": (
+                    bool(availability_ledger["availability_valid"].all())
+                    if availability_ledger is not None
+                    else None
+                ),
+                "minimum_availability_margin_samples": (
+                    int(
+                        np.min(
+                            availability_ledger["student_latest_samples"]
+                            - availability_ledger["teacher_latest_samples"]
+                        )
+                    )
+                    if availability_ledger is not None
+                    else None
+                ),
                 "anchor_label_accuracy": anchor_accuracy,
                 "mean_selected_language_mass": float(np.mean(in_set_mass)),
                 "audio_sha256": audio_hash,
@@ -293,6 +339,15 @@ def main() -> None:
         "window_past_ms": TEACHER_PAST_MS,
         "window_future_ms": TEACHER_FUTURE_MS,
         "target_hop_frames": TEACHER_HOP_FRAMES,
+        "target_expansion": TEACHER_TARGET_EXPANSION,
+        "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
+        "availability_checked_frames": sum(
+            record["availability_checked_frames"] for record in summary_records
+        ),
+        "availability_contract_valid": all(
+            record["availability_contract_valid"] is not False
+            for record in summary_records
+        ),
         "target_configuration": target_configuration,
         "target_configuration_sha256": target_configuration_hash,
         "manifest_records_sha256": manifest_hash,
@@ -328,6 +383,10 @@ def main() -> None:
         "temperature": TEACHER_TEMPERATURE,
         "window_past_ms": TEACHER_PAST_MS,
         "window_future_ms": TEACHER_FUTURE_MS,
+        "target_expansion": TEACHER_TARGET_EXPANSION,
+        "availability_sample_index_semantics": "exclusive_right_edge_unclipped",
+        "availability_checked_frames": metadata["availability_checked_frames"],
+        "availability_contract_valid": metadata["availability_contract_valid"],
         "speaker_split": speaker_audit,
         "target_cache": cache_audit,
     }

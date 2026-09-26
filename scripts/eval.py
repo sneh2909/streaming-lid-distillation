@@ -502,6 +502,16 @@ def main() -> None:
         "heldout_per_clip": per_clip,
         "speaker_split": speaker_audit,
         "target_cache": target_cache.audit(),
+        "target_expansion": target_cache.audit()["target_expansion"],
+        "target_availability_sample_index_semantics": target_cache.audit()[
+            "availability_sample_index_semantics"
+        ],
+        "target_availability_checked_frames": target_cache.audit()[
+            "availability_checked_frames"
+        ],
+        "target_availability_contract_valid": target_cache.audit()[
+            "availability_contract_valid"
+        ],
         "switch_detected_seconds": detected_seconds,
         "true_switch_seconds": true_switch_seconds,
         "switch_lag_ms": switch_lag_ms,
@@ -554,6 +564,16 @@ def main() -> None:
             "provenance_validated"
         ],
         "target_cache_schema_version": target_cache.identity["schema_version"],
+        "target_expansion": target_cache.audit()["target_expansion"],
+        "target_availability_sample_index_semantics": target_cache.audit()[
+            "availability_sample_index_semantics"
+        ],
+        "target_availability_checked_frames": target_cache.audit()[
+            "availability_checked_frames"
+        ],
+        "target_availability_contract_valid": target_cache.audit()[
+            "availability_contract_valid"
+        ],
         "target_configuration_sha256": target_cache.identity[
             "target_configuration_sha256"
         ],
