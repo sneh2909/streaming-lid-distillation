@@ -15,7 +15,8 @@ Everything here was run on one laptop (RTX 4050 6 GB for teachers and training; 
   - That target is a function of the student's own input, so a perfect student can match it exactly. Nothing is asked of the student that needs the future.
   - It is the same as the "centred window + emit delay Δ = W/2" recipe, written down honestly (section 3).
 - **Student:** a 3.1M-parameter causal Conformer with 80 ms frames and chunked attention. Trained with random chunk sizes (80/160/320/640 ms), so one model serves 4 latencies.
-  - Runs at ⟨TBD⟩× real time on one CPU thread.
+  - Runs at ≤ 0.006× real time on one CPU thread.
+  - Held-out: .89 accuracy at 2 s, .94 at clip end, .86 on simulated telephony, ECE .02, 88% frame agreement with the teacher.
 - **Evidence:**
   - one real optimizer step, then N steps, all finite
   - held-out KD loss falls
@@ -55,14 +56,17 @@ Accuracy on held-out clips (restricted), 480 clips:
 | TalTech XLS-R-300M VoxLingua | .36 | .66 | .82 | .92 | .90 | .38 | .82 | .97 | 1.0 | .061 | 390 |
 | Whisper-large-v3-turbo (language token) | .28 | .41 | .49 | .61 | .57 | **1.00** | .73 | .33 | **.00** | .357 | 131 |
 | Indic-Transcribe-core (Bodhan/AI4Bharat) | **.43** | **.81** | **.89** | .90 | .90 | .20 | **.95** | 1.0 | 1.0 | .068 | 11 |
-| **Ensemble (Indic-T × Whisper)** | ⟨TBD⟩ | | | | | | | | | | |
+| **Ensemble: Indic-T^0.7 × Whisper^0.3** | **.44** | **.85** | **.95** | **.95** | **.95** | **.63** | **.98** | 1.0 | 1.0 | **.030** | 11 + 131 |
 
 **Findings that drove the choice:**
 1. **Restriction matters on short audio.** At 1 s, 70–96% of every VoxLingua teacher's probability sits on languages outside our 7.
 2. **The VoxLingua teachers (ECAPA, AmberNet, XLS-R) cannot recognise Indian-accented English** (3–38%). Their "English" is YouTube English. For an Indian voice bot this is disqualifying.
 3. **Indic-Transcribe labels Indian English as the speaker's native language.** Marathi speakers' English comes out Marathi, Nepali speakers' Nepali, Konkani speakers' Konkani. It identifies the accent, not the language.
 4. **Whisper is perfect on Hindi, English and Indian English** but misses Marathi, Gujarati, Bengali and Telugu (0–33% on full clips).
-5. **So the two best teachers fail on opposite cases.** The ensemble weight *w* is tuned on a slice of the **training** pool by the NLL of the true language: w = ⟨TBD⟩.
+5. **So the two best teachers fail on opposite cases.** The ensemble is log q ∝ w·log q_IndicT + (1−w)·log q_Whisper over the routing set.
+   - *w* is tuned on 25 clips per group from the **training** pool (never eval), by the mean NLL of the true language over 1/2/3 s + full, clean + telephony: **w = 0.7** (NLL 0.61 vs 1.07 for Indic-T alone; `results/teachers/ensemble_tuning.json`).
+   - On held-out eval it is the best teacher on every column except Indian English at 1 s, and it's the most stable as the prefix grows (clips whose argmax flips more than once: 10% vs 32%).
+   - Whisper's 131 ms/call was run on Modal L4s (`scripts/modal_whisper.py`). The Modal and laptop results agree to within 0.002.
 
 **Also not used as teachers:**
 - **Nemotron 3.5 ASR:** among our languages it covers only hi and en, and it emits the language tag only after a finished transcript.
@@ -122,13 +126,60 @@ The loss left over at that optimum is E[ KL(q_t ‖ E[q_t | x[0:e(t)]]) ]. This 
 
 **Latency** (why this architecture):
 - **Algorithmic latency** = 25 ms window + one chunk of buffering: 80 / 160 / 320 / 640 ms at chunk 1 / 2 / 4 / 8. The default operating point is 320 ms.
-- **Compute** = ⟨TBD⟩× real time on one CPU thread (a 10 s clip in ⟨TBD⟩ ms). Per-call cost is negligible next to ASR, so **the latency budget is set by evidence, not compute**: the commit policy (Part 2) waits for enough speech to be confident.
+- **Compute** = 0.002–0.006× real time on one CPU thread (a 10 s clip in 17–55 ms). Per-call cost is negligible next to ASR, so **the latency budget is set by evidence, not compute**: the commit policy (Part 2) waits for enough speech to be confident.
 - **Dynamic chunk training:** chunk size is re-drawn every batch from {1,2,4,8}. One model serves every operating point, and section 5 reports accuracy per chunk: the latency/accuracy curve comes for free.
 - **Why not a GRU or TCN:** a GRU is causal but has no bounded lookahead to trade. A TCN has lookahead that grows with depth. The chunked Conformer is the standard streaming-ASR encoder (U2/WeNet, NeMo cache-aware), so it could share a front-end with the production ASR.
 
 ## 5. Sanity checks and results
 
-⟨TBD: loss curve, held-out KD + agreement, per-chunk table, telephony, switch lag decomposition⟩
+The final model is the **ensemble teacher + causal targets + telephony augmentation**, 5,000 steps (`checkpoints/ensemble_causal/`, `eval.json`, `train_log.json`).
+
+**The plumbing works:**
+- **Step 1:** loss 1.99, grad-norm 8.8, finite.
+- **All 5,000 steps finite:** training raises on a non-finite loss.
+- **Training KD loss:** 1.76 (first 10 steps) → 0.22 (last 10).
+- **On 570 held-out clips** (eval + switch), with the student's own target type:
+
+  | step | 1k | 2k | 3k | 4k | 5k |
+  |---|---|---|---|---|---|
+  | held-out KD | 0.750 | 0.480 | 0.313 | 0.283 | **0.279** |
+  | held-out argmax agreement with teacher | .69 | .81 | .87 | .88 | **.88** |
+
+- **Unit tests:**
+  - causality: `tests/test_student.py` checks that perturbing audio after a chunk ends leaves earlier outputs unchanged, for every chunk size
+  - frame and target alignment
+  - commit-policy behaviour (`tests/test_commit.py`)
+
+**The student as a stream, held-out (480 monolingual clips).** Accuracy on the 7 routing languages at time t after the start (wall-clock, so chunk buffering is included):
+
+| chunk (lookahead) | 0.5 s | 1 s | 2 s | 3 s | end | end, telephony | ECE (end) | agreement with teacher |
+|---|---|---|---|---|---|---|---|---|
+| 80 ms | .16 | .48 | .90 | .95 | .94 | .87 | .022 | .88 |
+| 160 ms | .17 | .52 | .89 | .95 | .94 | .87 | .030 | .88 |
+| **320 ms** | .20 | .58 | .89 | .95 | .94 | .86 | .022 | .88 |
+| 640 ms | .24 | .59 | .90 | .95 | .94 | .86 | .029 | .88 |
+
+**Reading it:**
+- **Longer chunks only help in the first second.** From 2 s on, the 80 ms setting is as good as 640 ms. So the latency knob can sit at 80–320 ms at almost no cost, and the time to a decision is set by *evidence* (≈1.5–2 s of speech), not by lookahead.
+- **At 1–2 s the student beats its teacher.** Teacher run on a 1 s prefix: .44, vs .58 for the student at 1 s. The student has seen thousands of in-domain windows; the teacher has only the clip.
+- **Telephony augmentation** (half the training clips degraded, target = teacher on the *clean* audio) is what makes the telephony column possible. Without it the same recipe scored **.14** on telephony (.89 clean). With it: .86 telephony, .94 clean.
+- **Indian English at 2 s:** .72 (clean) with the ensemble teacher vs .15 with Indic-T alone. The student inherits its teacher's blind spots, which is why the teacher was chosen by measurement.
+
+**Switch detection, Hindi → English** (10 held-out clips, 320 ms chunks, medians). Each row is one of the three lags, measured from the true switch:
+
+| | lag |
+|---|---|
+| teacher (causal 3 s window) | 2.46 s |
+| student, raw argmax | 2.26 s |
+| student, committed (θ 0.7, dwell 240 ms) | 2.83 s |
+
+- **Flip-flops:** the raw argmax makes 17 extra label changes per minute; the committed label makes 1.9.
+- **Where the lag comes from:** mostly the target. A 3 s causal teacher window only says "English" once most of the window is English (≈1.5–2.5 s). The student is on average slightly *faster* than its own target, and the commit policy adds ≈0.5 s. See `results/figures/switch_trace.png`.
+- **Hindi → Indian English is the weak spot:** 7/10 committed switches missed, because the teacher itself is only .63 on Indian English.
+
+![switch](results/figures/switch_trace.png)
+
+**Compute:** 3.06M parameters. On one CPU thread a 10 s clip takes 17–55 ms (RTF 0.0017–0.0055, depending on machine load; `eval.json`), i.e. well under 1 ms of compute per 80 ms frame.
 
 ## 6. Reproduce
 
