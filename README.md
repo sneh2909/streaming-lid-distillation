@@ -4,6 +4,7 @@ Distil a frozen, full-context (offline) spoken-language-ID **teacher** into a sm
 
 - **Part 1 (this file):** the implemented distillation.
 - **Part 2 ([`DESIGN.md`](DESIGN.md)):** how the streaming LID plugs into ASR.
+- **Walkthrough ([`notebooks/pipeline_walkthrough.ipynb`](notebooks/pipeline_walkthrough.ipynb)):** every stage executed with outputs: data and the loudness fix, teachers, targets, one KD step, causality, streaming, results.
 
 Run on one laptop (RTX 4050 6 GB for Indic-Transcribe and all training), with the slow Whisper teacher fanned out to Modal L4 GPUs. The required training step also runs on CPU (`--device cpu`).
 
