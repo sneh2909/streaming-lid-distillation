@@ -1,0 +1,71 @@
+{
+  "cv_hindi_speakers_per_split": {
+    "train": {
+      "clips": 4689,
+      "speakers": 3
+    },
+    "validation": {
+      "clips": 2428,
+      "speakers": 11
+    },
+    "test": {
+      "clips": 3154,
+      "speakers": 294
+    },
+    "other": {
+      "clips": 4044,
+      "speakers": 212
+    },
+    "invalidated": {
+      "clips": 775,
+      "speakers": 170
+    }
+  },
+  "seen_speakers_in_first_cv_run": 3,
+  "final_cv3spk": {
+    "seen_speakers": {
+      "n": 60,
+      "acc": 0.9833333333333333,
+      "called": {
+        "hi": 59,
+        "mr": 1
+      }
+    },
+    "new_speakers": {
+      "n": 60,
+      "acc": 0.2833333333333333,
+      "called": {
+        "en": 29,
+        "hi": 17,
+        "bn": 6,
+        "mr": 5,
+        "ta": 2,
+        "gu": 1
+      }
+    }
+  },
+  "final": {
+    "seen_speakers": {
+      "n": 60,
+      "acc": 0.8,
+      "called": {
+        "hi": 48,
+        "en": 5,
+        "mr": 4,
+        "bn": 3
+      }
+    },
+    "new_speakers": {
+      "n": 60,
+      "acc": 0.5333333333333333,
+      "called": {
+        "hi": 32,
+        "en": 18,
+        "bn": 6,
+        "mr": 2,
+        "ta": 1,
+        "te": 1
+      }
+    }
+  }
+}

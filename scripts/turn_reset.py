@@ -13,22 +13,14 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from slid.audio import SR, load_wav, trim_silence
+from slid.audio import SR, load_wav
 from slid.commit import commit_stream
 from slid.config import LANGS
 from slid.metrics import flips_per_min, frame_time, switch_lag
 from slid.student import HOP, SUBSAMPLE, load_student, n_frames
 
 ROOT = Path(__file__).resolve().parents[1]
-GAP_S, SEG_S = 0.5, 4.0
 FRAME = HOP * SUBSAMPLE
-
-
-def paused_clip(sw, rng):
-    xa = trim_silence(load_wav(sw["sources"][0]))[: int(SEG_S * SR)]
-    xb = trim_silence(load_wav(sw["sources"][1]))[: int(SEG_S * SR)]
-    gap = (rng.standard_normal(int(GAP_S * SR)) * 1e-4).astype(np.float32)
-    return np.concatenate([xa, gap, xb]), (len(xa) + len(gap)) / SR
 
 
 def vad_turn_starts(x, T, min_pause_frames=4, rel_db=-35.0):
@@ -61,12 +53,11 @@ def main():
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", default="checkpoints/final/student.pt")
-    ap.add_argument("--out", default="results/final/turn_reset_causal.json")
+    ap.add_argument("--out", default="results/final/turn_reset_final.json")
     args = ap.parse_args()
     model = load_student(ROOT / args.ckpt)
     chunk = 4
     post = lambda x: model(torch.from_numpy(x)[None], chunk)[0].softmax(-1).numpy()
-    rng = np.random.default_rng(0)
     kw = dict(theta_commit=0.8, theta_switch=0.9, dwell=3)
     res = {m: {"lag": [], "flips": [], "premature": []} for m in ("none", "policy", "state")}
     n_detected = 0
@@ -89,7 +80,7 @@ def main():
             res[m]["lag"].append(switch_lag(np.arange(T), c, new, switch_s))
             res[m]["flips"].append(flips_per_min(c[c >= 0], 1))
             res[m]["premature"].append(float((c[tt < switch_s] == new).any()))
-    out = {"gap_s": GAP_S, "policy": kw, "chunk": chunk, "pause_detected": n_detected, "n": 90}
+    out = {"policy": kw, "chunk": chunk, "pause_detected": n_detected, "n": 90}
     for m, d in res.items():
         lag = np.array(d["lag"])
         out[m] = {"switch_lag_median_s": float(np.nanmedian(lag)), "missed": int(np.isnan(lag).sum()),

@@ -1,5 +1,4 @@
 {
-  "gap_s": 0.5,
   "policy": {
     "switch_lag_median_s": 2.47465625,
     "missed": 18,

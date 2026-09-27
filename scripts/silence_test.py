@@ -39,7 +39,11 @@ def main() -> None:
             segs.append((x[:s], LANGS.index(it["lang"])))
     res = {"n_clips": len(segs), "chance": 1 / len(LANGS), "models": {}}
     for name in MODELS:
-        m = load_student(ROOT / f"checkpoints/{name}/student.pt")
+        ckpt = ROOT / f"checkpoints/{name}/student.pt"
+        if not ckpt.exists():                                   # only checkpoints/final ships with the repo
+            print(f"{name:26s} (checkpoint not present, skipped)")
+            continue
+        m = load_student(ckpt)
         ps = [m(torch.from_numpy(x)[None], 4)[0].softmax(-1).numpy()[-1] for x, _ in segs]
         acc = float(np.mean([p.argmax() == y for p, (_, y) in zip(ps, segs)]))
         res["models"][name] = {"acc_on_silence": acc, "mean_top_prob": float(np.mean([p.max() for p in ps]))}

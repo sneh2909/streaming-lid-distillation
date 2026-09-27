@@ -95,6 +95,7 @@ After the loudness fix the student still failed on the author's own recordings. 
 2. **Too few Hindi speakers.** Common Voice's Hindi `train` split turned out to contain **3 speakers** (4,689 clips). The student memorised them: 59/60 on their clips vs 17/60 on new Hindi speakers.
    - Fix: rebuild Hindi from the `other`/`invalidated`/`validation` splits: 110 speakers, ≤3 clips each, excluding every test speaker.
    - Their transcripts may be unvalidated, but we never use transcripts: **the teacher labels the audio.** This is the relabel loop of DESIGN §6 in miniature.
+   - Result on the same clips (`scripts/speaker_memorisation.py`): the 3-speaker model scored .98 on its seen speakers vs .28 on new ones. The shipped model scores .80 vs .53, so the seen/new gap shrinks from 70 to 27 points.
 
 **Other caveats:**
 - **Speaker IDs:** FLEURS publishes none, so train/eval speaker overlap is possible (the sentences are disjoint). Svarah has none either; we split on the (native language, state, district, gender, age group) tuple.
@@ -398,13 +399,13 @@ On these synthetic FLEURS/Svarah turns the shipped model is 4 points lower. On r
 ```bash
 uv venv --python 3.10 .venv
 uv pip install --python .venv/bin/python torch torchaudio --index-url https://download.pytorch.org/whl/cu126
-uv pip install --python .venv/bin/python -e . speechbrain transformers sentencepiece safetensors pyarrow tqdm
+uv pip install --python .venv/bin/python -e .              # all runtime deps are in pyproject.toml (modal optional)
 # accept the licences for bodhan-ai/indic-transcribe-core and ai4bharat/Svarah on Hugging Face, then `hf auth login`
 # quick look at the shipped model (no data or teacher needed):
 python scripts/stream_demo.py your.wav                      # 16 kHz mono wav; prints routing decisions
 pytest -q                                                   # 12 tests
 
-# full pipeline
+# full pipeline (data steps are explained in data/README.md)
 python scripts/prepare_data.py                              # FLEURS + Svarah selection and manifests
 python scripts/clean_data.py                                # VAD-trim, level-normalise, rebuild switch + mix clips
 python scripts/add_commonvoice.py && python scripts/add_cv_hindi_speakers.py   # speaker-diverse CV data
@@ -415,7 +416,7 @@ python scripts/ensemble.py tune && python scripts/ensemble.py score           # 
 python scripts/build_targets.py --teacher indic-transcribe --kinds causal     # + prefix centered full for the ablation
 modal run scripts/modal_whisper.py::main --targets-only                       # Whisper causal targets on L4s
 python scripts/ensemble.py targets --kind causal
-python scripts/train.py --teacher ensemble --kind causal --out checkpoints/final
+python scripts/train.py --teacher ensemble --kind causal --steps 6000 --out checkpoints/final
 python scripts/eval_student.py --ckpt checkpoints/final/student.pt --teacher ensemble
 python scripts/commit_sweep.py && python scripts/turn_reset.py && python scripts/silence_test.py
 python scripts/level_test.py && python scripts/turn_eval.py

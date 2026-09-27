@@ -53,7 +53,7 @@ def summarise(pred_end, pred_at, ys, kinds):
 @torch.no_grad()
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--ckpts", nargs="+", default=["final_clean_v2", "final"])
+    ap.add_argument("--ckpts", nargs="+", default=["final"])
     ap.add_argument("--teachers", action="store_true")
     ap.add_argument("--out", default="results/final/realworld.json")
     args = ap.parse_args()
@@ -63,7 +63,11 @@ def main() -> None:
     sets = {"eval_cv": cv_wav, "recordings": rec}
     out = json.loads((ROOT / args.out).read_text()) if (ROOT / args.out).exists() else {}
     for name in args.ckpts:
-        m = load_student(ROOT / f"checkpoints/{name}/student.pt")
+        ckpt = ROOT / f"checkpoints/{name}/student.pt"
+        if not ckpt.exists():
+            print(f"{name}: checkpoint not present, skipped")
+            continue
+        m = load_student(ckpt)
         out[name] = {}
         for sname, items in sets.items():
             pe, pa, ys, ks = [], {1.0: [], 2.0: []}, [], []
