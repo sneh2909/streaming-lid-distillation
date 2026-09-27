@@ -22,6 +22,7 @@ def main() -> None:
     ap.add_argument("--kinds", nargs="+", default=list(KINDS))
     ap.add_argument("--window-s", type=float, default=3.0)
     ap.add_argument("--suffix", default="", help="e.g. _w1.5 -> saves causal_w1.5.pt")
+    ap.add_argument("--only-new", action="store_true", help="keep existing targets, add clips not in them")
     args = ap.parse_args()
 
     teacher = load_teacher(args.teacher)
@@ -30,11 +31,15 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     for kind in args.kinds:
         out_path = out_dir / f"{kind}{args.suffix}.pt"
-        if out_path.exists():
-            print("exists:", out_path)
-            continue
         targets = {}
-        for p in tqdm(paths, desc=kind):
+        if out_path.exists():
+            if not args.only_new:
+                print("exists:", out_path)
+                continue
+            targets = torch.load(out_path)
+        todo = [p for p in paths if p not in targets]
+        print(f"{kind}: {len(targets)} existing, {len(todo)} to compute")
+        for p in tqdm(todo, desc=kind):
             frames, q = build_targets(teacher, load_wav(p), kind, window_s=args.window_s)
             targets[p] = (torch.from_numpy(frames), torch.from_numpy(q))
         torch.save(targets, out_path)

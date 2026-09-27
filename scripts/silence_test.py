@@ -17,7 +17,7 @@ from slid.config import LANGS
 from slid.student import load_student
 
 ROOT = Path(__file__).resolve().parents[1]
-MODELS = ["final", "final_v1data", "ensemble_centered", "indic-transcribe_causal", "indic-transcribe_prefix",
+MODELS = ["final", "final_cv3spk", "final_clean_v2", "final_v1data", "ensemble_centered", "indic-transcribe_causal", "indic-transcribe_prefix",
           "indic-transcribe_centered", "indic-transcribe_full", "indic-transcribe_hybrid"]
 
 

@@ -2,12 +2,12 @@
   "ckpt": "checkpoints/final/student.pt",
   "theta": 0.8,
   "n_turns": 200,
-  "final_lid_acc": 0.945,
-  "final_lid_acc_turns_ge_1.5s": 0.9473684210526315,
-  "early_route_rate": 0.855,
-  "early_route_acc": 0.935672514619883,
-  "early_route_time_median_s": 1.225,
-  "redecode_rate": 0.03,
+  "final_lid_acc": 0.905,
+  "final_lid_acc_turns_ge_1.5s": 0.9105263157894737,
+  "early_route_rate": 0.86,
+  "early_route_acc": 0.9418604651162791,
+  "early_route_time_median_s": 1.305,
+  "redecode_rate": 0.025,
   "turns": [
     {
       "pair": "hi->en",
@@ -23,15 +23,15 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.905
+      "early_t": 1.305
     },
     {
       "pair": "hi->en",
       "dur": 6.012,
       "y": 0,
       "final": 0,
-      "early": -1,
-      "early_t": NaN
+      "early": 0,
+      "early_t": 1.145
     },
     {
       "pair": "hi->en",
@@ -39,7 +39,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.065
+      "early_t": 0.825
     },
     {
       "pair": "hi->en",
@@ -47,7 +47,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.505
+      "early_t": 1.225
     },
     {
       "pair": "hi->en",
@@ -55,7 +55,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.145
+      "early_t": 1.625
     },
     {
       "pair": "hi->en",
@@ -63,7 +63,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.745
+      "early_t": 1.865
     },
     {
       "pair": "hi->en",
@@ -71,7 +71,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.505
+      "early_t": 1.625
     },
     {
       "pair": "hi->en",
@@ -79,7 +79,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.625
+      "early_t": 1.705
     },
     {
       "pair": "hi->en",
@@ -87,7 +87,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.905
+      "early_t": 0.665
     },
     {
       "pair": "hi->en",
@@ -103,7 +103,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.905
+      "early_t": 1.225
     },
     {
       "pair": "hi->en",
@@ -111,7 +111,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.745
+      "early_t": 1.865
     },
     {
       "pair": "hi->en",
@@ -119,7 +119,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.825
+      "early_t": 0.985
     },
     {
       "pair": "hi->en",
@@ -127,7 +127,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.665
+      "early_t": 0.825
     },
     {
       "pair": "hi->en",
@@ -135,7 +135,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.225
+      "early_t": 0.905
     },
     {
       "pair": "hi->en",
@@ -143,7 +143,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.225
+      "early_t": 2.745
     },
     {
       "pair": "hi->en",
@@ -151,7 +151,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.665
+      "early_t": 0.745
     },
     {
       "pair": "hi->en",
@@ -159,7 +159,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.665
+      "early_t": 1.225
     },
     {
       "pair": "hi->en",
@@ -167,7 +167,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.425
+      "early_t": 1.545
     },
     {
       "pair": "en->hi",
@@ -175,13 +175,13 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.545
+      "early_t": 1.305
     },
     {
       "pair": "en->hi",
       "dur": 5.806625,
       "y": 0,
-      "final": 0,
+      "final": 1,
       "early": -1,
       "early_t": NaN
     },
@@ -191,7 +191,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.385
+      "early_t": 0.985
     },
     {
       "pair": "en->hi",
@@ -199,7 +199,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.705
+      "early_t": 1.225
     },
     {
       "pair": "en->hi",
@@ -207,7 +207,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.625
+      "early_t": 1.785
     },
     {
       "pair": "en->hi",
@@ -215,7 +215,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.425
+      "early_t": 1.225
     },
     {
       "pair": "en->hi",
@@ -223,15 +223,15 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.865
+      "early_t": 0.985
     },
     {
       "pair": "en->hi",
       "dur": 6.13775,
       "y": 0,
       "final": 0,
-      "early": 4,
-      "early_t": 3.065
+      "early": 0,
+      "early_t": 1.305
     },
     {
       "pair": "en->hi",
@@ -247,7 +247,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.385
+      "early_t": 1.225
     },
     {
       "pair": "en->hi",
@@ -255,15 +255,15 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.625
+      "early_t": 0.665
     },
     {
       "pair": "en->hi",
       "dur": 5.8165625,
       "y": 0,
-      "final": 0,
-      "early": 1,
-      "early_t": 3.385
+      "final": 1,
+      "early": -1,
+      "early_t": NaN
     },
     {
       "pair": "en->hi",
@@ -271,7 +271,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.705
+      "early_t": 1.305
     },
     {
       "pair": "en->hi",
@@ -279,7 +279,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.145
+      "early_t": 1.305
     },
     {
       "pair": "en->hi",
@@ -287,7 +287,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.625
+      "early_t": 0.665
     },
     {
       "pair": "en->hi",
@@ -295,7 +295,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.905
+      "early_t": 1.545
     },
     {
       "pair": "en->hi",
@@ -303,7 +303,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.825
+      "early_t": 1.305
     },
     {
       "pair": "en->hi",
@@ -311,7 +311,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.145
+      "early_t": 1.705
     },
     {
       "pair": "en->hi",
@@ -319,7 +319,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 2.185
+      "early_t": 2.505
     },
     {
       "pair": "en->hi",
@@ -327,7 +327,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.705
+      "early_t": 1.305
     },
     {
       "pair": "hi->en-in",
@@ -341,7 +341,7 @@
       "pair": "hi->en-in",
       "dur": 4.6351875,
       "y": 1,
-      "final": 0,
+      "final": 1,
       "early": -1,
       "early_t": NaN
     },
@@ -351,13 +351,13 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.225
+      "early_t": 2.745
     },
     {
       "pair": "hi->en-in",
       "dur": 2.762625,
       "y": 1,
-      "final": 3,
+      "final": 1,
       "early": -1,
       "early_t": NaN
     },
@@ -367,15 +367,15 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.225
+      "early_t": 1.865
     },
     {
       "pair": "hi->en-in",
       "dur": 4.612125,
       "y": 1,
-      "final": 1,
-      "early": -1,
-      "early_t": NaN
+      "final": 3,
+      "early": 3,
+      "early_t": 2.185
     },
     {
       "pair": "hi->en-in",
@@ -383,15 +383,15 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.225
+      "early_t": 1.865
     },
     {
       "pair": "hi->en-in",
       "dur": 6.793875,
       "y": 1,
-      "final": 3,
-      "early": 3,
-      "early_t": 3.705
+      "final": 0,
+      "early": 1,
+      "early_t": 2.585
     },
     {
       "pair": "hi->en-in",
@@ -399,15 +399,15 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.225
+      "early_t": 1.865
     },
     {
       "pair": "hi->en-in",
       "dur": 5.0210625,
       "y": 1,
-      "final": 1,
-      "early": 1,
-      "early_t": 2.345
+      "final": 5,
+      "early": -1,
+      "early_t": NaN
     },
     {
       "pair": "hi->en-in",
@@ -415,21 +415,21 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.225
+      "early_t": 1.865
     },
     {
       "pair": "hi->en-in",
       "dur": 3.388,
       "y": 1,
-      "final": 0,
-      "early": 0,
-      "early_t": 3.305
+      "final": 3,
+      "early": 3,
+      "early_t": 2.265
     },
     {
       "pair": "hi->en-in",
       "dur": 2.6080625,
       "y": 1,
-      "final": 5,
+      "final": 0,
       "early": -1,
       "early_t": NaN
     },
@@ -439,13 +439,13 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.665
+      "early_t": 0.825
     },
     {
       "pair": "hi->en-in",
       "dur": 2.14,
       "y": 1,
-      "final": 0,
+      "final": 1,
       "early": -1,
       "early_t": NaN
     },
@@ -453,7 +453,7 @@
       "pair": "hi->en-in",
       "dur": 1.2395,
       "y": 1,
-      "final": 1,
+      "final": 0,
       "early": -1,
       "early_t": NaN
     },
@@ -463,15 +463,15 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.505
+      "early_t": 1.225
     },
     {
       "pair": "hi->en-in",
       "dur": 2.7836875,
       "y": 1,
       "final": 1,
-      "early": -1,
-      "early_t": NaN
+      "early": 0,
+      "early_t": 1.545
     },
     {
       "pair": "hi->en-in",
@@ -485,9 +485,9 @@
       "pair": "hi->en-in",
       "dur": 5.0014375,
       "y": 1,
-      "final": 1,
-      "early": 1,
-      "early_t": 1.785
+      "final": 5,
+      "early": 5,
+      "early_t": 4.505
     },
     {
       "pair": "hi->en-in",
@@ -495,7 +495,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.745
+      "early_t": 1.865
     },
     {
       "pair": "hi->en-in",
@@ -527,7 +527,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.945
+      "early_t": 2.265
     },
     {
       "pair": "en-in->hi",
@@ -535,7 +535,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.505
+      "early_t": 0.745
     },
     {
       "pair": "en-in->hi",
@@ -550,8 +550,8 @@
       "dur": 5.5378125,
       "y": 0,
       "final": 0,
-      "early": -1,
-      "early_t": NaN
+      "early": 0,
+      "early_t": 5.225
     },
     {
       "pair": "en-in->hi",
@@ -559,7 +559,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 2.185
+      "early_t": 1.225
     },
     {
       "pair": "en-in->hi",
@@ -567,21 +567,21 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.385
+      "early_t": 3.145
     },
     {
       "pair": "en-in->hi",
       "dur": 3.9,
       "y": 1,
-      "final": 6,
-      "early": 6,
-      "early_t": 2.345
+      "final": 0,
+      "early": 0,
+      "early_t": 1.305
     },
     {
       "pair": "en-in->hi",
       "dur": 1.852,
       "y": 1,
-      "final": 1,
+      "final": 0,
       "early": -1,
       "early_t": NaN
     },
@@ -591,21 +591,21 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.425
+      "early_t": 2.265
     },
     {
       "pair": "en-in->hi",
       "dur": 3.9,
       "y": 1,
-      "final": 6,
-      "early": 6,
-      "early_t": 2.345
+      "final": 0,
+      "early": 0,
+      "early_t": 1.305
     },
     {
       "pair": "en-in->hi",
       "dur": 1.852,
       "y": 1,
-      "final": 1,
+      "final": 0,
       "early": -1,
       "early_t": NaN
     },
@@ -615,15 +615,15 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.825
+      "early_t": 2.185
     },
     {
       "pair": "en-in->hi",
       "dur": 4.7,
       "y": 1,
-      "final": 1,
-      "early": 0,
-      "early_t": 2.905
+      "final": 0,
+      "early": -1,
+      "early_t": NaN
     },
     {
       "pair": "en-in->hi",
@@ -631,7 +631,7 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 1.705
+      "early_t": 1.465
     },
     {
       "pair": "en-in->hi",
@@ -639,7 +639,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.945
+      "early_t": 2.265
     },
     {
       "pair": "en-in->hi",
@@ -647,13 +647,13 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.505
+      "early_t": 0.585
     },
     {
       "pair": "en-in->hi",
       "dur": 1.788,
       "y": 1,
-      "final": 1,
+      "final": 5,
       "early": -1,
       "early_t": NaN
     },
@@ -671,15 +671,15 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.585
+      "early_t": 0.825
     },
     {
       "pair": "en-in->hi",
       "dur": 4.508,
       "y": 1,
-      "final": 1,
-      "early": -1,
-      "early_t": NaN
+      "final": 3,
+      "early": 3,
+      "early_t": 2.025
     },
     {
       "pair": "en-in->hi",
@@ -687,15 +687,15 @@
       "y": 0,
       "final": 0,
       "early": 0,
-      "early_t": 0.665
+      "early_t": 1.305
     },
     {
       "pair": "gu->en",
       "dur": 6.62,
       "y": 2,
       "final": 2,
-      "early": 2,
-      "early_t": 5.385
+      "early": 1,
+      "early_t": 2.825
     },
     {
       "pair": "gu->en",
@@ -703,7 +703,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.425
+      "early_t": 1.705
     },
     {
       "pair": "gu->en",
@@ -711,7 +711,7 @@
       "y": 2,
       "final": 2,
       "early": 2,
-      "early_t": 1.705
+      "early_t": 1.865
     },
     {
       "pair": "gu->en",
@@ -719,7 +719,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.305
+      "early_t": 0.905
     },
     {
       "pair": "gu->en",
@@ -735,7 +735,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.585
+      "early_t": 0.745
     },
     {
       "pair": "gu->en",
@@ -743,7 +743,7 @@
       "y": 2,
       "final": 2,
       "early": 2,
-      "early_t": 1.625
+      "early_t": 1.865
     },
     {
       "pair": "gu->en",
@@ -751,7 +751,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 2.025
+      "early_t": 1.065
     },
     {
       "pair": "gu->en",
@@ -759,23 +759,23 @@
       "y": 2,
       "final": 2,
       "early": 2,
-      "early_t": 1.705
+      "early_t": 1.865
     },
     {
       "pair": "gu->en",
       "dur": 5.9495625,
       "y": 1,
-      "final": 0,
-      "early": -1,
-      "early_t": NaN
+      "final": 1,
+      "early": 1,
+      "early_t": 3.145
     },
     {
       "pair": "gu->en",
       "dur": 6.62,
       "y": 2,
       "final": 2,
-      "early": 2,
-      "early_t": 5.385
+      "early": 1,
+      "early_t": 2.825
     },
     {
       "pair": "gu->en",
@@ -783,7 +783,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.905
+      "early_t": 0.985
     },
     {
       "pair": "gu->en",
@@ -791,7 +791,7 @@
       "y": 2,
       "final": 2,
       "early": 2,
-      "early_t": 1.625
+      "early_t": 1.865
     },
     {
       "pair": "gu->en",
@@ -799,7 +799,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.585
+      "early_t": 0.825
     },
     {
       "pair": "gu->en",
@@ -815,7 +815,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.065
+      "early_t": 0.585
     },
     {
       "pair": "gu->en",
@@ -831,15 +831,15 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.065
+      "early_t": 0.745
     },
     {
       "pair": "gu->en",
       "dur": 6.62,
       "y": 2,
       "final": 2,
-      "early": 2,
-      "early_t": 5.385
+      "early": 1,
+      "early_t": 2.825
     },
     {
       "pair": "gu->en",
@@ -847,7 +847,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.905
+      "early_t": 1.385
     },
     {
       "pair": "mr->en",
@@ -855,7 +855,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 2.425
+      "early_t": 1.945
     },
     {
       "pair": "mr->en",
@@ -863,7 +863,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.905
+      "early_t": 0.665
     },
     {
       "pair": "mr->en",
@@ -879,7 +879,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.305
+      "early_t": 1.385
     },
     {
       "pair": "mr->en",
@@ -887,7 +887,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.305
+      "early_t": 0.985
     },
     {
       "pair": "mr->en",
@@ -895,7 +895,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.305
+      "early_t": 1.465
     },
     {
       "pair": "mr->en",
@@ -903,7 +903,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.385
+      "early_t": 0.985
     },
     {
       "pair": "mr->en",
@@ -919,7 +919,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.825
+      "early_t": 0.985
     },
     {
       "pair": "mr->en",
@@ -927,7 +927,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.305
+      "early_t": 1.465
     },
     {
       "pair": "mr->en",
@@ -935,7 +935,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.385
+      "early_t": 0.985
     },
     {
       "pair": "mr->en",
@@ -951,7 +951,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.665
+      "early_t": 0.745
     },
     {
       "pair": "mr->en",
@@ -959,7 +959,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.465
+      "early_t": 1.545
     },
     {
       "pair": "mr->en",
@@ -967,7 +967,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.745
+      "early_t": 0.905
     },
     {
       "pair": "mr->en",
@@ -975,7 +975,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.385
+      "early_t": 1.305
     },
     {
       "pair": "mr->en",
@@ -983,7 +983,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.985
+      "early_t": 0.665
     },
     {
       "pair": "mr->en",
@@ -999,7 +999,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.305
+      "early_t": 1.385
     },
     {
       "pair": "mr->en",
@@ -1007,7 +1007,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.985
+      "early_t": 0.905
     },
     {
       "pair": "mr->en",
@@ -1015,7 +1015,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.385
+      "early_t": 1.545
     },
     {
       "pair": "mr->en",
@@ -1023,7 +1023,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.705
+      "early_t": 1.065
     },
     {
       "pair": "mr->en",
@@ -1039,7 +1039,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.305
+      "early_t": 1.385
     },
     {
       "pair": "mr->en",
@@ -1047,7 +1047,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.905
+      "early_t": 0.585
     },
     {
       "pair": "mr->en",
@@ -1055,7 +1055,7 @@
       "y": 3,
       "final": 3,
       "early": 3,
-      "early_t": 1.385
+      "early_t": 1.305
     },
     {
       "pair": "mr->en",
@@ -1063,7 +1063,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.905
+      "early_t": 0.665
     },
     {
       "pair": "bn->en",
@@ -1071,7 +1071,7 @@
       "y": 4,
       "final": 4,
       "early": 4,
-      "early_t": 1.225
+      "early_t": 0.905
     },
     {
       "pair": "bn->en",
@@ -1079,7 +1079,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.305
+      "early_t": 1.225
     },
     {
       "pair": "bn->en",
@@ -1093,9 +1093,9 @@
       "pair": "bn->en",
       "dur": 4.22,
       "y": 4,
-      "final": 6,
-      "early": 6,
-      "early_t": 2.905
+      "final": 0,
+      "early": -1,
+      "early_t": NaN
     },
     {
       "pair": "bn->en",
@@ -1103,7 +1103,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.425
+      "early_t": 1.625
     },
     {
       "pair": "bn->en",
@@ -1119,7 +1119,7 @@
       "y": 4,
       "final": 4,
       "early": 4,
-      "early_t": 1.225
+      "early_t": 1.065
     },
     {
       "pair": "bn->en",
@@ -1127,7 +1127,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 2.745
+      "early_t": 1.945
     },
     {
       "pair": "bn->en",
@@ -1135,7 +1135,7 @@
       "y": 4,
       "final": 4,
       "early": 4,
-      "early_t": 2.665
+      "early_t": 1.465
     },
     {
       "pair": "bn->en",
@@ -1143,7 +1143,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.905
+      "early_t": 1.305
     },
     {
       "pair": "bn->en",
@@ -1151,7 +1151,7 @@
       "y": 4,
       "final": 4,
       "early": 4,
-      "early_t": 1.385
+      "early_t": 0.745
     },
     {
       "pair": "bn->en",
@@ -1159,7 +1159,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 2.505
+      "early_t": 1.545
     },
     {
       "pair": "bn->en",
@@ -1167,7 +1167,7 @@
       "y": 4,
       "final": 4,
       "early": 4,
-      "early_t": 2.585
+      "early_t": 0.985
     },
     {
       "pair": "bn->en",
@@ -1175,7 +1175,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.905
+      "early_t": 0.665
     },
     {
       "pair": "bn->en",
@@ -1191,7 +1191,7 @@
       "y": 4,
       "final": 4,
       "early": 4,
-      "early_t": 1.225
+      "early_t": 1.065
     },
     {
       "pair": "bn->en",
@@ -1199,7 +1199,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.785
+      "early_t": 1.385
     },
     {
       "pair": "bn->en",
@@ -1215,7 +1215,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.425
+      "early_t": 1.705
     },
     {
       "pair": "bn->en",
@@ -1239,7 +1239,7 @@
       "y": 4,
       "final": 4,
       "early": 4,
-      "early_t": 1.225
+      "early_t": 1.065
     },
     {
       "pair": "bn->en",
@@ -1247,7 +1247,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.305
+      "early_t": 0.825
     },
     {
       "pair": "bn->en",
@@ -1255,7 +1255,7 @@
       "y": 4,
       "final": 4,
       "early": 4,
-      "early_t": 0.985
+      "early_t": 0.825
     },
     {
       "pair": "bn->en",
@@ -1263,7 +1263,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.385
+      "early_t": 0.905
     },
     {
       "pair": "ta->en",
@@ -1271,7 +1271,7 @@
       "y": 5,
       "final": 5,
       "early": 5,
-      "early_t": 2.025
+      "early_t": 2.105
     },
     {
       "pair": "ta->en",
@@ -1279,15 +1279,15 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.465
+      "early_t": 1.545
     },
     {
       "pair": "ta->en",
       "dur": 6.268,
       "y": 5,
       "final": 5,
-      "early": 0,
-      "early_t": 0.505
+      "early": 5,
+      "early_t": 2.825
     },
     {
       "pair": "ta->en",
@@ -1303,7 +1303,7 @@
       "y": 5,
       "final": 5,
       "early": 5,
-      "early_t": 0.905
+      "early_t": 1.705
     },
     {
       "pair": "ta->en",
@@ -1311,7 +1311,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.825
+      "early_t": 0.585
     },
     {
       "pair": "ta->en",
@@ -1319,7 +1319,7 @@
       "y": 5,
       "final": 5,
       "early": 5,
-      "early_t": 1.705
+      "early_t": 2.585
     },
     {
       "pair": "ta->en",
@@ -1327,7 +1327,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.745
+      "early_t": 0.905
     },
     {
       "pair": "ta->en",
@@ -1335,11 +1335,27 @@
       "y": 5,
       "final": 5,
       "early": 5,
-      "early_t": 1.145
+      "early_t": 1.385
     },
     {
       "pair": "ta->en",
       "dur": 6.8295625,
+      "y": 1,
+      "final": 1,
+      "early": 1,
+      "early_t": 1.225
+    },
+    {
+      "pair": "ta->en",
+      "dur": 6.268,
+      "y": 5,
+      "final": 5,
+      "early": 5,
+      "early_t": 3.865
+    },
+    {
+      "pair": "ta->en",
+      "dur": 4.61275,
       "y": 1,
       "final": 1,
       "early": 1,
@@ -1350,24 +1366,8 @@
       "dur": 6.268,
       "y": 5,
       "final": 5,
-      "early": 0,
-      "early_t": 0.665
-    },
-    {
-      "pair": "ta->en",
-      "dur": 4.61275,
-      "y": 1,
-      "final": 1,
-      "early": 1,
-      "early_t": 1.145
-    },
-    {
-      "pair": "ta->en",
-      "dur": 6.268,
-      "y": 5,
-      "final": 5,
-      "early": 0,
-      "early_t": 0.665
+      "early": 5,
+      "early_t": 3.865
     },
     {
       "pair": "ta->en",
@@ -1375,23 +1375,23 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.545
+      "early_t": 2.265
     },
     {
       "pair": "ta->en",
       "dur": 2.908,
       "y": 5,
-      "final": 5,
-      "early": 5,
-      "early_t": 1.305
+      "final": 1,
+      "early": -1,
+      "early_t": NaN
     },
     {
       "pair": "ta->en",
       "dur": 2.812,
       "y": 5,
       "final": 5,
-      "early": -1,
-      "early_t": NaN
+      "early": 5,
+      "early_t": 2.265
     },
     {
       "pair": "ta->en",
@@ -1399,7 +1399,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.305
+      "early_t": 0.985
     },
     {
       "pair": "ta->en",
@@ -1407,7 +1407,7 @@
       "y": 5,
       "final": 5,
       "early": 5,
-      "early_t": 1.385
+      "early_t": 1.785
     },
     {
       "pair": "ta->en",
@@ -1415,7 +1415,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 2.985
+      "early_t": 4.585
     },
     {
       "pair": "ta->en",
@@ -1423,7 +1423,7 @@
       "y": 5,
       "final": 5,
       "early": 5,
-      "early_t": 1.145
+      "early_t": 1.385
     },
     {
       "pair": "ta->en",
@@ -1431,7 +1431,7 @@
       "y": 5,
       "final": 5,
       "early": 5,
-      "early_t": 1.305
+      "early_t": 2.985
     },
     {
       "pair": "ta->en",
@@ -1439,7 +1439,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.065
+      "early_t": 0.665
     },
     {
       "pair": "te->en",
@@ -1447,7 +1447,7 @@
       "y": 6,
       "final": 6,
       "early": 6,
-      "early_t": 1.785
+      "early_t": 1.225
     },
     {
       "pair": "te->en",
@@ -1455,7 +1455,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.065
+      "early_t": 0.665
     },
     {
       "pair": "te->en",
@@ -1463,7 +1463,7 @@
       "y": 6,
       "final": 6,
       "early": 6,
-      "early_t": 1.305
+      "early_t": 1.545
     },
     {
       "pair": "te->en",
@@ -1471,7 +1471,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 2.585
+      "early_t": 1.865
     },
     {
       "pair": "te->en",
@@ -1479,7 +1479,7 @@
       "y": 6,
       "final": 6,
       "early": 6,
-      "early_t": 1.465
+      "early_t": 1.145
     },
     {
       "pair": "te->en",
@@ -1487,7 +1487,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.145
+      "early_t": 1.625
     },
     {
       "pair": "te->en",
@@ -1503,7 +1503,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.585
+      "early_t": 0.825
     },
     {
       "pair": "te->en",
@@ -1519,7 +1519,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 0.825
+      "early_t": 1.145
     },
     {
       "pair": "te->en",
@@ -1527,7 +1527,7 @@
       "y": 6,
       "final": 6,
       "early": 6,
-      "early_t": 1.305
+      "early_t": 1.225
     },
     {
       "pair": "te->en",
@@ -1535,7 +1535,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 2.265
+      "early_t": 1.305
     },
     {
       "pair": "te->en",
@@ -1543,7 +1543,7 @@
       "y": 6,
       "final": 6,
       "early": 6,
-      "early_t": 1.465
+      "early_t": 1.065
     },
     {
       "pair": "te->en",
@@ -1566,8 +1566,8 @@
       "dur": 4.156,
       "y": 6,
       "final": 6,
-      "early": 6,
-      "early_t": 2.505
+      "early": -1,
+      "early_t": NaN
     },
     {
       "pair": "te->en",
@@ -1575,7 +1575,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.225
+      "early_t": 0.905
     },
     {
       "pair": "te->en",
@@ -1583,7 +1583,7 @@
       "y": 6,
       "final": 6,
       "early": 6,
-      "early_t": 1.785
+      "early_t": 1.225
     },
     {
       "pair": "te->en",
@@ -1591,7 +1591,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 1.225
+      "early_t": 0.985
     },
     {
       "pair": "te->en",
@@ -1599,7 +1599,7 @@
       "y": 6,
       "final": 6,
       "early": 6,
-      "early_t": 1.305
+      "early_t": 1.545
     },
     {
       "pair": "te->en",
@@ -1607,7 +1607,7 @@
       "y": 1,
       "final": 1,
       "early": 1,
-      "early_t": 3.305
+      "early_t": 4.825
     }
   ]
 }

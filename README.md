@@ -27,18 +27,23 @@ Run on one laptop (RTX 4050 6 GB for Indic-Transcribe and all training), with th
 - **Student:** a 3.1M-parameter causal Conformer with 80 ms frames and chunked attention. Trained with random chunk sizes (80/160/320/640 ms), so one model serves 4 latencies.
   - **Real incremental streaming:** `StreamingSession.push(audio)` with a KV cache, tested equal to the batch forward.
   - Runs at ≈0.002× real time on one CPU thread.
-  - Held-out (clean data, 320 ms chunks): .71 accuracy after 1 s of speech, .86 at 2 s, .90 at clip end, .84 on simulated telephony, ECE .03. Stable from −10 to +10 dB.
+  - Held-out (FLEURS/Svarah, 320 ms chunks): .74 accuracy after 1 s of speech, .83 at 2 s, .89 at clip end, .84 on simulated telephony, ECE .04. Stable from −10 to +10 dB.
+- **Real-world check** (speech that is *not* FLEURS/Svarah: Common Voice test speakers + the author's own recorded Hindi/English/Hinglish turns, §5):
+  - The **ensemble teacher is right on 97% and 30/30** of it.
+  - The student is right on **52% and 67%**.
+  - Most of the gap came from the student memorising the few Hindi speakers it had. Going from 3 to 110 Common Voice Hindi speakers took real-recording accuracy from 47% to 67% with no in-domain loss.
+  - Closing the rest needs the teacher-relabel loop at scale: many more speakers, labelled by the teacher.
 - **In the VAD-gated turn pipeline** (DESIGN §1):
-  - the final language is right at the end of **95% of turns**
-  - an early route happens after a median **1.2 s** on 85% of turns (94% correct)
-  - only 3% of turns need a re-decode
-  - a switch between turns is followed in **0.95 s**
+  - the final language is right at the end of **~91% of turns**
+  - an early route happens after a median **1.3 s** on 86% of turns (94% correct)
+  - only 2.5% of turns need a re-decode
+  - a switch between turns is followed in **~1.1 s**
 - **Evidence:**
-  - one real optimizer step, then 5,000 steps, all finite
-  - held-out KD loss falls (0.88 → 0.50)
+  - one real optimizer step, then 6,000 steps, all finite
+  - held-out KD loss falls (1.40 → 0.45)
   - student-teacher agreement on held-out clips
   - a 5-way target comparison plus a silence-shortcut probe
-  - loudness-invariance and turn-level tests
+  - loudness-invariance, turn-level and **real-world** tests (unseen Common Voice speakers + own recordings)
   - a window-size (W) and turn-reset study
   - 12 unit tests (causality, streaming equivalence, commit policy)
 - **Shipped model:** `checkpoints/final/student.pt` (12 MB, in the repo). Try `python scripts/stream_demo.py some.wav`.
@@ -50,7 +55,9 @@ Run on one laptop (RTX 4050 6 GB for Indic-Transcribe and all training), with th
 | Train, monolingual | FLEURS **dev** split, 7 languages × 200 clips (1,399 after VAD) | ~4 h |
 | Train, Indian English | AI4Bharat **Svarah**, 200 clips, speaker keys disjoint from eval | |
 | Train, switches | 600 clips of 2–3 whole sentences. Half hi↔en, rest random pairs. 70% of joins have a 0.2–0.6 s pause, 30% none (mid-sentence style) | 1.8 h |
+| Train, Common Voice 17 (CC0) | Hindi 296 clips from **110 speakers** (`other`/`invalidated`/`validation` splits, ≤3 per speaker), Marathi 150, Bengali 145, Tamil 148, **Indian-accented English 298 clips from 258 speakers**, plus 200 CV hi↔en-IN switch mixes. `scripts/add_commonvoice.py`, `scripts/add_cv_hindi_speakers.py` | ~1.3 h |
 | Eval, monolingual | FLEURS **test** split, 7 × 60; Svarah 60 (other speaker keys) | |
+| Eval, real-world | Common Voice Hindi **test** split (78 clips, 78 speakers never seen in training) + Indian-accented English from 64 held-out speakers (79 clips); **the author's own recordings** (30 VAD turns of Hindi, English and Hinglish; `tools/recorder/`, kept private) | |
 | Eval, switches | 90 clips: whole sentence A, 0.25–0.6 s pause, whole sentence B. Pairs: hi↔en (US), hi↔en-IN, gu/mr/bn/ta/te→en | |
 | Telephony | Every eval clip also scored after 300–3400 Hz band-pass, 8 kHz μ-law, 20 dB SNR noise | |
 
@@ -77,6 +84,17 @@ The first final model had learned the shortcut:
 3. Switch and training-mix clips are rebuilt from whole sentences with natural pauses, 10 ms fades and equal levels.
 
 Training adds a random ±10 dB gain so level carries no information. Every number in §5 and DESIGN is on the cleaned data. §2's five-teacher table and §3's target comparison were measured on the original data (their conclusions don't depend on loudness: see the notes there).
+
+### A second shortcut: speakers and sources
+
+After the loudness fix the student still failed on the author's own recordings. It called Hindi "English" (14/30 turns right), while the **ensemble teacher got all 30 right**. Two causes, found in order:
+
+1. **Source ⇔ label.** Every Indian-accented voice in training was Svarah English, and every Hindi clip was studio-style FLEURS. So "Indian voice on an ordinary mic" predicted English.
+   - Fix: add Common Voice (volunteers on their own mics), including Indian-accented English from 258 speakers.
+   - That lifted Indian English on held-out speakers (.52 → .71), but not Hindi.
+2. **Too few Hindi speakers.** Common Voice's Hindi `train` split turned out to contain **3 speakers** (4,689 clips). The student memorised them: 59/60 on their clips vs 17/60 on new Hindi speakers.
+   - Fix: rebuild Hindi from the `other`/`invalidated`/`validation` splits: 110 speakers, ≤3 clips each, excluding every test speaker.
+   - Their transcripts may be unvalidated, but we never use transcripts: **the teacher labels the audio.** This is the relabel loop of DESIGN §6 in miniature.
 
 **Other caveats:**
 - **Speaker IDs:** FLEURS publishes none, so train/eval speaker overlap is possible (the sentences are disjoint). Svarah has none either; we split on the (native language, state, district, gender, age group) tuple.
@@ -196,7 +214,7 @@ The same students under the commit policy, compared at **equal wrong-commit rate
 
 | student (target type) | accuracy on silence |
 |---|---|
-| **final (clean data): ensemble teacher, causal** | **.12** |
+| **shipped final: ensemble teacher, causal** | **.11** |
 | final on the original data | .09 |
 | Indic-T causal | .14 |
 | Indic-T prefix | .10 |
@@ -225,7 +243,7 @@ Same student and teacher, 320 ms chunks, held-out:
 | hi↔en committed switch lag / premature switches | 2.42 s / **8%** | 1.52 s / 15% |
 | accuracy on silence (chance .14) | **.09** | .64 |
 
-**We ship causal**, retrained on the cleaned data (§5). Centred's speed is partly a shortcut. On the cleaned data the shipped causal student is still at chance on silence (.12). The honest ways to get speed back (shorter W, per-turn reset) are measured in DESIGN §4.
+**We ship causal**, retrained on the cleaned data (§5). Centred's speed is partly a shortcut. The shipped causal student is still at chance on silence (.11). The honest ways to get speed back (shorter W, per-turn reset) are measured in DESIGN §4.
 
 ## 4. Student and latency budget (`slid/student.py`)
 
@@ -272,20 +290,20 @@ Same student and teacher, 320 ms chunks, held-out:
 - **Dynamic chunk training:** chunk size is re-drawn every batch from {1,2,4,8}. One model serves every operating point, and section 5 reports accuracy per chunk: the latency/accuracy curve comes for free.
 - **Why not a GRU or TCN:** a GRU is causal but has no bounded lookahead to trade. A TCN has lookahead that grows with depth. The chunked Conformer is the standard streaming-ASR encoder (U2/WeNet, NeMo cache-aware), so it could share a front-end with the production ASR.
 
-## 5. Sanity checks and results (cleaned data)
+## 5. Sanity checks and results
 
-The final model is the **ensemble teacher (w = 0.65) + causal 3 s targets + telephony augmentation + ±10 dB random gain**, v1 architecture, 5,000 steps (`checkpoints/final/`; `results/final/final_eval.json`, `final_train_log.json`).
+The shipped model is the **ensemble teacher (w = 0.65) + causal 3 s targets + telephony augmentation + ±10 dB random gain**, v1 architecture, 6,000 steps. It's trained on FLEURS + Svarah + Common Voice (§1), 3,436 training clips including mixes (`checkpoints/final/`; `results/final/final_eval.json`, `final_train_log.json`).
 
 **The plumbing works:**
-- **Step 1:** loss 2.06, grad-norm 9.1, finite. A 2-step run with `--device cpu` also runs clean.
-- **All 5,000 steps finite:** training raises on a non-finite loss.
-- **Training KD loss:** 1.84 (first 10 steps) → 0.14 (last 10).
-- **On 569 held-out clips** (eval + switch), with the student's own targets:
+- **Step 1:** loss 1.90, grad-norm 5.5, finite. A 2-step run with `--device cpu` also runs clean.
+- **All 6,000 steps finite:** training raises on a non-finite loss.
+- **Training KD loss:** 1.84 (first 10 steps) → 0.33 (last 10).
+- **On 570 held-out clips** (eval + switch), with the student's own targets:
 
-  | step | 1k | 2k | 3k | 4k | 5k |
-  |---|---|---|---|---|---|
-  | held-out KD | 0.878 | 0.616 | 0.551 | 0.501 | **0.496** |
-  | held-out argmax agreement with teacher | .66 | .77 | .81 | .83 | **.83** |
+  | step | 1k | 2k | 3k | 4k | 5k | 6k |
+  |---|---|---|---|---|---|---|
+  | held-out KD | 1.397 | 1.082 | 0.611 | 0.529 | 0.469 | **0.453** |
+  | held-out argmax agreement with teacher | .42 | .61 | .76 | .80 | .82 | **.83** |
 
 - **Unit tests:**
   - causality: `tests/test_student.py` perturbs audio after a chunk ends and checks that earlier outputs are unchanged, for every chunk size
@@ -297,58 +315,79 @@ The final model is the **ensemble teacher (w = 0.65) + causal 3 s targets + tele
 
 This figure is from the target comparison (§3, original data). Each curve is measured against *its own* targets, so the plateau height is the part of that target the student cannot learn. The order matches §3: the whole-clip target (needs the most future) plateaus highest, then centred, then the information-matched ones.
 
-**The student as a stream** (480 monolingual held-out clips, speech-only). Accuracy on the 7 routing languages after t seconds of speech (wall-clock, so chunk buffering is included):
+**The student as a stream** (480 monolingual held-out FLEURS/Svarah clips, speech-only). Accuracy on the 7 routing languages after t seconds of speech (wall-clock, so chunk buffering is included):
 
 | chunk (lookahead) | 0.5 s | 1 s | 2 s | 3 s | end | end, telephony | ECE (end) | agreement with teacher |
 |---|---|---|---|---|---|---|---|---|
-| 80 ms | .29 | .68 | .84 | .89 | .91 | .84 | .032 | .83 |
-| 160 ms | .30 | .70 | .84 | .89 | .90 | .84 | .033 | .83 |
-| **320 ms** | .35 | .71 | .86 | .89 | .90 | .84 | .034 | .83 |
-| 640 ms | .36 | .72 | .85 | .88 | .90 | .83 | .037 | .83 |
+| 80 ms | .31 | .69 | .82 | .85 | .88 | .82 | .039 | .82 |
+| 160 ms | .30 | .71 | .83 | .85 | .89 | .83 | .041 | .82 |
+| **320 ms** | .31 | .74 | .83 | .87 | .89 | .84 | .035 | .82 |
+| 640 ms | .34 | .71 | .82 | .85 | .89 | .83 | .034 | .82 |
 
 **Reading it:**
-- **Longer chunks only help in the first second.** From 2 s on, 80 ms is as good as 640 ms, so the lookahead can sit at 80–320 ms at almost no cost.
+- **Chunk size barely matters.** 80 ms is within a point or two of 640 ms, so the lookahead can sit at 80–320 ms.
 - **Telephony augmentation** (half the training clips degraded, target = teacher on the *clean* audio) is what makes the telephony column possible. The same recipe without it scored .14 on telephony.
-- **Weakest groups at 2 s:** Indian English .62 and Hindi .77. The others are .87–.95.
+- **By group at 2 s:** en .97, bn .93, gu/mr .92, te .87, ta .85, **Indian English .60, FLEURS Hindi .60**.
+  - FLEURS Hindi fell from .77 when Common Voice was added.
+  - Hindi from *unseen* Common Voice speakers rose from .23 to .45 (real-world table below).
+  - The student leans less on FLEURS's particular recording style. We shipped the model that is better on speech it hasn't seen.
 
-**Before/after the data fix, on the *same* cleaned eval audio:**
+**Loudness** (`scripts/level_test.py`), on the same cleaned eval audio. The model trained on the original, un-normalised data is shown for comparison:
 
-| | old final model (trained on un-normalised data) | **new final model** |
+| gain | original-data model: accuracy / non-English called English | **shipped** |
 |---|---|---|
-| accuracy at clip end, normal level | .64 | **.90** |
-| **turned down 30 dB:** accuracy / non-English called English | .31 / **45%** | .53 / 16% |
-| turned down 20 dB | .34 / 10% | .79 / 5% |
-| turned down 10 dB | .67 / 6% | .88 / 1% |
-| turned up 10 dB | .39 / 26% | .90 / 1% |
-| VAD-turn final LID (below) | .72 | **.95** |
-
-(`scripts/level_test.py`, `results/final/level_test.json`, `results/v1_data/final/level_test_v1model.json`.)
+| +10 dB | .39 / 26% | **.89 / 1%** |
+| 0 dB | .64 / 8% | **.89 / 1%** |
+| −10 dB | .67 / 6% | **.87 / 1%** |
+| −20 dB | .34 / 10% | .74 / 3% |
+| −30 dB | .31 / **45%** | .35 / 16% |
 
 - **Level-invariant from −10 to +10 dB.** It degrades at −20/−30 dB, where speech approaches the feature floor and training only varied level by ±10 dB. Phone lines apply AGC; widening the training range is the fix.
-- **Silence probe:** the new model is still at chance on pure silence (.12; `results/final/silence_test.json`).
+- **Silence probe:** at chance (.11; `results/final/silence_test.json`).
 
-**The VAD-gated turn pipeline** (DESIGN §1; `scripts/turn_eval.py`, `results/final/turn_eval.json`). Silero VAD cuts the 90 switch clips into 200 turns (≥ 300 ms of silence ends a turn), and each turn gets a fresh student stream:
+**Real-world check** (`scripts/eval_realworld.py` → `results/final/realworld.json`). Speech the student never trained on, from sources it never saw in evaluation. Each clip or turn gets a fresh stream; accuracy at the end:
 
-| | value |
-|---|---|
-| **final LID at the endpoint** (what the bot acts on) | **.945** (.947 on turns ≥ 1.5 s) |
-| turns with an early route (first commit, θ 0.8) | 85% |
-| early route, median time from turn start | **1.23 s** |
-| early route accuracy | .94 |
-| turns needing a re-decode (early ≠ final) | 3% |
+| model | CV all (157) | CV Hindi, 78 new speakers | CV Indian English | **own recordings (30 turns)** | own Hindi | own Hinglish |
+|---|---|---|---|---|---|---|
+| student before Common Voice | .38 | .23 | .52 | .47 | .00 | .00 |
+| student + CV (Hindi from 3 speakers) | .42 | .13 | .71 | .47 | .00 | .20 |
+| **student + CV (Hindi from 110 speakers), shipped** | **.52** | **.45** | .59 | **.67** | **.36** | **.40** |
+| same + SpecAugment | .53 | .39 | .67 | .63 | .36 | .20 |
+| *teacher: Indic-Transcribe* | *.78* | *.99* | *.58* | *.63* | *.91* | *.80* |
+| *teacher: Whisper-turbo* | *.95* | *.90* | *1.00* | *.83* | *.64* | *.80* |
+| ***teacher: ensemble*** | ***.97*** | ***1.00*** | ***.94*** | ***1.00*** | ***1.00*** | ***1.00*** |
+
+**Reading it:**
+- **The teacher generalises; the student only partly does.** The ensemble is right on every one of the author's 30 turns, including Hinglish (routed as Hindi). So the targets are not the problem; student generalisation to new speakers is.
+- **Speaker diversity is the lever.** 3 → 110 Hindi speakers doubled held-out Hindi (.23 → .45) and took the recordings from 47% to 67%. In-domain held-out KD also *improved* (0.47 → 0.45).
+- **SpecAugment didn't help once speakers were diverse,** and it cost in-domain accuracy (held-out agreement .83 → .76), so it isn't shipped.
+- **The remaining gap (.52/.67 vs .97/1.00) is the honest limitation.** A 3M-parameter student trained from scratch on ~7 h from a few hundred speakers can't match a teacher pretrained on thousands of hours. The fix is more speakers, not a different target: the teacher-relabel loop (DESIGN §6) at scale, on unlabelled Indian call audio.
+
+**The VAD-gated turn pipeline** (DESIGN §1; `scripts/turn_eval.py`, `results/final/turn_eval.json`). Silero VAD cuts the 90 synthetic switch clips into 200 turns (≥ 300 ms of silence ends a turn), and each turn gets a fresh student stream:
+
+| | shipped | previous model (before Common Voice) |
+|---|---|---|
+| **final LID at the endpoint** (what the bot acts on) | **.905** (.911 on turns ≥ 1.5 s) | .945 |
+| turns with an early route (first commit, θ 0.8) | 86% | 85% |
+| early route, median time from turn start | 1.30 s | 1.23 s |
+| early route accuracy | .94 | .94 |
+| turns needing a re-decode (early ≠ final) | 2.5% | 3% |
+
+On these synthetic FLEURS/Svarah turns the shipped model is 4 points lower. On real speech it is 14–20 points higher (real-world table above). We chose real speech.
 
 **Switch detection inside a clip, Hindi → English** (10 clips, 320 ms chunks, medians, no per-turn reset):
 
 | | lag |
 |---|---|
 | teacher (causal 3 s window) | 1.90 s |
-| student, raw argmax | 1.56 s |
-| student, committed (θ 0.7, dwell 240 ms) | 2.28 s |
+| student, raw argmax | 1.40 s |
+| student, committed (θ 0.7, dwell 240 ms) | 2.19 s |
 
-- **Misses and flip-flops:** 0/10 missed. The raw argmax makes 18.5 extra label changes per minute; the committed label makes 0.
-- **Where the lag comes from:** mostly the target. A 3 s causal teacher window says "English" only once most of the window is English. The student is *faster* than its own target, and the commit policy adds ≈0.7 s.
-- **With a fresh stream per VAD turn** (DESIGN §4), switch lag across all pairs drops to **0.95 s** (16/90 missed).
-- **Weak spot:** Hindi → Indian English, where 9/10 committed switches are missed within the clip. The teacher is .72 on Indian English, and Indian English after Hindi from different speakers is the hardest case for it.
+- **Misses and flip-flops:** 0/10 missed and no premature switches. The raw argmax makes 16 extra label changes per minute; the committed label makes 0.7.
+- **Across all 90 switch clips:** 14 missed, down from 22.
+- **Where the lag comes from:** mostly the target. A 3 s causal teacher window says "English" only once most of the window is English. The student is *faster* than its own target, and the commit policy adds ≈0.8 s.
+- **With a fresh stream per VAD turn** (DESIGN §4), switch lag across all pairs drops to **1.09 s** (17/90 missed).
+- **Weak spot:** Hindi → Indian English, where 8/10 committed switches are missed within the clip. The teacher is .94 on Indian English, but the student's Indian English is its weakest group (.60 at 2 s).
 
 ![switch](results/figures/switch_trace.png)
 
@@ -368,6 +407,7 @@ pytest -q                                                   # 12 tests
 # full pipeline
 python scripts/prepare_data.py                              # FLEURS + Svarah selection and manifests
 python scripts/clean_data.py                                # VAD-trim, level-normalise, rebuild switch + mix clips
+python scripts/add_commonvoice.py && python scripts/add_cv_hindi_speakers.py   # speaker-diverse CV data
 for t in ecapa ambernet xlsr-voxlingua whisper-turbo indic-transcribe; do
   python scripts/teacher_bakeoff.py --teacher $t; done      # Whisper: `modal run scripts/modal_whisper.py::main` instead
 python scripts/teacher_bakeoff.py --teacher indic-transcribe --manifest train --max-per-lang 25 --no-switch
@@ -379,6 +419,7 @@ python scripts/train.py --teacher ensemble --kind causal --out checkpoints/final
 python scripts/eval_student.py --ckpt checkpoints/final/student.pt --teacher ensemble
 python scripts/commit_sweep.py && python scripts/turn_reset.py && python scripts/silence_test.py
 python scripts/level_test.py && python scripts/turn_eval.py
+python scripts/eval_realworld.py --ckpts final --teachers    # unseen CV speakers + own recordings
 python scripts/eval_recordings.py                          # your own wavs in data/user_recordings/ (kept private)
 python scripts/figures.py
 ```
@@ -395,7 +436,8 @@ python scripts/figures.py
 - training with a NaN guard, telephony augmentation and random gain
 - **incremental streaming inference with a KV cache** (tested equal to the batch forward)
 - streaming evaluation with a runnable, swept commit policy
-- loudness-invariance, silence-shortcut and VAD turn-level evaluations
+- loudness-invariance, silence-shortcut, VAD turn-level and real-world evaluations (unseen Common Voice speakers + own recordings via `tools/recorder/`)
+- speaker-diverse Common Voice data, labelled only by the teacher (the relabel loop in miniature)
 - unit tests (12)
 
 **Stubbed or not done:**
@@ -405,7 +447,7 @@ python scripts/figures.py
 - **Export** (ONNX/TorchScript) of the streaming session.
 
 **With more compute:**
-- ~1k hours of IndicVoices + MUCS + Svarah-style accented English, relabelled by the ensemble teacher
+- ~1k hours from thousands of speakers (IndicVoices, Kathbath, MUCS, real call audio), relabelled by the ensemble teacher. The real-world check says this is the biggest remaining lever.
 - real 8 kHz call-centre audio instead of simulated telephony
 - a fuller sweep of the teacher window W (we measured 1.5 s vs 3 s) and a two-timescale student
 - calibration (temperature scaling) checked on real calls

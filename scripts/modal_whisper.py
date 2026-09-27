@@ -36,11 +36,11 @@ app = modal.App("slid-whisper", image=image)
 
 
 @app.function(volumes={DATA: vol}, timeout=3600)
-def extract(manifests: dict[str, str]) -> int:
+def extract(manifests: dict[str, str], tar_name: str = "slid_audio.tar") -> int:
     import tarfile
-    marker = Path(DATA) / ".extracted"
+    marker = Path(DATA) / (".extracted" if tar_name == "slid_audio.tar" else f".extracted_{tar_name}")
     if not marker.exists():
-        with tarfile.open(f"{DATA}/slid_audio.tar") as tar:
+        with tarfile.open(f"{DATA}/{tar_name}") as tar:
             for m in tar.getmembers():
                 m.name = m.name.removeprefix("data/")
                 tar.extract(m, DATA, filter="data")
@@ -94,19 +94,25 @@ def indic():
 
 @app.local_entrypoint()
 def main(shard_size: int = 100, window_s: float = 3.0, suffix: str = "", targets_only: bool = False,
-         kind: str = "causal"):
+         kind: str = "causal", tar_name: str = "slid_audio.tar", only_new: bool = False):
     import torch
     root = Path(REPO)
     manifests = {f"{m}.jsonl": (root / f"data/manifests/{m}.jsonl").read_text()
                  for m in ("train", "train_mix", "eval", "switch")}
-    print("wav files on volume:", extract.remote(manifests))
+    print("wav files on volume:", extract.remote(manifests, tar_name))
 
     futs = [] if targets_only else [bakeoff.spawn([]),
                                     bakeoff.spawn(["--manifest", "train", "--max-per-lang", "25", "--no-switch"])]
 
     paths = [json.loads(l)["path"] for text in manifests.values() for l in text.splitlines()]
+    existing = {}
+    out_file = root / f"data/targets/whisper-turbo/{kind}{suffix}.pt"
+    if only_new and out_file.exists():
+        existing = torch.load(out_file)
+        paths = [p for p in paths if p not in existing]
+        print(f"only_new: {len(existing)} existing, {len(paths)} to compute")
     shards = [paths[i: i + shard_size] for i in range(0, len(paths), shard_size)]
-    targets = {}
+    targets = dict(existing)
     for i, part in enumerate(targets_shard.map(shards, kwargs={"window_s": window_s, "kind": kind})):
         targets.update({p: (torch.from_numpy(f), torch.from_numpy(q)) for p, (f, q) in part.items()})
         print(f"shard {i + 1}/{len(shards)} done, {len(targets)} clips")

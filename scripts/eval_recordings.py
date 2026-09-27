@@ -40,8 +40,14 @@ def main(theta: float = 0.8) -> None:
         ts = get_speech_timestamps(torch.from_numpy(x / (np.abs(x).max() + 1e-9) * 0.5), vad, sampling_rate=SR,
                                    min_silence_duration_ms=300)
         meta = json.loads(f.with_suffix(".json").read_text()) if f.with_suffix(".json").exists() else None
-        spans = []
-        if meta:
+        spans, turn_labels = [], None
+        labels_file = f.parent / "turn_labels.json"
+        if labels_file.exists():
+            turn_labels = json.loads(labels_file.read_text()).get(f.stem)
+        if turn_labels is not None and len(turn_labels) != len(ts):
+            print(f"  (turn_labels has {len(turn_labels)} labels but VAD found {len(ts)} turns - ignoring)")
+            turn_labels = None
+        if meta and len(meta["marks"]) > 1:
             marks = meta["marks"]
             for i, mk in enumerate(marks):
                 end = marks[i + 1]["t"] if i + 1 < len(marks) else len(x) / SR
@@ -57,10 +63,14 @@ def main(theta: float = 0.8) -> None:
             tt = a / SR + frame_time(np.arange(len(p)))
             early = f"{LANGS[c[idx[0]]]} at +{frame_time([idx[0]])[0]:.2f} s" if len(idx) else "none (keep previous)"
             top = np.argsort(-p[-1])[:2]
-            truth = ""
+            truth, lab = "", None
             if spans:
                 ov = [max(0.0, min(b / SR, e) - max(a / SR, s0)) for _, s0, e in spans]
                 lab = spans[int(np.argmax(ov))][0]
+            elif turn_labels:
+                lab = turn_labels[ts.index(t)]
+                lab = "hi" if lab == "mix" else lab
+            if lab:
                 n_ok_final += LANGS[top[0]] == lab
                 if len(idx):
                     n_early += 1
@@ -73,7 +83,7 @@ def main(theta: float = 0.8) -> None:
             other = 1 - p[:, [LANGS.index("hi"), LANGS.index("en")]].sum(1)
             ax.plot(tt, other, color="#8a8a85", lw=1, label="other 5" if t is ts[0] else None)
             ax.axvspan(a / SR, b / SR, color="#e6e5df", alpha=0.4, lw=0)
-        if spans:
+        if spans or turn_labels:
             print(f"  -> final LID {n_ok_final}/{len(ts)} turns correct; early route {n_ok_early}/{n_early} correct")
             for lab, s0, e in spans:
                 ax.axvline(s0, color="#1f1f1e", lw=0.8, ls=":")

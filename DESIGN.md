@@ -44,12 +44,12 @@ audio ─► Silero VAD ─speech─► LID student (streaming, fresh state per 
 
 | | value |
 |---|---|
-| **final LID at the endpoint** | **94.5%** of turns correct (94.7% on turns ≥ 1.5 s) |
-| early route issued | on 85% of turns, median **1.23 s** after the turn starts |
+| **final LID at the endpoint** | **90.5%** of turns correct (91.1% on turns ≥ 1.5 s) |
+| early route issued | on 86% of turns, median **1.30 s** after the turn starts |
 | early route correct | 94% |
-| re-decode needed (early ≠ final) | 3% of turns |
+| re-decode needed (early ≠ final) | 2.5% of turns |
 
-The old model (trained before the data fix) scored 72% final LID and routed early on only 52% of turns.
+The model trained before the data fix scored 72% final LID and routed early on only 52% of turns. These are synthetic FLEURS/Svarah turns. On the author's own recorded turns (real same-speaker Hindi/English/Hinglish) the shipped student is right on 20/30 at the endpoint, and the teacher on 30/30 (README §5, real-world check).
 
 ## 2. Commit and calibration policy
 
@@ -80,18 +80,18 @@ The student is trained on information-matched targets, so its early posteriors a
 
 | θ_commit | median first *correct* commit | wrong first commit | hi↔en committed switch lag | switches missed | flips/min |
 |---|---|---|---|---|---|
-| 0.5 | 0.98 s | 32% | 1.84 s | 30% | 2.0 |
-| 0.6 | 1.06 s | 19% | 1.90 s | 33% | 1.1 |
-| 0.7 | 1.23 s | 15% | 1.99 s | 38% | 0.4 |
-| **0.8** | **1.47 s** | **11%** | 2.24 s | 40% | 0.0 |
-| 0.9 | 1.78 s | 7.5% | 2.48 s | 40% | 0.0 |
+| 0.5 | 0.98 s | 33% | 1.58 s | 25% | 2.3 |
+| 0.6 | 1.15 s | 18% | 1.78 s | 20% | 0.9 |
+| 0.7 | 1.30 s | 15% | 1.84 s | 28% | 0.2 |
+| **0.8** | **1.47 s** | **12%** | 2.07 s | 33% | 0.0 |
+| 0.9 | 1.78 s | 7.7% | 2.39 s | 42% | 0.0 |
 
 ![commit trade-off](results/figures/commit_tradeoff.png)
 
 **Reading the sweep:**
 - **Each 0.1 of θ costs ~0.1–0.3 s and roughly halves-to-thirds the wrong first commits.**
-- **Operating point: θ_commit = 0.8.** 1.5 s to a first route, 11% of first routes wrong.
-- **Why 11% wrong is acceptable here:** in the turn pipeline (§1) the first route only chooses which ASR streams partials. The **final LID at the endpoint is right on 95% of turns**, and only 3% of turns need a re-decode (`results/final/turn_eval.json`). A product that acts *before* the endpoint (barge-in, very early intent) should take θ = 0.9.
+- **Operating point: θ_commit = 0.8.** 1.5 s to a first route, 12% of first routes wrong.
+- **Why 12% wrong is acceptable here:** in the turn pipeline (§1) the first route only chooses which ASR streams partials. The **final LID at the endpoint is right on ~91% of turns**, and only 2.5% need a re-decode (`results/final/turn_eval.json`). A product that acts *before* the endpoint (barge-in, very early intent) should take θ = 0.9.
 - **The cost of a high threshold is switch recall, not first-commit latency.** This is why the switch threshold and the first-commit threshold are separate knobs.
 - **Tune on real calls, not synthetic data.** In production this sweep runs on a labelled dev set of real calls; the numbers here come from synthetic concatenations.
 
@@ -140,10 +140,10 @@ The student is trained on information-matched targets, so its early posteriors a
 | | switch lag |
 |---|---|
 | teacher target | 1.90 s |
-| student raw | 1.56 s |
-| committed | 2.28 s |
+| student raw | 1.40 s |
+| committed | 2.19 s |
 
-- **Flip-flops:** 18.5/min raw vs **0/min committed**.
+- **Flip-flops:** 16/min raw vs **0.7/min committed**.
 - **Most of the lag is the 3 s teacher window,** not the student and not the policy. We tested both levers.
 
 **Lever 1: shorter teacher window W** (original data; same ensemble teacher, streaming-v2 student, 320 ms chunks):
@@ -159,15 +159,15 @@ Halving W halves the lag, but targets from 1.5 s of audio are noisy. The student
 
 | at a detected pause | committed lag | missed | flips/min | premature |
 |---|---|---|---|---|
-| nothing | 2.69 s | 29/90 | 0.1 | 0% |
-| reset the commit smoothing | 2.69 s | 29/90 | 0.2 | 0% |
-| **reset smoothing + start a fresh student stream** (keep routing the old language until the new turn commits) | **0.95 s** | **16/90** | 0.1 | 0% |
+| nothing | 2.47 s | 19/90 | 0.0 | 2% |
+| reset the commit smoothing | 2.47 s | 18/90 | 0.1 | 2% |
+| **reset smoothing + start a fresh student stream** (keep routing the old language until the new turn commits) | **1.09 s** | **17/90** | 0.2 | 2% |
 
-- **A fresh stream per turn turns every switch into a first decision,** so the switch lag becomes the first-commit time: under a second.
-- **The centred-target student** (original data) was even faster with the same reset (~1.0–1.25 s vs 2.08 s then), but it also names the language from pure silence 64% of the time. After the data fix the causal student gets below a second honestly.
+- **A fresh stream per turn turns every switch into a first decision,** so the switch lag becomes the first-commit time: about a second.
+- **The centred-target student** (original data) was even faster with the same reset (~1.0–1.25 s vs 2.08 s then), but it also names the language from pure silence 64% of the time. After the data fixes the causal student gets to about a second honestly.
 - **This is the turn-level design of §1.** It keeps a stable long-window student *within* a turn and gets fresh decisions *between* turns.
 
-- **Weakest pair:** Hindi→Indian-English within a clip (9/10 missed without reset), inherited from the teacher's Indian-English accuracy (.72).
+- **Weakest pair:** Hindi→Indian-English within a clip (8/10 missed without reset). Indian English is the student's weakest group (.60 at 2 s), although the teacher is .94 on it.
 
 ## 5. Fallback and priors
 
@@ -198,6 +198,12 @@ Halving W halves the lag, but targets from 1.5 s of audio are noisy. The student
    - Send a small sample for human verification, to catch cases where the teacher itself is wrong (e.g. Indian English: see the bake-off).
 4. **Retrain** the student on the original distillation data plus the mined set (up-weighted). Gate the release on a fixed held-out set so we catch regressions on monolingual clips.
 5. **Track drift:** commit latency, wrong-commit rate and flip rate per week, per circle.
+
+**We ran a small version of this loop.**
+- **What happened:** the student failed on real recordings (47%) that the teacher got 30/30 on. Diagnosis: too few Hindi speakers in training.
+- **What we did:** added 110 Common Voice Hindi speakers whose transcripts we never used (the teacher labelled the audio).
+- **Result:** real-recording accuracy went to 67% with no in-domain loss (README §1, §5).
+- **Takeaway:** the remaining gap to the teacher (.52–.67 vs .97–1.00 on unseen speakers) is the argument for running this loop at scale on real call audio.
 
 The teacher's blind spots bound what this loop can fix. Anything it mislabels is learned by the student, so human spot-checks on mined data are part of the loop, not optional.
 

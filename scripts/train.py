@@ -96,6 +96,7 @@ def main() -> None:
     ap.add_argument("--out", default=None)
     ap.add_argument("--left-frames", type=int, default=-1, help="attention history in 80 ms frames (-1 = unlimited)")
     ap.add_argument("--rel-pos", type=int, default=0, help="relative position bias instead of absolute sinusoids")
+    ap.add_argument("--specaug", type=int, default=0, help="SpecAugment frequency/time masking during training")
     args = ap.parse_args()
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
 
@@ -107,6 +108,7 @@ def main() -> None:
 
     arch = {"left_frames": args.left_frames, "rel_pos": bool(args.rel_pos)}
     model = StreamingLID(len(LANGS), **arch).to(args.device)
+    model.specaug = bool(args.specaug)
     cmvn_wavs = random.sample(train_d["wav"], 200)
     cmvn_wavs = [telephony(w, seed=i)[: len(w)] if i % 2 and args.tel_p > 0 else w for i, w in enumerate(cmvn_wavs)]
     fit_cmvn(model, cmvn_wavs, args.device)

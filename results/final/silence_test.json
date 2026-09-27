@@ -3,6 +3,14 @@
   "chance": 0.14285714285714285,
   "models": {
     "final": {
+      "acc_on_silence": 0.11016949152542373,
+      "mean_top_prob": 0.4750802516937256
+    },
+    "final_cv3spk": {
+      "acc_on_silence": 0.11016949152542373,
+      "mean_top_prob": 0.4204541742801666
+    },
+    "final_clean_v2": {
       "acc_on_silence": 0.11864406779661017,
       "mean_top_prob": 0.6306817531585693
     },
@@ -32,7 +40,7 @@
     },
     "indic-transcribe_hybrid": {
       "acc_on_silence": 0.6779661016949152,
-      "mean_top_prob": 0.6857110261917114
+      "mean_top_prob": 0.6857109665870667
     }
   }
 }

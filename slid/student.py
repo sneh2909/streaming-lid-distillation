@@ -138,9 +138,30 @@ class StreamingLID(nn.Module):
         """[heads, Tq, Tk] additive attention bias."""
         return self.rel_bias(rel_index(q_pos, k_pos, self.left_frames)).permute(2, 0, 1)
 
+    specaug: bool = False
+
+    def augment(self, f: torch.Tensor) -> torch.Tensor:
+        """SpecAugment (training only): 2 frequency masks (<=12 of 80 bins) + time masks (<=5% of frames).
+        Hides speaker/channel cues in fixed frequency bands; masks are per-utterance, so causality holds."""
+        B, T, F_ = f.shape
+        f = f.clone()
+        for b in range(B):
+            for _ in range(2):
+                w = int(torch.randint(0, 13, ()))
+                f0 = int(torch.randint(0, F_ - w + 1, ()))
+                f[b, :, f0:f0 + w] = 0
+            for _ in range(max(1, T // 100)):
+                w = int(torch.randint(0, max(2, T // 20), ()))
+                t0 = int(torch.randint(0, max(1, T - w), ()))
+                f[b, t0:t0 + w] = 0
+        return f
+
     def forward(self, wav: torch.Tensor, chunk: int) -> torch.Tensor:
         """[B, N] waveform -> [B, T, n_langs] logits, T = number of 80 ms frames."""
-        x = self.sub(self.feat(wav))
+        f = self.feat(wav)
+        if self.training and self.specaug:
+            f = self.augment(f)
+        x = self.sub(f)
         B, T, _ = x.shape
         mask = chunk_mask(T, chunk, self.left_frames, x.device)
         if self.rel_pos:
